@@ -1,0 +1,21 @@
+{
+  "editor.fontFamily": "IBM Plex Sans KR, IBM Plex Mono",
+  "editor.fontLigatures": true,
+  "editor.fontSize": 18,
+  "editor.letterSpacing": 2,
+  "python.defaultInterpreter": "/usr/bin/python3",
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "editor.wordWrap": "on",
+  "editor.wrappingIndent": "indent",
+  "jupyter.notebookFileRoot": "/workspaces/dev",
+  "python.envFile": "${workspaceFolder}/.env",
+  "python.analysis.exclude":[
+    "**/__pycache__",
+    "**/.git"
+  ],
+  "files.watcherExclude": {
+		"**/.git/objects/**": true,
+		"**/.git/subtree-cache/**": true,
+		"**/.hg/store/**": true,
+  }
+}

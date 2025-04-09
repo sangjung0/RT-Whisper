@@ -1,0 +1,22 @@
+name: RTWhisper
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    depends_on:
+      - redis_str
+      - redis_byte
+  
+  redis_str:
+    image: redis:latest
+
+  redis_byte:
+    image: redis:latest

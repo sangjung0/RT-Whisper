@@ -1,0 +1,31 @@
+numpy
+pandas
+opencv-python
+scipy
+scikit-image
+matplotlib
+scikit-learn
+seaborn
+tqdm
+python-multipart
+
+# torch
+torch
+torchvision
+torchaudio
+
+# whisper
+openai-whisper
+faster-whisper
+pysbd
+kss
+rapidfuzz
+soundfile
+librosa
+
+#redis
+redis[hiredis]
+
+# logging
+loguru
+rich

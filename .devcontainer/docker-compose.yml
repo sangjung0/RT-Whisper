@@ -1,0 +1,19 @@
+name: RTWhisper-Dev
+services:
+  dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ../:/workspaces/dev
+      - ../.model/huggingface:/root/.cache/huggingface
+      - ../.model/torch:/root/.cache/torch
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    command: ["tail", "-f", "/dev/null"]  
+
