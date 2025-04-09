@@ -8,7 +8,7 @@ from .util.utils import camel_to_snake
 class BaseLogger(BaseObject):
   def __init__(self, level: int = logging.DEBUG):
     super().__init__()
-    self.__logger = logging.getLogger("SilRok")
+    self.__logger = logging.getLogger("RTWhisper")
     self.__logger.setLevel(level)
 
     # console_handler = logging.StreamHandler()
