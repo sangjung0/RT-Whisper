@@ -1,11 +1,12 @@
 from typing import Any
-from .Word import Word
+
+from .Token import Token
 
 class Sentence:
-  def __init__(self, lang:list[str], text:str, words:list[Word]):
+  def __init__(self, lang:list[str], text:str, tokens:list[Token]):
     self.__lang = lang
     self.__text = text
-    self.__words = words
+    self.__tokens = tokens
 
   def __str__(self) -> str:
     return f"{self.__lang} {self.__text}"
@@ -17,14 +18,14 @@ class Sentence:
   def text(self) -> str:
     return self.__text
   @property
-  def words(self) -> list[Word]:
-    return self.__words
+  def tokens(self) -> list[Token]:
+    return self.__tokens
 
   def to_dict(self):
     return {
       "lang": self.lang,
       "text": self.text,
-      "words": [word.to_dict() for word in self.words]
+      "tokens": [token.to_dict() for token in self.tokens]
     }
 
   @classmethod
@@ -32,7 +33,7 @@ class Sentence:
     return cls(
       lang= data["lang"],
       text= data["text"],
-      words= [Word.from_dict(word) for word in data["words"]]
+      words= [Token.from_dict(token) for token in data["tokens"]]
     )
 
   def __json__(self):

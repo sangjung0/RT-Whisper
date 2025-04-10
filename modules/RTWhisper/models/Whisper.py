@@ -1,44 +1,44 @@
-from typing import Union
-from faster_whisper import WhisperModel, BatchedInferencePipeline
+from faster_whisper import WhisperModel
 from whisper import tokenizer
-import numpy as np
 
 from RTWhisper import BaseObject
 from RTWhisper import Settings
+from RTWhisper import Pipeline
 
-class Whisper(BaseObject):
+from RTWhisper.data import Context, Token
+
+
+class Whisper(BaseObject, Pipeline):
   def __init__(
     self, 
     beam_size:int = Settings.MODEL_BEAM_SIZE, 
-    batch_size:int = Settings.MODEL_BATCH_SIZE, 
     model_size:str = Settings.MODEL_SIZE,
     device:str = Settings.MODEL_DEVICE,
-    compute_type:str = Settings.MODEL_COMPUTE_TYPE
+    compute_type:str = Settings.MODEL_COMPUTE_TYPE,
+    SAMPLE_RATE:int = Settings.MODEL_SAMPLE_RATE,
   ):
     super().__init__()
-    self.__BEAM_SIZE = beam_size
-    self.__BATCH_SIZE = batch_size
+    self._BEAM_SIZE = beam_size
+    self._SAMPLE_RATE = SAMPLE_RATE
 
-    self.__model = WhisperModel(model_size, device=device, compute_type=compute_type)
-    self.__batched_model = BatchedInferencePipeline(self.__model)
+    self._model = WhisperModel(model_size, device=device, compute_type=compute_type)
     self.__tokenizer = tokenizer.get_tokenizer(multilingual=True)
 
-  def transcribe(self, audio: np.ndarray, language:str = None, prompt: str = ""):
-    return self.__model.transcribe(
-      audio, beam_size=self.__BEAM_SIZE, language=language,
+  def process(self, context:Context) -> None:
+    audio = context.processed_audio
+    language = context.language
+    prompt = context.prompt
+
+    if audio is None: return
+
+    segments, info = self._model.transcribe(
+      audio, beam_size=self._BEAM_SIZE, language=language,
       word_timestamps=True, vad_filter=False,
       initial_prompt=prompt
     )
 
-  def batched_transcribe(self, audio: Union[np.ndarray, list[np.ndarray]], language:str = None):
-    if isinstance(audio, list) and len(audio) > self.__BATCH_SIZE:
-      raise ValueError("The maximum number of audio files is 8.")
-
-    return self.__batched_model.transcribe(
-      audio, batch_size=self.__BATCH_SIZE, 
-      beam_size=self.__BEAM_SIZE, language=language,
-      word_timestamps=True, vad_filter=False
-    )
+    context.tokens = segments
+    context.language = info.language
 
   @property
   def tokenizer(self) -> tokenizer.Tokenizer:
