@@ -1,15 +1,14 @@
 import numpy as np
 from silero_vad import load_silero_vad, get_speech_timestamps
 
-from RTWhisper import BaseObject
-from RTWhisper import Pipeline
+from RTWhisper import BaseObject, Pipeline, Settings
 from RTWhisper.data import Context
 
 
 class SileroVad(BaseObject, Pipeline):
   def __init__(
     self,
-    SAMPLE_RATE:int
+    SAMPLE_RATE:int = Settings.MODEL_SAMPLE_RATE,
   ):
     super().__init__()
     self.__SAMPLE_RATE = SAMPLE_RATE

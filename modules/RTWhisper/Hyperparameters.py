@@ -6,7 +6,7 @@ from .BaseLogger import BaseLogger
 
 HYPERPARAMETERS = {
   "sentence_max_prev_sentence": 1,
-  "weighted_and_offset_token_boundary": 4800,
+  "weighted_and_offset_token_boundary": 8000,
   "duration_filter_z": {
     "default": 2.0,
     "ko": 2.0,
@@ -40,9 +40,14 @@ HYPERPARAMETERS = {
       "ko": 3200,
       "en": 3200,
     },
+    "tolerance": {
+      "default": 8000,
+      "ko": 8000,
+      "en": 8000,
+    },
   },
   "classifier_max_prev_sc": {
-    "default": 48000
+    "default": 96000
   }
 }
 

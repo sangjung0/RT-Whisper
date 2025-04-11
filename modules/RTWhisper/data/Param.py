@@ -139,7 +139,7 @@ class Param:
   def prev_processed_audio(self):
     return self.__prev_processed_audio
   @prev_processed_audio.setter
-  def prev_audio(self, value:np.ndarray):
+  def prev_processed_audio(self, value:np.ndarray):
     if not isinstance(value, np.ndarray) and value is not None:
       raise TypeError("Previous audio must be a numpy array")
     self.__prev_processed_audio = value

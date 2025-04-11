@@ -1,7 +1,6 @@
 
 from RTWhisper.models import Whisper, SileroVad
 from RTWhisper.preprocessor import AudioMerger
-from RTWhisper import Settings
 from RTWhisper.classifier import Classifier
 from RTWhisper.composer import Composer
 from RTWhisper.data import Param, Context
@@ -24,10 +23,11 @@ class TokenStreamer(BaseObject):
 
     self.__init_pipeline()
 
+  @SileroVad.object
   @Whisper.object
-  def __init_pipeline(self, whisper:Whisper):
+  def __init_pipeline(self, whisper:Whisper, silero_vad:SileroVad):
     self.__pipeline = [
-      SileroVad(Settings.MODEL_SAMPLE_RATE),
+      silero_vad,
       # Use: processed_audio
       # Result: processed_audio, timestamps
       AudioMerger(), 

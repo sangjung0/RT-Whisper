@@ -2,7 +2,10 @@ from RTWhisper.SentenceStreamer import AdjustOffset, AudioMerger, RecoverTimeoff
 from RTWhisper.composer import SimpleComposer
 from RTWhisper.data import Param, Context
 from RTWhisper.models import Whisper, SileroVad
-from RTWhisper import Hyperparameters, BaseObject, Pipeline, Settings
+
+from .Hyperparameters import Hyperparameters
+from .BaseObject import BaseObject
+from .Pipeline import Pipeline
 
 
 class Transcriber(BaseObject):
@@ -16,10 +19,11 @@ class Transcriber(BaseObject):
 
     self.__init_pipeline()
 
+  @SileroVad.object
   @Whisper.object
-  def __init_pipeline(self, whisper:Whisper):
+  def __init_pipeline(self, whisper:Whisper, silero_vad:SileroVad):
     self.__pipeline = [
-      SileroVad(Settings.MODEL_SAMPLE_RATE),
+      silero_vad,
       AudioMerger(),
       whisper,
       SegmentsToTokenWithEOS(whisper.tokenizer),
