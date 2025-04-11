@@ -1,4 +1,3 @@
-
 from RTWhisper.models import Whisper, SileroVad
 from RTWhisper.preprocessor import AudioMerger
 from RTWhisper import Settings

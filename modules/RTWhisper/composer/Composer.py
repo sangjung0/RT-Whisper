@@ -55,7 +55,7 @@ class Composer(Pipeline):
     completed_dict = {}
     start_idx = 0
     sents = tokenizer.segment(text)
-    for sent in sents[:-tail]:
+    for sent in (sents[:-tail] if tail > 0 else sents):
       len_scent = len(sent)
       for idx in range(start_idx, len(tokens)):
         len_scent -= len(tokens[idx].text)

@@ -8,6 +8,7 @@ from .Settings import Settings
 from .Tokenizer import Tokenizer
 from .TokenStreamer import TokenStreamer
 from .SentenceStreamer import SentenceStreamer
+from .Transcriber import Transcriber
 from . import classifier
 from . import composer
 from . import data
@@ -27,6 +28,7 @@ __all__ = [
   "Hyperparameters",
   "TokenStreamer",
   "SentenceStreamer",
+  "Transcriber",
   # "classifier",
   # "composer",
   # "data",
