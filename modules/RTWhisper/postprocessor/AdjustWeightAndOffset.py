@@ -24,8 +24,7 @@ class AdjustWeightAndOffset(Pipeline):
   
   def process(self, context:Context):
 
-    if context.processed_audio is None:
-      return
+    if len(context.processed_audio) == 0: return 
 
     sc_offset = context.sc_offset
     audio_sc = len(context.audio) + context.prev_audio_sc 

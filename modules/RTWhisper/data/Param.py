@@ -27,11 +27,11 @@ STATISTIC = {
 class Param:
   def __init__(
     self,
-    audio:np.ndarray = None,
+    audio:np.ndarray = np.zeros((0,), dtype=np.float32),
     order: int = 0,
     sc_offset: int= 0,
     prev_audio_sc: int = 0,
-    prev_processed_audio:np.ndarray = None,
+    prev_processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32),
     prev_timestamps: list[dict] = [],
     prev_sentence:Sentence = None,
     prev_words:list[Token] = [],
@@ -53,7 +53,7 @@ class Param:
     self.__prompt = prompt
     self.__language = language
 
-  def update(self, result:Result = None):
+  def update(self, result:Result):
     self.__order = result.order
     self.__sc_offset = result.sc_offset
     self.__prev_audio_sc = result.prev_audio_sc
@@ -82,11 +82,11 @@ class Param:
   @classmethod
   def from_dict(cls, d: dict[str, Any]):
     return cls(
-      audio=d.get("audio", None),
+      audio=d.get("audio", np.zeros((0,), dtype=np.float32)),
       order=d.get("order", 0),
       sc_offset=d.get("sc_offset", 0),
       prev_audio_sc=d.get("prev_audio_sc", 0),
-      prev_processed_audio=d.get("prev_processed_audio", None),
+      prev_processed_audio=d.get("prev_processed_audio", np.zeros((0,), dtype=np.float32)),
       prev_timestamps=d.get("prev_timestamps", []),
       prev_sentence=Sentence.from_dict(d.get("prev_sentence", {})) if d.get("prev_sentence") else None,
       prev_words=[Token.from_dict(w) for w in d.get("prev_words", [])],
@@ -104,7 +104,7 @@ class Param:
     return self.__audio
   @audio.setter
   def audio(self, value:np.ndarray):
-    if not isinstance(value, np.ndarray) and value is not None:
+    if not isinstance(value, np.ndarray):
       raise TypeError("Audio must be a numpy array")
     self.__audio = value
 
@@ -140,7 +140,7 @@ class Param:
     return self.__prev_processed_audio
   @prev_processed_audio.setter
   def prev_processed_audio(self, value:np.ndarray):
-    if not isinstance(value, np.ndarray) and value is not None:
+    if not isinstance(value, np.ndarray):
       raise TypeError("Previous audio must be a numpy array")
     self.__prev_processed_audio = value
 

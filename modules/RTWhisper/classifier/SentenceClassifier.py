@@ -27,7 +27,7 @@ class SentenceClassifier(Pipeline):
     timestamps = context.timestamps
     order = context.order
 
-    if processed_audio is None:
+    if len(processed_audio) == 0:
       context.prev_audio_sc = prev_audio_sc + len(audio)
       return
 

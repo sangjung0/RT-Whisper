@@ -9,7 +9,7 @@ class AudioMerger(Pipeline):
     audio = context.processed_audio
     prev_audio = context.prev_processed_audio
 
-    if audio is None: return
-    elif prev_audio is None: return
+    if len(audio) == 0: return
+    elif len(prev_audio) == 0 : return
     
     context.processed_audio = np.concatenate((prev_audio, audio))

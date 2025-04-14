@@ -17,6 +17,9 @@ class SileroVad(BaseObject, Pipeline):
   def process(self, context:Context):
     audio = context.processed_audio
 
+    if len(audio) == 0:
+      return
+
     timestamps = get_speech_timestamps(
       audio,
       self.__model,
@@ -36,6 +39,6 @@ class SileroVad(BaseObject, Pipeline):
     if merged_audio:
       context.processed_audio = np.concatenate(merged_audio)
     else:
-      context.processed_audio = None
+      context.processed_audio = np.zeros((0,), dtype=np.float32)
     context.timestamps = timestamps
       

@@ -91,11 +91,12 @@ class Composer(Pipeline):
     
     if tokenizer is None:
       completed_dict, completed_words, order = self._cut_by_eos(
-        completed_words, order, 1
+        # processed_audio 이거 좀 다른 방식으로 바꿀 필요가 있음
+        completed_words, order, 0 if len(context.processed_audio) == 0 else 1
       )
     else:
       completed_dict, completed_words, order = self._cut_by_tokenizer(
-        tokenizer, completed_words, order, 1
+        tokenizer, completed_words, order, 0 if len(context.processed_audio) == 0 else 1
       )
 
     context.completed = completed_dict

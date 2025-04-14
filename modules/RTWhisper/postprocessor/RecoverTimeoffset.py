@@ -20,7 +20,8 @@ class RecoverTimeoffset(Pipeline):
     raise ValueError("Condition not found")
 
   def process(self, context: Context):
-    if context.processed_audio is None: return
+
+    if len(context.processed_audio) == 0: return
     
     tokens = context.tokens
     timestamps = context.timestamps

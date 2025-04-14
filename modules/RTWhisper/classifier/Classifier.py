@@ -1,3 +1,4 @@
+import numpy as np
 from RTWhisper.data import Context
 from RTWhisper import Pipeline
 
@@ -33,13 +34,13 @@ class Classifier(Pipeline):
     prev_audio_sc = context.prev_audio_sc
     timestamps = context.timestamps
 
-    if processed_audio is None:
+    if len(processed_audio) == 0:
       context.prev_timestamps = []
       context.prev_audio_sc = 0
-      context.sc_offset = sc_offset + len(audio) + prev_audio_sc
+      context.sc_offset = sc_offset + prev_audio_sc + len(audio)
       context.completed_words = context.tokens
       context.prev_recog = []
-      context.prev_processed_audio = None
+      context.prev_processed_audio = np.zeros((0,), dtype=np.float32)
       return
 
     prev_audio_start = max(0, len(processed_audio) - self.__MAX_PREV_SC["default"])

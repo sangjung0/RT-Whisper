@@ -29,7 +29,7 @@ class Whisper(BaseObject, Pipeline):
     language = context.language
     prompt = context.prompt
 
-    if audio is None: return
+    if len(audio) == 0: return
 
     segments, info = self._model.transcribe(
       audio, beam_size=self._BEAM_SIZE, language=language,

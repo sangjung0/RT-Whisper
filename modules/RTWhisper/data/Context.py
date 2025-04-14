@@ -10,9 +10,9 @@ class Context:
     # need update
     self.order:int = 0 # order of the completed sentence
     self.sc_offset:float = 0 # sample count offset
-    self.audio:np.ndarray = None # raw audio
+    self.audio:np.ndarray = np.zeros((0,), dtype=np.float32) # raw audio
     self.prev_audio_sc:int = 0 # sample rate of prev audio
-    self.prev_processed_audio:np.ndarray = None
+    self.prev_processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32)
     self.prev_timestamps: list[dict] = []
     self.prev_sentence:Sentence = None
     self.prev_words:list[Token] = []
@@ -22,7 +22,7 @@ class Context:
     self.language: str = None
 
     # don't need update
-    self.processed_audio:np.ndarray = None # pre processed audio
+    self.processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32) # pre processed audio
     self.timestamps: list[dict] = [] # timestamps
     self.tokens:list[Token] = [] 
     self.processed_timestamp_conditions: list[tuple[int, int, int]] = [] # processed timestamp conditions
@@ -33,7 +33,7 @@ class Context:
     self.order = param.order
     self.sc_offset = param.sc_offset
     self.audio = self.processed_audio = param.audio
-    self.timestamps = [{"start": 0, "end": len(param.audio)}]
+    self.timestamps = [] if len(param.audio) == 0 else [{"start": 0, "end": len(param.audio)}]
     self.prev_audio_sc = param.prev_audio_sc
     self.prev_processed_audio = param.prev_processed_audio
     self.prev_timestamps = param.prev_timestamps
