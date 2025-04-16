@@ -1,51 +1,25 @@
+from dataclasses import dataclass
+from typing import Union
 import numpy as np 
+from beartype import beartype
 
 from .Sentence import Sentence
 from .Token import Token
 
+@beartype
+@dataclass(frozen=True)
 class Result:
-  def __init__(
-    self,
-    completed:dict[int, Sentence] = {},
-    order: int = 0,
-    sc_offset: float = 0,
-    processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32),
-    prev_audio_sc: int = 0,
-    prev_processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32),
-    prev_timestamps: list[dict] = [],
-    prev_sentence:Sentence = None,
-    prev_words:list[Token] = [],
-    prev_recog:list[Token] = [],
-    statistics:dict[str : dict[str : float]] = {},
-  ): 
-    self.completed = completed
-    self.__order = order
-    self.__sc_offset = sc_offset
-    self.processed_audio = processed_audio
-    self.__prev_audio_sc = prev_audio_sc
-    self.prev_processed_audio = prev_processed_audio
-    self.prev_timestamps = prev_timestamps
-    self.prev_sentence = prev_sentence
-    self.__prev_words = tuple(prev_words) if prev_words else tuple()
-    self.__prev_recog = tuple(prev_recog) if prev_recog else tuple()
-    self.statistics = statistics
-
-  @property
-  def order(self):
-    return self.__order
-  
-  @property
-  def sc_offset(self):
-    return self.__sc_offset
-
-  @property
-  def prev_audio_sc(self):
-    return self.__prev_audio_sc
-
-  @property
-  def prev_words(self):
-    return list(self.__prev_words)
-
-  @property
-  def prev_recog(self):
-    return list(self.__prev_recog)
+  order: int
+  sc_offset: int
+  statistics: dict[str, dict[str, dict[str, float]]]
+  completed: list[Sentence]
+  candidate: list[Sentence]
+  audio: np.ndarray
+  processed_audio: np.ndarray
+  prev_audio: np.ndarray
+  prev_processed_audio: np.ndarray
+  prev_timestamps: list[dict]
+  prev_timestamps_mapping: list[dict]
+  prev_completed_tokens: list[Token]
+  prev_candidate_tokens: list[Token]
+  prev_sentence: Union[Sentence, None]

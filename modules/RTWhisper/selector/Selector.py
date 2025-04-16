@@ -42,16 +42,15 @@ class Selector(Pipeline):
     iou = self.__token_iou(A, B, padding, self.__SMOOTH)
     return (ratio + iou)/2
 
-  def process(self, context:Context) -> None:
-    A = context.prev_recog
-    B = context.tokens
-    if not A: return
-    if not B: 
-      context.tokens = context.prev_recog
-      return
+  def can_process(self, context:Context) -> bool:
+    if not context.prev_candidate_tokens: return False
+    return context.merged_candidate_tokens, context.prev_candidate_tokens, context.language
 
-    language = context.language
-    
+  def compute_process(self, param:tuple):
+    B, A, language = param
+
+    if not A: return B
+
     orphan_tokens = []
     new_token_group = []
     tail = []
@@ -59,14 +58,14 @@ class Selector(Pipeline):
     for t in B:
       if not t.is_word and t.end > start: tail.append(t) 
       elif t.is_word and  t.start > start: tail.append(t)
-      else: new_token_group.append([t]) 
-    
+      else: new_token_group.append([t])
+
     idx_A , idx_group = -1, 0
     while True:
       idx_A += 1
       if idx_A >= len(A) or idx_group >= len(new_token_group): break
-
-      a = A[idx_A]   
+      
+      a = A[idx_A]
       similarities = []
       for i in range(idx_group, len(new_token_group)):
         token = new_token_group[i][0]
@@ -76,11 +75,11 @@ class Selector(Pipeline):
         else: 
           similarity = self.__token_similiarity(a, token, self.__PADDING[language])
           similarities.append((i, similarity))
-
+          
       if not similarities:
         orphan_tokens.append(a)
         continue
-
+        
       maxarg = max(range(len(similarities)), key=lambda x: similarities[x][1])
       if similarities[maxarg][1] < self.__THRESHOLD[language]:
         orphan_tokens.append(a)
@@ -88,11 +87,11 @@ class Selector(Pipeline):
       idx = similarities[maxarg][0]
       new_token_group[idx].append(a)
       idx_group = similarities[0][0] + 1
-
+        
     for i in range(idx_A, len(A)):
       orphan_tokens.append(A[i])
-      
-    tokens = [max(tk, key=lambda x: x.probability) for tk in new_token_group] 
+
+    tokens = [max(tk, key=lambda x: x.probability) for tk in new_token_group]
     tokens_idx = 0
     orphan_idx = 0
     while True:
@@ -111,6 +110,8 @@ class Selector(Pipeline):
         orphan_idx += 1
       else:
         tokens_idx += 1
-
     tokens.extend(tail)
-    context.tokens = tokens
+    return tokens
+
+  def apply_process(self, context:Context, result:list):
+    context.merged_candidate_tokens = result

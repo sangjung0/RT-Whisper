@@ -1,51 +1,81 @@
-from RTWhisper.data import Context
-from RTWhisper import Pipeline
+import numpy as np
 
-class SentenceClassifier(Pipeline):
+from .Classifier import Classifier
 
-  def _get_prev_timestamps(self, timestamps:list[dict], anchor:int):
-    prev_timestamps = []
-    t_index = 0
-    while t_index < len(timestamps) and timestamps[t_index]["end"] < anchor:
-      t_index += 1
-    if t_index < len(timestamps) and timestamps[t_index]["start"] < anchor:
-      t = timestamps[t_index]
-      prev_timestamps.append({"start": 0, "end": t["end"] - anchor})
-      t_index += 1
-    while t_index < len(timestamps):
-      t = timestamps[t_index]
-      prev_timestamps.append({"start": t["start"] - anchor, "end": t["end"] - anchor})
-      t_index += 1
-    return prev_timestamps
+class SentenceClassifier(Classifier):
+  def can_process(self, context):
+    return (
+      context.sc_offset,
+      context.completed,
+      context.audio,
+      context.audio_sc,
+      context.prev_audio,
+      context.prev_audio_sc,
+      context.merged_processed_audio,
+      context.merged_timestamps,
+      context.merged_timestamps_mapping,
+      context.prev_sentence,
+      context.prev_candidate_sentences,
+    )
 
-  def process(self, context: Context):
-    audio = context.audio
-    processed_audio = context.processed_audio
-    sc_offset = context.sc_offset
-    completed = context.completed
-    prev_audio_sc = context.prev_audio_sc
-    timestamps = context.timestamps
-    order = context.order
+  def compute_process(self, param):
+    ( sc_offset, 
+      completed,
+      audio,
+      audio_sc,
+      prev_audio,
+      prev_audio_sc,
+      merged_processed_audio,
+      merged_timestamps,
+      merged_timestamps_mapping,
+      prev_sentence,
+      prev_candidate_sentences) = param
 
-    if len(processed_audio) == 0:
-      context.prev_audio_sc = prev_audio_sc + len(audio)
-      return
-
-    anchor = (completed[order - 1].tokens[-1].end - sc_offset) if completed else timestamps[0]["start"]
-
+    if len(merged_processed_audio) == 0:
+      return (
+        sc_offset + prev_audio_sc + audio_sc,
+        np.zeros((0,), dtype=np.float32),
+        np.zeros((0,), dtype=np.float32),
+        [],
+        [],
+        None,
+        prev_candidate_sentences,
+      )
+    
+    anchor = (completed[-1].tokens[-1].end - sc_offset) if completed else merged_timestamps[0]["start"]
     prev_audio_start = 0
-    for ts in timestamps:
+    for ts in merged_timestamps:
       if ts["start"] <= anchor <= ts["end"]:
         prev_audio_start += anchor - ts["start"]
         break
       prev_audio_start += (ts["end"] - ts["start"])
-    
-    prev_audio_sc = prev_audio_sc + len(audio) - anchor
-    sc_offset = sc_offset + anchor
-    prev_audio = processed_audio[prev_audio_start:]
-    prev_timestamps = self._get_prev_timestamps(timestamps, anchor)
 
-    context.prev_timestamps = prev_timestamps
-    context.prev_audio_sc = prev_audio_sc
+    merged_audio = np.concatenate([prev_audio, audio])
+
+    prev_audio = merged_audio[anchor:]
+    prev_processed_audio = merged_processed_audio[prev_audio_start:]
+    prev_timestamps = self._get_prev_timestamps(merged_timestamps, anchor)
+    prev_timestamps_mapping = self._get_prev_timestamps_mapping(merged_timestamps_mapping, prev_audio_start)
+    sc_offset += anchor
+    prev_sentence = completed[-1] if completed else prev_sentence
+    
+    return (
+      sc_offset,
+      prev_audio,
+      prev_processed_audio,
+      prev_timestamps,
+      prev_timestamps_mapping,
+      prev_sentence,
+      completed,
+    )
+
+  def apply_process(self, context, result):
+    sc_offset, prev_audio, prev_processed_audio, prev_timestamps, prev_timestamps_mapping, prev_sentence, completed = result
+
     context.sc_offset = sc_offset
-    context.prev_processed_audio = prev_audio
+    context.prev_audio = prev_audio
+    context.prev_processed_audio = prev_processed_audio
+    context.prev_timestamps = prev_timestamps
+    context.prev_timestamps_mapping = prev_timestamps_mapping
+    context.prev_sentence = prev_sentence
+    context.completed = completed

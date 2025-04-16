@@ -21,14 +21,14 @@ class AdjustWeightAndOffset(Pipeline):
     if center < duration_sc - boundary:
       return probabilities
     return probabilities * ((duration_sc - center)/boundary)
-  
-  def process(self, context:Context):
 
-    if len(context.processed_audio) == 0: return 
+  def can_process(self, context:Context) -> bool:
+    if context.merged_processed_audio_sc == 0: return False
+    return context.sc_offset, context.audio_sc, context.prev_audio_sc, context.merged_candidate_tokens
 
-    sc_offset = context.sc_offset
-    audio_sc = len(context.audio) + context.prev_audio_sc 
-    tokens = context.tokens
+  def compute_process(self, param:tuple):
+    sc_offset, audio_sc, prev_audio_sc, tokens = param
+    audio_sc = audio_sc + prev_audio_sc
 
     for token in tokens:
       start = token.start
@@ -42,4 +42,8 @@ class AdjustWeightAndOffset(Pipeline):
         token.probability, start, end, audio_sc, self.__BOUNDARY
       )
 
-    # context.tokens = tokens
+    return tokens
+  
+  def apply_process(self, context:Context, result):
+    pass
+    # context.merged_candidate_tokens = result

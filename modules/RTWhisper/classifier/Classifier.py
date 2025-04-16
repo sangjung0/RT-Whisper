@@ -1,15 +1,6 @@
-import numpy as np
-from RTWhisper.data import Context
 from RTWhisper import Pipeline
 
 class Classifier(Pipeline):
-  def __init__(
-    self,
-    MAX_PREV_SC:int,
-  ):
-    super().__init__()
-    self.__MAX_PREV_SC = MAX_PREV_SC
-
   def _get_prev_timestamps(self, timestamps:list[dict], anchor:int):
     prev_timestamps = []
     t_index = 0
@@ -25,41 +16,20 @@ class Classifier(Pipeline):
       t_index += 1
     return prev_timestamps
 
-  def process(self, context:Context) -> None:
-    audio = context.audio
-    processed_audio = context.processed_audio
-    sc_offset = context.sc_offset
-    tokens = context.tokens
-    conditions = context.processed_timestamp_conditions
-    prev_audio_sc = context.prev_audio_sc
-    timestamps = context.timestamps
-
-    if len(processed_audio) == 0:
-      context.prev_timestamps = []
-      context.prev_audio_sc = 0
-      context.sc_offset = sc_offset + prev_audio_sc + len(audio)
-      context.completed_words = context.tokens
-      context.prev_recog = []
-      context.prev_processed_audio = np.zeros((0,), dtype=np.float32)
-      return
-
-    prev_audio_start = max(0, len(processed_audio) - self.__MAX_PREV_SC["default"])
-    anchor = 0
-    for start, end, offset in conditions:
-      if start <= prev_audio_start <= end:
-        anchor = offset + prev_audio_start
-        break
-
-    prev_audio_sc = prev_audio_sc + len(audio) - anchor 
-    sc_offset = sc_offset + anchor
-    completed_words = [t for t in tokens if t.end < sc_offset]
-    prev_recog = [t for t in tokens if t not in completed_words and t.is_word]
-    prev_audio = processed_audio[prev_audio_start:]
-    prev_timestamps = self._get_prev_timestamps(timestamps, anchor)
-
-    context.prev_timestamps = prev_timestamps
-    context.prev_audio_sc = prev_audio_sc
-    context.sc_offset = sc_offset
-    context.completed_words = completed_words
-    context.prev_recog = prev_recog
-    context.prev_processed_audio = prev_audio
+  def _get_prev_timestamps_mapping(self, timestamps_mapping:list[dict], anchor:int):
+    prev_timestamps_mapping = []
+    t_index = 0
+    while t_index < len(timestamps_mapping) and timestamps_mapping[t_index]["end"] < anchor:
+      t_index += 1
+    offset = timestamps_mapping[t_index]["offset"] if t_index < len(timestamps_mapping) else 0
+    if t_index < len(timestamps_mapping) and timestamps_mapping[t_index]["start"] < anchor:
+      t = timestamps_mapping[t_index]
+      prev_timestamps_mapping.append({"start": 0, "end": t["end"] - anchor, "offset": 0})
+      t_index += 1
+    while t_index < len(timestamps_mapping):
+      t = timestamps_mapping[t_index]
+      prev_timestamps_mapping.append(
+        {"start": t["start"] - anchor, "end": t["end"] - anchor, "offset": t["offset"] - offset}
+      )
+      t_index += 1
+    return prev_timestamps_mapping

@@ -2,8 +2,10 @@
 
 from .Classifier import Classifier
 from .SentenceClassifier import SentenceClassifier
+from .TokenClassifier import TokenClassifier
 
 __all__ = [
-  "Classifier",
-  "SentenceClassifier"
+  # "Classifier",
+  "SentenceClassifier",
+  "TokenClassifier",
 ]

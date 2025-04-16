@@ -1,4 +1,6 @@
+from typing import Generator
 from whisper import tokenizer
+from faster_whisper.transcribe import Segment
 
 from RTWhisper import Settings
 from RTWhisper import Pipeline
@@ -16,26 +18,39 @@ class SegmentsToTokenWithEOS(Pipeline):
     self.__tokenizer = tokenizer
     self._SAMPLE_RATE = SAMPLE_RATE
 
-  def process(self, context:Context) -> None:
-    segments = context.tokens
-    language = context.language
+  def can_process(self, context:Context) -> bool:
+    if not context.merged_candidate_tokens: return False
+    return context.merged_candidate_tokens, context.language
 
-    if not segments: return
+  def compute_process(self, param:tuple):
+    segments: Generator[Segment] = param[0]
+    language = param[1]
 
-    tokens = []
+    new_tokens = []
     for segment in segments:
-      words = [
+      tokens = [
         Token(
-          int(w.start * self._SAMPLE_RATE), 
-          int(w.end * self._SAMPLE_RATE), 
-          w.word, language,
-          self.__tokenizer.encode(w.word.lower()), w.probability
+          start = int(w.start * self._SAMPLE_RATE), 
+          end = int(w.end * self._SAMPLE_RATE), 
+          text = w.word, 
+          lang = language,
+          tokens = self.__tokenizer.encode(w.word.lower()), 
+          probability = w.probability
         ) for w in segment.words
       ]
-      start = words[0].start
-      end = words[-1].end
-      words.append(Token(start, end, segment.text, None, None, 1, False))
-      tokens.extend(words)
+      start = tokens[0].start
+      end = tokens[-1].end
+      tokens.append(Token(
+        start = start, 
+        end = end, 
+        text = segment.text, 
+        lang = "", 
+        tokens = [], 
+        probability = 1, 
+        is_word = False))
+      new_tokens.extend(tokens)
 
-    context.tokens = tokens
-  
+    return new_tokens
+
+  def apply_process(self, context:Context, result) -> None:
+    context.merged_candidate_tokens = result

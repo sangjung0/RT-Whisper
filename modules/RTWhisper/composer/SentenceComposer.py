@@ -9,26 +9,30 @@ class SentenceComposer(Composer):
     max_prev_sent:int
   ):
     super().__init__()
-    self.__MAX_PREV_SENT = max_prev_sent
-  
-  def process(self, context:Context):
-    tokens = context.tokens
-    language = context.language
-    order = context.order
+    self.__MAX_PREV_SENT = max_prev_sent + 1
 
-    if not tokens: return
+  def can_process(self, context:Context):
+    if len(context.merged_candidate_tokens) == 0: return False
+    return context.merged_candidate_tokens, context.language, context.order
+
+  def compute_process(self, param):
+    (tokens, language, order) = param
+
+    language = language if language else tokens[0].lang
     tokenizer = Tokenizer.get_tokenizer(language)
-    
+
     if tokenizer is None:
-      completed_dict, prev_recog, order = self._cut_by_eos(
-        tokens, order, self.__MAX_PREV_SENT + 1
+      completed, _ , completed_tokens, order = self._cut_by_eos(
+        tokens, order, len(tokens)
       )
     else:
-      completed_dict, prev_recog, order = self._cut_by_tokenizer(
-        tokenizer, tokens, order, self.__MAX_PREV_SENT + 1
-      )    
+      completed, _, completed_tokens, order = self._cut_by_tokenizer(
+        tokenizer, tokens, order, len(tokens)
+      )
+    
+    candidate = []
+    for idx in range(order - 1, order -1 - self.__MAX_PREV_SENT, -1):
+      if idx < 0: break
+      candidate.append(completed.pop())
 
-    context.completed = completed_dict
-    context.prev_sentence = completed_dict[order - 1] if order != context.order else context.prev_sentence
-    context.order = order
-    context.prev_recog = prev_recog
+    return completed, candidate, completed_tokens, order - len(candidate)

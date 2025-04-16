@@ -1,62 +1,218 @@
+from dataclasses import MISSING, dataclass, field
+from beartype import beartype
+from typing import Generator, Union
 import numpy as np
+from faster_whisper.transcribe import Segment
 
 from .Sentence import Sentence
 from .Token import Token
 from .Param import Param
 from .Result import Result
 
+@beartype
+@dataclass
 class Context:
-  def __init__(self):
-    # need update
-    self.order:int = 0 # order of the completed sentence
-    self.sc_offset:float = 0 # sample count offset
-    self.audio:np.ndarray = np.zeros((0,), dtype=np.float32) # raw audio
-    self.prev_audio_sc:int = 0 # sample rate of prev audio
-    self.prev_processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32)
-    self.prev_timestamps: list[dict] = []
-    self.prev_sentence:Sentence = None
-    self.prev_words:list[Token] = []
-    self.prev_recog:list[Token] = []
-    self.statistics:dict[str : dict[str : float]] = {}
-    self.prompt:str = None
-    self.language: str = None
+  order: int = 0
+  sc_offset: int = 0
+  statistics: dict[str, dict[str, dict[str, float]]] = field(default_factory=dict)
+  prompt: Union[str, None] = None
+  language: Union[str, None] = None
+  completed: list[Sentence] = field(default_factory=list)
+  candidate: list[Sentence] = field(default_factory=list)
 
-    # don't need update
-    self.processed_audio:np.ndarray = np.zeros((0,), dtype=np.float32) # pre processed audio
-    self.timestamps: list[dict] = [] # timestamps
-    self.tokens:list[Token] = [] 
-    self.processed_timestamp_conditions: list[tuple[int, int, int]] = [] # processed timestamp conditions
-    self.completed_words:list[Token] = []
-    self.completed:dict[int, Sentence] = {}
+  audio: np.ndarray = field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+  processed_audio: np.ndarray = field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+  timestamps: list[dict] = field(default_factory=list)
+
+  prev_audio: np.ndarray = field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+  prev_processed_audio: np.ndarray = field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+  prev_timestamps: list[dict] = field(default_factory=list)
+  prev_timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
+  prev_candidate_tokens: list[Token] = field(default_factory=list)
+  prev_completed_tokens: list[Token] = field(default_factory=list)
+  prev_candidate_sentences: list[Sentence] = field(default_factory=list)
+  prev_sentence: Union[Sentence, None] = None
+
+  merged_processed_audio: np.ndarray = field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+  merged_timestamps: list[dict[str, int]] = field(default_factory=list)
+  merged_timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
+  merged_candidate_tokens: Union[list[Token], Generator[Segment, None, None]] = field(default_factory=list)
+  merged_completed_tokens: list[Token] = field(default_factory=list)
+  merged_sentence: Union[Sentence, None] = None
+
+  def get_default_value(self, field_name: str):
+    field = self.__dataclass_fields__.get(field_name)
+    if field is None:
+        raise ValueError(f"No field named '{field_name}' in the dataclass.")
+    
+    if field.default_factory is not MISSING:
+        return field.default_factory()
+    elif field.default is not MISSING:
+        return field.default
+    else:
+        raise ValueError(f"No default value for field '{field_name}'.")
+
+  @property
+  def audio_sc(self) -> int:
+      return self.audio.shape[0]
+
+  @property
+  def processed_audio_sc(self) -> int:
+      return self.processed_audio.shape[0]
+
+  @property
+  def prev_audio_sc(self) -> int:
+      return self.prev_audio.shape[0]
+
+  @property
+  def prev_processed_audio_sc(self) -> int:
+      return self.prev_processed_audio.shape[0]
+
+  @property
+  def merged_processed_audio_sc(self) -> int:
+      return self.merged_processed_audio.shape[0]
 
   def bind(self, param:Param):
+    self.completed = self.get_default_value('completed')
+    self.candidate = self.get_default_value('candidate')
+    self.merged_processed_audio = self.get_default_value('merged_processed_audio')
+    self.merged_timestamps = self.get_default_value('merged_timestamps')
+    self.merged_timestamps_mapping = self.get_default_value('merged_timestamps_mapping')
+    self.merged_candidate_tokens = self.get_default_value('merged_candidate_tokens')
+    self.merged_completed_tokens = self.get_default_value('merged_completed_tokens')
+    self.merged_sentence = self.get_default_value('merged_sentence')
+
     self.order = param.order
     self.sc_offset = param.sc_offset
-    self.audio = self.processed_audio = param.audio
-    self.timestamps = [] if len(param.audio) == 0 else [{"start": 0, "end": len(param.audio)}]
-    self.prev_audio_sc = param.prev_audio_sc
-    self.prev_processed_audio = param.prev_processed_audio
-    self.prev_timestamps = param.prev_timestamps
-    self.prev_sentence = param.prev_sentence
-    self.prev_words = param.prev_words
-    self.prev_recog = param.prev_recog
     self.statistics = param.statistics
     self.prompt = param.prompt
     self.language = param.language
-
+    
+    self.audio = self.processed_audio = param.audio
+    self.timestamps = [{'start': 0, 'end': len(self.audio)}] if self.audio_sc > 0 else []
+    self.prev_audio = param.prev_audio
+    self.prev_processed_audio = param.prev_processed_audio
+    self.prev_timestamps = param.prev_timestamps
+    self.prev_timestamps_mapping = param.prev_timestamps_mapping
+    self.prev_completed_tokens = param.prev_completed_tokens
+    self.prev_candidate_tokens = param.prev_candidate_tokens
+    self.prev_candidate_sentences = param.prev_candidate_sentences
+    self.prev_sentence = param.prev_sentence
+    
   def extract(self):
     return Result(
-      completed=self.completed,
       order=self.order,
       sc_offset = self.sc_offset,
+      statistics = self.statistics,
+      completed=self.completed,
+      candidate =self.candidate,
+      audio = self.audio,
       processed_audio = self.processed_audio,
-      prev_audio_sc  = self.prev_audio_sc,
+      prev_audio = self.prev_audio,
       prev_processed_audio=self.prev_processed_audio,
       prev_timestamps=self.prev_timestamps,
+      prev_timestamps_mapping=self.prev_timestamps_mapping,
+      prev_candidate_tokens=self.prev_candidate_tokens,
+      prev_completed_tokens=self.prev_completed_tokens,
       prev_sentence=self.prev_sentence,
-      prev_words=self.prev_words,
-      prev_recog=self.prev_recog,
-      statistics = self.statistics
     )
+
+# class Context(BaseModel):
+#   order: int = Field(0)
+#   sc_offset: float = Field(0)
+#   statistics: dict[str, dict[str, float]] = Field(default_factory=dict)
+#   prompt: Union[str, None] = Field(None)
+#   language: Union[str, None] = Field(None)
+#   completed: dict[int, Sentence] = Field(default_factory=dict)
+#   candidate: dict[int, Sentence] = Field(default_factory=dict)
+
+#   audio: np.ndarray = Field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+#   processed_audio: np.ndarray = Field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+#   timestamps: list[dict] = Field(default_factory=list)
+
+#   prev_audio: np.ndarray = Field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+#   prev_processed_audio: np.ndarray = Field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+#   prev_timestamps: list[dict] = Field(default_factory=list)
+#   prev_timestamps_mapping: list[dict[str, int]] = Field(default_factory=list)
+#   prev_candidate_tokens:list[Token] = Field(default_factory=list)
+#   prev_completed_tokens:list[Token] = Field(default_factory=list)
+#   prev_sentence: Union[Sentence, None] = Field(None)
+
+#   merged_processed_audio: np.ndarray = Field(default_factory=lambda: np.zeros((0,), dtype=np.float32))
+#   merged_timestamps: list[dict[str, int]] = Field(default_factory=list)
+#   merged_timestamps_mapping: list[dict[str, int]] = Field(default_factory=list)
+#   merged_candidate_tokens:Union[list[Token], Generator[Segment]] = Field(default_factory=list)
+#   merged_completed_tokens:list[Token] = Field(default_factory=list)
+#   merged_sentence: Union[Sentence, None] = Field(None)
+
+#   @field_validator('audio')
+#   @classmethod
+#   def validate_audio(cls, v:np.ndarray):
+#     if v.ndim == 1 and v.dtype == np.float32:
+#       return v
+#     raise ValueError("audio must be a 1D numpy array of float32")
+  
+#   @staticmethod
+#   def reset_all_fields_to_default(obj:"Context"):
+#     for name, field in obj.__class__.model_fields.items():
+#       default = field.get_default()
+#       setattr(obj, name, default)
+
+#   @property
+#   def audio_sc(self):
+#     return self.audio.shape[0]
+
+#   @property
+#   def processed_audio_sc(self):
+#     return self.processed_audio.shape[0]
+
+#   @property
+#   def prev_audio_sc(self):
+#     return self.prev_audio.shape[0]
+
+#   @property
+#   def prev_processed_audio_sc(self):
+#     return self.prev_processed_audio.shape[0]
+
+#   @property
+#   def merged_processed_audio_sc(self):
+#     return self.merged_processed_audio.shape[0]
+
+#   def bind(self, param:Param):
+#     Context.reset_all_fields_to_default(self)
+
+#     self.order = param.order
+#     self.sc_offset = param.sc_offset
+#     self.statistics = param.statistics
+#     self.prompt = param.prompt
+#     self.language = param.language
+    
+#     self.audio = self.processed_audio = param.audio
+#     if self.audio_sc > 0: self.timestamps = [{'start': 0, 'end': len(self.audio)}]
+#     self.prev_audio = param.prev_audio
+#     self.prev_processed_audio = param.prev_processed_audio
+#     self.prev_timestamps = param.prev_timestamps
+#     self.prev_timestamps_mapping = param.prev_timestamps_mapping
+#     self.prev_completed_tokens = param.prev_completed_words
+#     self.prev_candidate_tokens = param.prev_candidate_words
+#     self.prev_sentence = param.prev_sentence
+    
+#   def extract(self):
+#     return Result(
+#       order=self.order,
+#       sc_offset = self.sc_offset,
+#       statistics = self.statistics,
+#       completed=self.completed,
+#       candidate =self.candidate,
+#       audio = self.audio,
+#       processed_audio = self.processed_audio,
+#       prev_audio = self.prev_audio,
+#       prev_processed_audio=self.prev_processed_audio,
+#       prev_timestamps=self.prev_timestamps,
+#       prev_timestamps_mapping=self.prev_timestamps_mapping,
+#       prev_candidate_tokens=self.prev_candidate_tokens,
+#       prev_completed_tokens=self.prev_completed_tokens,
+#       prev_sentence=self.prev_sentence,
+#     )
 
   

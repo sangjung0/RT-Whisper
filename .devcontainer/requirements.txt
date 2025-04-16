@@ -9,6 +9,8 @@ seaborn
 tqdm
 python-multipart
 python-dotenv
+pydantic
+beartype
 
 # torch
 torch

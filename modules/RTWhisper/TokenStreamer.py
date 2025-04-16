@@ -1,7 +1,7 @@
 
 from RTWhisper.models import Whisper, SileroVad
 from RTWhisper.preprocessor import AudioMerger
-from RTWhisper.classifier import Classifier
+from RTWhisper.classifier import TokenClassifier
 from RTWhisper.composer import Composer
 from RTWhisper.data import Param, Context
 from RTWhisper.filter import DurationFilter, ProbabilityFilter
@@ -30,7 +30,7 @@ class TokenStreamer(BaseObject):
       silero_vad,
       # Use: processed_audio
       # Result: processed_audio, timestamps
-      AudioMerger(), 
+      AudioMerger(),
       # Use: processed_audio, prev_processed_audio
       # Result: processed_audio
       whisper,
@@ -64,7 +64,7 @@ class TokenStreamer(BaseObject):
       ),
       # Use: tokens, prev_recog
       # Result: tokens
-      Classifier(
+      TokenClassifier(
         self._hyperparameters["classifier_max_prev_sc"],
       ),
       # Use: audio, processed_audio, sc_offset, tokens, processed_timestamp_conditions, prev_audio_sc, timestamps

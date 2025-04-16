@@ -8,6 +8,9 @@ scikit-learn
 seaborn
 tqdm
 python-multipart
+python-dotenv
+pydantic
+beartype
 
 # torch
 torch
@@ -23,9 +26,12 @@ rapidfuzz
 soundfile
 librosa
 
-#redis
-redis[hiredis]
-
 # logging
 loguru
 rich
+
+# Silero VAD
+silero-vad
+
+# pyannote
+pyannote.audio

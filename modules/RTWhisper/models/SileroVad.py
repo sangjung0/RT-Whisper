@@ -14,13 +14,8 @@ class SileroVad(BaseObject, Pipeline):
     self.__SAMPLE_RATE = SAMPLE_RATE
     self.__model = load_silero_vad(onnx=True)
 
-  def process(self, context:Context):
-    audio = context.processed_audio
-
-    if len(audio) == 0:
-      return
-
-    timestamps = get_speech_timestamps(
+  def get_timestamps(self, audio:np.ndarray):
+    return get_speech_timestamps(
       audio,
       self.__model,
       sampling_rate=self.__SAMPLE_RATE,
@@ -29,16 +24,27 @@ class SileroVad(BaseObject, Pipeline):
       speech_pad_ms = 300
     )
 
-    merged_audio = []
+  def can_process(self, context:Context) -> bool:
+    if context.processed_audio_sc == 0: return False
+    return context.processed_audio
 
+  def compute_process(self, processed_audio):
+    timestamps = self.get_timestamps(processed_audio)
+    merged_audio = []
     for segment in timestamps:
       start = segment['start']
       end = segment['end']
-      merged_audio.append(audio[start:end])
+      merged_audio.append(processed_audio[start:end])
+    
+    new_processed_audio = (
+      np.concatenate(merged_audio) 
+      if merged_audio else 
+      np.zeros((0,), dtype=np.float32)
+    )
+    
+    return new_processed_audio, timestamps
 
-    if merged_audio:
-      context.processed_audio = np.concatenate(merged_audio)
-    else:
-      context.processed_audio = np.zeros((0,), dtype=np.float32)
+  def apply_process(self, context:Context, result:tuple):
+    new_processed_audio, timestamps = result
+    context.processed_audio = new_processed_audio
     context.timestamps = timestamps
-      
