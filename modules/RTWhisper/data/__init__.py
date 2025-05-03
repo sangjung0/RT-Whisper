@@ -11,5 +11,5 @@ __all__ = [
     "Param",
     "Result",
     "Sentence",
-    "Token"
+    "Token",
 ]

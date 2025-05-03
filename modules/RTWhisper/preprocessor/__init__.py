@@ -2,6 +2,4 @@
 
 from .AudioMerger import AudioMerger
 
-__all__ = [
-  "AudioMerger"
-]
+__all__ = ["AudioMerger"]

@@ -7,9 +7,9 @@ from .SegmentsToToken import SegmentsToToken
 from .SegmentsToTokenWithEOS import SegmentsToTokenWithEOS
 
 __all__ = [
-  "RecoverTimeoffset",
-  "AdjustWeightAndOffset",
-  "AdjustOffset",
-  "SegmentsToToken",
-  "SegmentsToTokenWithEOS",
+    "RecoverTimeoffset",
+    "AdjustWeightAndOffset",
+    "AdjustOffset",
+    "SegmentsToToken",
+    "SegmentsToTokenWithEOS",
 ]

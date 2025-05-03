@@ -2,8 +2,9 @@ from pydantic import BaseModel
 
 from .Token import Token
 
+
 class Sentence(BaseModel):
-  order:int
-  lang:list[str]
-  text:str
-  tokens:list[Token]
+    order: int
+    lang: list[str]
+    text: str
+    tokens: list[Token]

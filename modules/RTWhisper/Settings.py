@@ -1,7 +1,7 @@
 class Settings:
-  MODEL_SIZE = "large-v3"
-  MODEL_DEVICE = "cuda"
-  MODEL_COMPUTE_TYPE = "int8"
-  MODEL_BEAM_SIZE = 3
-  MODEL_BATCH_SIZE = 8
-  MODEL_SAMPLE_RATE = 16000
+    MODEL_SIZE = "large-v3"
+    MODEL_DEVICE = "cuda"
+    MODEL_COMPUTE_TYPE = "int8"
+    MODEL_BEAM_SIZE = 3
+    MODEL_BATCH_SIZE = 8
+    MODEL_SAMPLE_RATE = 16000
