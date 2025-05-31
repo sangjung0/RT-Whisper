@@ -1,6 +1,6 @@
 # models/__init__.py
 
 from .Whisper import Whisper
-from .SileroVad import SileroVad
+from .silero_vad import SileroVad
 
-__all__ = ["Whisper", "SileroVad"]
+__all__ = ["Whisper", "silero_vad"]

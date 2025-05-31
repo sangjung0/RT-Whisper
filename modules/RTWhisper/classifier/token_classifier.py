@@ -1,7 +1,7 @@
 import numpy as np
 
 from RTWhisper.data import Context
-from .Classifier import Classifier
+from .classifier_ import Classifier
 
 
 class TokenClassifier(Classifier):

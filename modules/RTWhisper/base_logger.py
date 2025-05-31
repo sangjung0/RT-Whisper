@@ -2,7 +2,7 @@ import logging
 from typing import Any, Callable, cast
 from rich.logging import RichHandler
 
-from .BaseObject import BaseObject
+from .base_object import BaseObject
 from .util.utils import camel_to_snake
 
 

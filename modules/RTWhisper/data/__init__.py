@@ -1,15 +1,15 @@
 # RTWhisper/data/__init__.py
 
 from .Context import Context
-from .Param import Param
-from .Result import Result
-from .Sentence import Sentence
-from .Token import Token
+from .param_ import Param
+from .result_ import Result
+from .sentence_ import Sentence
+from .token_ import Token
 
 __all__ = [
     # "Context",
-    "Param",
-    "Result",
-    "Sentence",
-    "Token",
+    "param_",
+    "result_",
+    "sentence_",
+    "token_",
 ]

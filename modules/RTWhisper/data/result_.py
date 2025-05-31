@@ -3,8 +3,8 @@ from typing import Union
 import numpy as np
 from beartype import beartype
 
-from .Sentence import Sentence
-from .Token import Token
+from .sentence_ import Sentence
+from .token_ import Token
 
 
 @beartype

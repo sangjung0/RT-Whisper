@@ -1,15 +1,15 @@
 # RTWhisper/postprocessor/__init__.py
 
-from .RecoverTimeoffset import RecoverTimeoffset
-from .AdjustWeightAndOffset import AdjustWeightAndOffset
-from .AdjustOffset import AdjustOffset
-from .SegmentsToToken import SegmentsToToken
-from .SegmentsToTokenWithEOS import SegmentsToTokenWithEOS
+from .recover_time_offset import RecoverTimeoffset
+from .adjust_weight_and_offset import AdjustWeightAndOffset
+from .adjust_offset import AdjustOffset
+from .segments_to_token import SegmentsToToken
+from .segments_to_token_with_eos import SegmentsToTokenWithEOS
 
 __all__ = [
-    "RecoverTimeoffset",
-    "AdjustWeightAndOffset",
-    "AdjustOffset",
-    "SegmentsToToken",
-    "SegmentsToTokenWithEOS",
+    "recover_time_offset",
+    "adjust_weight_and_offset",
+    "adjust_offset",
+    "segments_to_token",
+    "segments_to_token_with_eos",
 ]

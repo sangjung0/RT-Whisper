@@ -4,10 +4,10 @@ from typing import Generator, Union
 import numpy as np
 from faster_whisper.transcribe import Segment
 
-from .Sentence import Sentence
-from .Token import Token
-from .Param import Param
-from .Result import Result
+from .sentence_ import Sentence
+from .token_ import Token
+from .param_ import Param
+from .result_ import Result
 
 
 @beartype

@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from .Token import Token
+from .token_ import Token
 
 
 class Sentence(BaseModel):

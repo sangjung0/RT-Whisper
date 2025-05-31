@@ -1,6 +1,6 @@
 # RTWhisper/filter/__init__.py
 
-from .DurationFilter import DurationFilter
-from .ProbabilityFilter import ProbabilityFilter
+from .duration_filter import DurationFilter
+from .probability_filter import ProbabilityFilter
 
-__all__ = ["DurationFilter", "ProbabilityFilter"]
+__all__ = ["duration_filter", "probability_filter"]

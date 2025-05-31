@@ -1,5 +1,5 @@
 # RTWhisper/selector/__init__.py
 
-from .Selector import Selector
+from .selector_ import Selector
 
-__all__ = ["Selector"]
+__all__ = ["selector_"]

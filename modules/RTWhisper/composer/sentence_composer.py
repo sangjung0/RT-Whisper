@@ -1,7 +1,7 @@
 from RTWhisper.data import Context
 from RTWhisper import Tokenizer
 
-from .Composer import Composer
+from .composer_ import Composer
 
 
 class SentenceComposer(Composer):

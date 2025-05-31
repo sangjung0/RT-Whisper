@@ -2,9 +2,9 @@ from typing import Union
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
 
-from .Token import Token
-from .Sentence import Sentence
-from .Result import Result
+from .token_ import Token
+from .sentence_ import Sentence
+from .result_ import Result
 
 STATISTIC = {
     "probability": {

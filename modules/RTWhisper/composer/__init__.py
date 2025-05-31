@@ -1,11 +1,11 @@
 # RTWhisper/composer/__init__.py
 
-from .Composer import Composer
-from .SentenceComposer import SentenceComposer
-from .SimpleComposer import SimpleComposer
+from .composer_ import Composer
+from .sentence_composer import SentenceComposer
+from .simple_composer import SimpleComposer
 
 __all__ = [
-  "Composer",
-  "SentenceComposer",
-  "SimpleComposer",
+  "composer_",
+  "sentence_composer",
+  "simple_composer",
 ]

@@ -1,5 +1,5 @@
 # RTWhisper/preprocessor/__init__.py
 
-from .AudioMerger import AudioMerger
+from .audio_merger import AudioMerger
 
-__all__ = ["AudioMerger"]
+__all__ = ["audio_merger"]
