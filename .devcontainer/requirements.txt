@@ -21,7 +21,7 @@ torchaudio
 openai-whisper
 faster-whisper
 pysbd
-# kss
+kss
 rapidfuzz
 soundfile
 librosa

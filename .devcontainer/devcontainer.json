@@ -9,16 +9,28 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-python.vscode-pylance",
-				"ms-python.python", 
-				"ms-python.debugpy",
-				"rsip-vision.nvidia-smi-plus",
-				"ms-vscode.azurecli",
-				"ms-vscode.powershell",
-				"hashicorp.terraform",
-				"tfsec.tfsec",
-				"esbenp.prettier-vscode",
-				"ms-toolsai.jupyter"
+                "ms-python.vscode-pylance",
+                "ms-python.python",
+                "ms-python.debugpy",
+                "rsip-vision.nvidia-smi-plus",
+                "ms-vscode.azurecli",
+                "esbenp.prettier-vscode",
+                "ms-toolsai.jupyter",
+                "njpwerner.autodocstri",
+                "formulahendry.code-runner",
+                "streetsidesoftware.code-spell-checker",
+                "naumovs.color-highlight",
+                "oderwat.indent-rainbow",
+                "visualstudioexptteam.vscodeintellicode",
+                "ionutvmi.path-autocomplete",
+                "demystifying-javascript.python-extensions-pack",
+                "mgesbert.python-path",
+                "foxundermoon.shell-format",
+                "gruntfuggly.todo-tree",
+                "editorconfig.editorconfig",
+                "ms-python.black-formatter",
+                "jebbs.plantuml",
+                "claudineyqr.plantuml-snippets"
 			]
 		}
 	}

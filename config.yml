@@ -1,0 +1,10 @@
+rt_whisper:
+    model_size: "large-v3"
+    model_device: "cuda"
+    model_compute_type: "int8"
+    model_beam_size: 3
+    model_batch_size: 8
+    model_sample_rate: 16000
+
+    log_level: 20 # INFO: 20, DEBUG: 10
+    log_dir: ${RT_WHISPER_LOG_DIR:./logs}
