@@ -1,75 +1,40 @@
+from dataclasses import dataclass, field
 import numpy as np
-from pydantic import BaseModel, Field, field_validator
 
-from .token import Token
-from .sentence import Sentence
 from .result import Result
+from .token import Token
 
-STATISTIC = {
-    "probability": {
-        "mean": {},
-        "std": {},
-        "count": {},
-    },
-    "duration": {
-        "mean": {},
-        "std": {},
-        "count": {},
-    },
-}
-
-empty_chunk = lambda: np.zeros((0,), dtype=np.float32)
+generate_empty_chunk = lambda: np.zeros((0,), dtype=np.float32)
 
 
-class Param(BaseModel):
-    model_config = {
-        "arbitrary_types_allowed": True,
-    }
+@dataclass(slots=True)
+class Param:
+    chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    offset: int = field(default=0)
+    order: int = field(default=0)
+    prompt: str | None = field(default=None)
+    language: str | None = field(default=None)
 
-    order: int = Field(default=0)
-    offset: int = Field(default=0)
-    statistics: dict[str, dict[str, dict[str, float | None]]] = Field(
-        default_factory=lambda: STATISTIC
-    )
-    prompt: str | None = Field(default=None)
-    language: str | None = Field(default=None)
+    recycle_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    recycle_segment_tokens: list[Token] = field(default_factory=list)
 
-    chunk: np.ndarray = Field(default_factory=empty_chunk, exclude=True)
+    recycles: dict = field(default_factory=dict)
 
-    recycle_chunk: np.ndarray = Field(default_factory=empty_chunk, exclude=True)
-    recycle_vad_chunk: np.ndarray = Field(default_factory=empty_chunk, exclude=True)
-    recycle_vad_timestamps: list[dict[str, int]] = Field(default_factory=list)
-    recycle_vad_timestamps_mapping: list[dict[str, int]] = Field(default_factory=list)
-    recycle_completed_tokens: list[Token] = Field(default_factory=list)
-    recycle_candidate_tokens: list[Token] = Field(default_factory=list)
+    def validate_audio(self, v: np.ndarray):
+        return isinstance(v, np.ndarray) and v.ndim == 1 and v.dtype == np.float32
 
-    prev_candidate_sentences: list[Sentence] = Field(default_factory=list)
-    prev_sentence: Sentence | None = Field(default=None)
-
-    @classmethod
-    @field_validator("chunk", "recycle_chunk", "recycle_vad_chunk")
-    def validate_audio(cls, v: np.ndarray):
-        if isinstance(np.ndarray, v) and v.ndim == 1 and v.dtype == np.float32:
-            return v
-        raise ValueError("chunk must be a 1D numpy array of float32")
-
-    @staticmethod
-    def reset_all_fields_to_default(obj: "Param"):
-        for name, field in obj.__class__.model_fields.items():
-            default = field.get_default(call_default_factory=True)
-            setattr(obj, name, default)
+    def __post_init__(self):
+        if not self.validate_audio(self.chunk) or not self.validate_audio(
+            self.recycle_chunk
+        ):
+            raise ValueError("chunk must be a 1D numpy array of float32")
 
     def update(self, result: Result):
-        Param.reset_all_fields_to_default(self)
+        self.__init__()
 
+        self.offset = result.offset
         self.order = result.order
-        self.offset = result.next_offset
-        self.statistics = result.statistics
+
         self.recycle_chunk = result.recycle_chunk
-        self.recycle_vad_chunk = result.recycle_vad_chunk
-        self.recycle_vad_timestamps = result.recycle_vad_timestamps
-        self.recycle_vad_timestamps_mapping = result.recycle_vad_timestamps_mapping
-        self.recycle_completed_tokens = result.recycle_completed_tokens
-        self.recycle_candidate_tokens = result.recycle_candidate_tokens
-        self.prev_candidate_sentences = result.candidate
-        self.prev_sentence = result.prev_sentence
+        self.recycle_segment_tokens = result.recycle_segment_tokens
+        self.recycles = result.recycles

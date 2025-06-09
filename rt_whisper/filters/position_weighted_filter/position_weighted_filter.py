@@ -1,7 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from rt_whisper.abstracts import Worker
-from rt_whisper.data import Context
 
 from .data import PositionWeightedFilterParam, PositionWeightedFilterResult
+
+if TYPE_CHECKING:
+    from rt_whisper.data import TokenContext
 
 
 class PositionWeightedFilter(Worker):
@@ -13,24 +18,24 @@ class PositionWeightedFilter(Worker):
         self.__BOUNDARY = boundary
 
     # override
-    def _can_process(self, context: Context):
-        return PositionWeightedFilterParam.from_context(context)
+    def _can_process(self, context: TokenContext):
+        if context.chunk.shape[0] > 0:
+            return PositionWeightedFilterParam.from_context(context)
+        return None
 
     # override
     def _process(
         self, param: PositionWeightedFilterParam
     ) -> PositionWeightedFilterResult:
-        merged_chunk_size = param.chunk_size + param.prev_chunk_size
-
-        for token in param.candidate_tokens:
+        for token in param.segment_tokens:
             if not token.is_word:
                 continue
 
             token.probability = self.__get_weighted_probability(
                 token.probability,
-                token.start - param.prev_chunk_offset,
-                token.end - param.prev_chunk_offset,
-                merged_chunk_size,
+                token.start - param.offset,
+                token.end - param.offset,
+                param.chunk.shape[0],
                 self.__BOUNDARY,
             )
 
@@ -39,7 +44,9 @@ class PositionWeightedFilter(Worker):
         )
 
     # override
-    def _update(self, context: Context, result: PositionWeightedFilterResult) -> None:
+    def _update(
+        self, context: TokenContext, result: PositionWeightedFilterResult
+    ) -> None:
         result.update_context(context)
 
     def __get_weighted_probability(

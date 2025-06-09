@@ -16,7 +16,7 @@ class SileroVad(Singleton):
             audio,
             self.__model,
             sampling_rate=self.__SAMPLE_RATE,
-            #   threshold = 0.4,
-            #   min_silence_duration_ms = 400,
+            threshold=0.4,
+            min_silence_duration_ms=100,
             #   speech_pad_ms = 300
         )

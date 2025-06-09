@@ -1,5 +1,5 @@
 from rt_whisper.abstracts import Singleton, Worker
-from rt_whisper.data import Context, Param, Result
+from rt_whisper.data import TokenContext, Param, Result
 
 
 class Pipeline(Singleton):
@@ -22,7 +22,7 @@ class Pipeline(Singleton):
         if not self.__workers:
             raise RuntimeError("Pipeline is not initialized with workers.")
 
-        context = Context()
+        context = TokenContext()
         context.bind(param)
 
         for worker_group in self.__workers:
@@ -30,5 +30,7 @@ class Pipeline(Singleton):
                 worker.process(context)
             for worker in reversed(worker_group):
                 worker.post_process(context)
+            for worker in reversed(worker_group):
+                worker.recycle(context)
 
         return context.extract()

@@ -1,9 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from rapidfuzz.distance import Levenshtein
 
 from rt_whisper.abstracts import Worker
-from rt_whisper.data import Token, Context
 
 from .data import SelectorParam, SelectorResult
+
+if TYPE_CHECKING:
+    from rt_whisper.data import Token, TokenContext
 
 
 class Selector(Worker):
@@ -23,17 +27,19 @@ class Selector(Worker):
         self.__SMOOTH = smooth
 
     # override
-    def _can_process(self, context: Context) -> SelectorParam:
-        return SelectorParam.from_context(context)
+    def _can_process(self, context: TokenContext) -> SelectorParam:
+        if len(context.segment_tokens) > 0 or len(context.prev_segment_tokens) > 0:
+            return SelectorParam.from_context(context)
+        return None
 
     # override
     def _process(self, param: SelectorParam) -> SelectorResult:
-        B = param.candidate_tokens
-        A = param.prev_candidate_tokens
+        B = param.segment_tokens
+        A = param.prev_segment_tokens
         language = param.language
 
         if not A:
-            return SelectorResult(candidate_tokens=B)
+            return SelectorResult(segment_tokens=B)
 
         orphan_tokens = []
         new_token_group = []
@@ -106,10 +112,10 @@ class Selector(Worker):
                 tokens_idx += 1
         tokens.extend(tail)
 
-        return SelectorResult(candidate_tokens=tokens)
+        return SelectorResult(segment_tokens=tokens)
 
     # override
-    def _update(self, context: Context, result: SelectorResult) -> None:
+    def _update(self, context: TokenContext, result: SelectorResult) -> None:
         result.update_context(context)
 
     def __token_iou(

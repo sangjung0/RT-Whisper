@@ -1,10 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 import statistics
 
 from rt_whisper.abstracts import Worker
-from rt_whisper.data import Context
 from rt_whisper.util.utils import update_mean_std
 
 from .data import DurationFilterParam, DurationFilterResult
+
+if TYPE_CHECKING:
+    from rt_whisper.data import TokenContext
 
 
 class DurationFilter(Worker):
@@ -13,12 +17,14 @@ class DurationFilter(Worker):
         self.__Z_THRESH = z_thresh
 
     # override
-    def _can_process(self, context: Context) -> DurationFilterParam:
-        return DurationFilterParam.from_context(context)
+    def _can_process(self, context: TokenContext) -> DurationFilterParam:
+        if context.chunk.shape[0] > 0 and len(context.segment_tokens) > 0:
+            return DurationFilterParam.from_context(context)
+        return None
 
     # override
     def _process(self, param: DurationFilterParam) -> DurationFilterResult:
-        candidate_tokens = param.candidate_tokens
+        candidate_tokens = param.segment_tokens
         language = param.language
         prev_mean = param.mean
         prev_std = param.std
@@ -32,7 +38,7 @@ class DurationFilter(Worker):
 
         if not X:
             return DurationFilterResult(
-                candidate_tokens=candidate_tokens,
+                segment_tokens=candidate_tokens,
                 mean=prev_mean,
                 std=prev_std,
                 count=prev_n,
@@ -57,9 +63,9 @@ class DurationFilter(Worker):
         n = N + prev_n if prev_n is not None else N
 
         return DurationFilterResult(
-            candidate_tokens=new_candidate_tokens, mean=mean, std=std, count=n
+            segment_tokens=new_candidate_tokens, mean=mean, std=std, count=n
         )
 
     # override
-    def _update(self, context: Context, result: DurationFilterResult) -> None:
+    def _update(self, context: TokenContext, result: DurationFilterResult) -> None:
         result.update_context(context)

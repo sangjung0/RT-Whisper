@@ -33,3 +33,16 @@ class Worker(ABC):
     def _post_process(self, param: Param) -> Result: ...
 
     def _post_update(self, context: Context, result: Result) -> None: ...
+
+    def recycle(self, context: Context) -> None:
+        param = self._need_recycle(context)
+        if param is None:
+            return
+        result = self._recycle(param)
+        self._recycle_update(context, result)
+
+    def _need_recycle(self, context: Context) -> Param: ...
+
+    def _recycle(self, context: Param) -> None: ...
+
+    def _recycle_update(self, context: Context, result: Result) -> None: ...

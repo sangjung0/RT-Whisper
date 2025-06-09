@@ -1,10 +1,16 @@
 import math
 import re
 
+import numpy as np
+
 
 def camel_to_snake(name: str) -> str:
     s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
     return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+
+
+def get_empty_chunk(dtype=np.float32) -> np.ndarray:
+    return np.zeros((0,), dtype=dtype)
 
 
 def update_mean_std(

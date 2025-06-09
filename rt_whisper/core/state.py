@@ -48,6 +48,6 @@ hyperparameter = SafetyDict(
                 "en": 8000,
             },
         },
-        "max_overlap_size": 96000,
+        "max_overlap_duration": 96000,
     }
 )
