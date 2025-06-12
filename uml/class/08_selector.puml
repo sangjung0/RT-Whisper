@@ -1,0 +1,46 @@
+@startuml selector
+!include ../style.puml
+title Selector 클래스 다이어그램
+
+class Worker <<abstract>>
+class Token <<data>>
+class TokenContext <<data>>
+
+class Selector {
+- __SEARCH_RANGE_SC: dict[str, int]
+- __THRESHOLD: dict[str, float]
+- __PADDING: dict[str, int]
+- __TOLERANCE: dict[str, int]
+- __SMOOTH: float
++ __init__(self, search_range_sc: int, threshold: float, padding: int, tolerance: int, smooth: float = 1e-6) : None
++ _can_process(self, context: TokenContext) : SelectorParam
++ _process(self, param: SelectorParam) : SelectorResult
++ _update(self, context: TokenContext, result: SelectorResult) : None
+- __token_iou(self, A: Token, B: Token, padding: int, smooth: float) : float
+- __token_similarity(self, A: Token, B: Token, padding: int) : float
+}
+
+class SelectorParam <<data>> {
+    segment_tokens: list[Token]
+    language: str | None
+    prev_segment_tokens: list<Token>
+    + from_context(context: TokenContext) : SelectorParam
+}
+
+class SelectorResult <<data>> {
+    segment_tokens: list<Token>
+    + update_context(self, context: TokenContext) : None
+}
+
+SelectorParam --> TokenContext
+SelectorParam --> Token
+SelectorResult --> TokenContext
+SelectorResult --> Token
+
+Selector --|> Worker
+Selector --> SelectorParam
+Selector --> SelectorResult
+Selector --> Token
+Selector --> TokenContext
+
+@enduml

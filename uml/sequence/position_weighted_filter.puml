@@ -1,0 +1,20 @@
+@startuml position_weighted_filter
+title PositionWeightedFilter Sequence Diagram
+
+participant Pipeline as PP
+participant PositionWeightedFilter as PWF
+
+PP -> PWF: process(context)
+activate PP
+    activate PWF
+        PWF -> PWF: _can_process(context)
+        PWF -> PWF: _process(param)
+        PWF -> PWF: __get_weighted_probability\n(token.probability,\ntoken.start,\ntoken.end,\nparam.chunk.length,\nboundary)
+        PWF -> PWF: _update(param)
+        PWF --> PP: None
+    deactivate PWF
+deactivate PP
+
+@enduml
+
+

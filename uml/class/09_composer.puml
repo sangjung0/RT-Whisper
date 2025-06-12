@@ -1,0 +1,29 @@
+@startuml composer_class_diagram
+!include ../style.puml
+title rt_whisper/data/composer.py - Composer 클래스 다이어그램
+
+class Worker <<abstract>>
+class TokenContext <<data>>
+class ComposerParam <<data>>
+class ComposerResult <<data>>
+class Sentence <<data>>
+class Token <<data>>
+
+class Composer {
+    + logger: Logger
+    + __init__(self, logger: Logger) : None
+    # _can_process(self, context: TokenContext) : ComposerParam
+    # _process(self, param: ComposerParam) : ComposerResult
+    # _update(self, context: TokenContext, result: ComposerResult) : None
+    # _cut_by_eos(self, tokens: list[Token], order: int, completed_length: int)
+    # _cut_by_tokenizer(self, tokenizer, tokens: list[Token], order: int, completed_length: int)
+}
+
+Composer --|> Worker
+Composer --> TokenContext
+Composer --> ComposerParam
+Composer --> ComposerResult
+Composer --> Token
+Composer --> Sentence
+
+@enduml

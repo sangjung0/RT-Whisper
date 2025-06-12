@@ -1,0 +1,19 @@
+@startuml composer
+title Composer Sequence Diagram
+
+participant Pipeline as PP
+participant Composer as CP
+
+PP -> CP: process(context)
+activate PP
+    activate CP
+        CP -> CP: _can_process(context)
+        CP -> CP: _process(param)
+        CP -> CP: _update(param)
+        CP --> PP: None
+    deactivate CP
+deactivate PP
+
+@enduml
+
+

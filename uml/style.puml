@@ -1,0 +1,5 @@
+' ===== style.puml =====
+' skinparam defaultFontName "Times New Roman"
+skinparam linetype ortho
+' =============================
+

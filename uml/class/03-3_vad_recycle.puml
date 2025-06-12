@@ -1,0 +1,30 @@
+@startuml vad_recycle
+!include ../style.puml
+title VADRecycler Class Diagram
+
+' External Dependencies
+class VADPostProcessor
+class TokenContext <<data>>
+class VADRecycleParam <<data>>
+class VADRecycleResult <<data>>
+
+class VADRecycler {
+    # _need_recycle(self, context: TokenContext): VADRecycleParam
+    # _recycle(self, param: VADRecycleParam): VADRecycleResult
+    # _recycle_update(self, context: TokenContext, result: VADRecycleResult): None
+
+    # _get_prev_timestamps(self, timestamps: list<dict<str, int>>, anchor: int): list<dict<str, int>>
+    # _get_prev_timestamps_mapping(timestamps_mapping: list<dict>, anchor: int): list<dict<str, int>>
+    - __get_recycle_vad_timestamps(prev_vad: list<dict<str, int>>, vad: list<dict<str, int>>, anchor: int): list<dict<str, int>>
+    - __get_recycle_Vad_timestamps_mapping(merged_vad: list<dict<str, int>>, anchor: int): list<dict<str, int>>
+    - __get_recycle_vad_chunk(merged_vad_timestamps_mapping: list<dict<str, int>>, vad_chunk: np.ndarray): np.ndarray
+}
+
+' Relationships
+VADPostProcessor <|-- VADRecycler
+
+VADRecycler ..> TokenContext : uses
+VADRecycler ..> VADRecycleParam : uses/creates
+VADRecycler ..> VADRecycleResult : uses/returns
+
+@enduml

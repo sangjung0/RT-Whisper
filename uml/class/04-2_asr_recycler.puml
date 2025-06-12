@@ -1,0 +1,41 @@
+@startuml asr_recycler
+!include ../style.puml
+title ASRRecycler Class Diagram
+
+' External Dependencies
+class ASRProcessor
+class Token <<data>>
+class TokenContext <<data>>
+
+class ASRRecycler {
+    - __MAX_OVERLAP_DURATION: int
+    + __init__(*args, max_overlap_duration: int, **kwargs)
+    # _need_recycle(context: TokenContext): ASRRecycleParam
+    # _recycle(param: ASRRecycleParam): ASRRecycleResult
+    # _recycle_update(context: TokenContext, result: ASRRecycleResult): None
+}
+
+class ASRRecycleParam <<data>>{
+    chunk: np.ndarray
+    merged_chunk: np.ndarray
+    prev_chunk: np.ndarray
+    offset: int
+    + from_context(context: TokenContext) : ASRRecycleParam
+}
+
+class ASRRecycleResult <<data>>{
+    recycle_chunk: np.ndarray
+    recycle_offset: int
+    anchor_timestamp: int
+    + update_context(self, context: TokenContext) : None
+}
+
+
+' Relationships
+ASRProcessor <|-- ASRRecycler
+
+ASRRecycler --> TokenContext
+ASRRecycler --> ASRRecycleParam
+ASRRecycler --> ASRRecycleResult
+
+@enduml

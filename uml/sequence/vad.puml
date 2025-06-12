@@ -1,0 +1,79 @@
+@startuml vad
+title VAD Sequence Diagram
+
+participant Pipeline as PP
+participant VAD as VAD
+participant VADProcessor as VADP
+participant VADPostProcessor as VADPP
+participant VADRecycler as VADR
+
+PP -> VAD: process(context)
+activate PP
+    activate VAD
+        VAD -> VADP: _can_process(context)
+        activate VADP
+            VADP --> VAD: param
+        deactivate VADP
+
+        VAD -> VADP: _process(param)
+        activate VADP
+            VADP -> VADP: __get_timestamps\n(param.chunk)
+            VADP -> VADP: __get_vad_chunk\n(param.cunk, timestamps, param.offset)
+            VADP --> VAD: result
+        deactivate VADP
+
+        VAD -> VADP: _update(param)
+        activate VADP
+            VADP --> VAD: None
+        deactivate VADP
+
+        VAD --> PP: None
+    deactivate VAD
+
+    PP -> VAD: post_process(context)
+    activate VAD
+        VAD -> VADPP: _can_post_process(context)
+        activate VADPP
+            VADPP --> VAD: param
+        deactivate VADPP
+
+        VAD -> VADPP: _post_process(param)
+        activate VADPP
+            VADPP -> VADPP: __get_merged_vad_timestamps_mapping\n(param.prev_vad_timestamps_mapping,\nparam.vad_timestamps)
+            VADPP -> VADPP: __set_offset\n(param.segment_tokens,\nmerged_vad_timestamps_mapping)
+            VADPP --> VAD: result
+        deactivate VADPP
+
+        VAD -> VADPP: _post_update(param)
+        activate VADPP
+            VADPP --> VAD: None
+        deactivate VADPP
+
+        VAD --> PP: result
+    deactivate VAD
+
+    PP -> VAD: recycle(context)
+    activate VAD
+        VAD -> VADPR: _need_recycle(context)
+        activate VADPR
+            VADPR --> VAD: param
+        deactivate VADPR
+
+        VAD -> VADPR: _recycle(param)
+        activate VADPR
+            VADPR -> VADPR: __get_recycle_vad_timestamps\n(param.prev_vad_timestamps,\nparam.vad_timestamps,\nparam.anchor_timestamp)
+            VADPR -> VADPR: __get_recycle_vad_chunk\n(param.merged_vad_timestamps_mapping,\nparam.vad_chunk)
+            VADPR --> VAD: result
+        deactivate VADPR
+
+        VAD -> VADPR: _recycle_update(param)
+        activate VADPR
+            VADPR --> VAD: None
+        deactivate VADPR
+
+        VAD --> PP: result
+    deactivate VAD
+deactivate PP
+
+@enduml
+

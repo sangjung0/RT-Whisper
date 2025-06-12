@@ -1,0 +1,32 @@
+@startuml main
+title RTWhisper 활동 다이어그램
+
+|클라이언트|
+start
+
+:음성 스트림 전송;
+
+|전처리 (Pre-processing)|
+:음성 활동 감지 (VAD) 적용;
+
+|처리 (Processing)|
+:자동 음성 인식 (ASR) 적용;
+
+|후처리 (Post-processing)|
+:VAD 적용 구간 복구;
+:다음 ASR을 위한 컨텍스트 데이터 준비;
+:다음 VAD을 위한 컨텍스트 데이터 준비;
+
+|결과 정제 및 출력 (Refinement & Output)|
+:발화 위치 기반 가중치 조정;
+:길이 기반 이상치 필터링;
+:확률 기반 이상치 필터링;
+
+:이전 결과와 현재 결과 병합 및 재조립;
+
+:인식 완료/미완료 문장 분리;
+:최종 문장 생성 및 전달;
+
+stop
+
+@enduml

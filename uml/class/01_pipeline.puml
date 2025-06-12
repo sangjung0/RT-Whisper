@@ -1,0 +1,19 @@
+@startuml pipeline
+!include ../style.puml
+
+title Pipeline 클래스 다이어그램
+
+class Pipeline {
+    - __workers: list<list[Worker>>
+    + __init__(self) : None
+    + init(self, workers: list<list<Worker>>) : None
+    + process(self, param: Param) : Result
+}
+
+Pipeline --|> Singleton
+Pipeline --> Worker
+Pipeline --> TokenContext
+Pipeline --> Param
+Pipeline --> Result
+
+@enduml

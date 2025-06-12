@@ -1,0 +1,20 @@
+@startuml duration_filter
+title DurationFilter Sequence Diagram
+
+participant Pipeline as PP
+participant DurationFilter as DF
+
+PP -> DF: process(context)
+activate PP
+    activate DF
+        DF -> DF: _can_process(context)
+        DF -> DF: _process(param)
+        DF -> DF: _update(param)
+        DF --> PP: result
+    deactivate DF
+deactivate PP
+
+@enduml
+
+
+

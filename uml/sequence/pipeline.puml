@@ -1,0 +1,97 @@
+@startuml pipeline
+title Pipeline Sequence Diagram
+
+participant "AI Server" as AI
+
+participant Pipeline as PP
+participant TokenContext as TC
+
+participant VAD
+participant ASR
+participant PositionWeightedFilter as PWF
+participant DurationFilter as DF
+participant ProbabilityFilter as PF
+participant Selector as ST
+participant Composer as CP
+
+
+AI -> PP: process(param)
+activate AI
+    activate PP
+        PP -> TC: __init__()
+        activate TC
+            TC --> PP: context
+            ref over TC: TokenContext 내부의\n자세한 처리 과정은\nTokenContext Sequence\nDiagram 참조
+        deactivate TC
+
+        PP -> TC: bind(param)
+        activate TC
+            TC --> PP: None
+        deactivate TC
+
+        PP -> VAD: process(context)
+        activate VAD
+            VAD --> PP: None
+            ref over VAD: VAD 내부의\n자세한 처리 과정은\nVAD Sequence Diagram 참조
+        deactivate VAD
+
+        PP -> ASR: process(context)
+        activate ASR
+            ASR --> PP: None
+            ref over ASR: ASR 내부의\n자세한 처리 과정은\nASR Sequence Diagram 참조
+        deactivate ASR
+
+        PP -> VAD: post_process(context)
+        activate VAD
+            VAD --> PP: None
+        deactivate VAD
+
+        PP -> ASR: recycle(context)
+        activate ASR
+            ASR --> PP: None
+        deactivate ASR
+
+        PP -> VAD: recycle(context)
+        activate VAD
+            VAD --> PP: None
+        deactivate VAD
+
+        PP -> PWF: process(context)
+        activate PWF
+            PWF --> PP: None
+            ref over PWF: PositionWeightedFilter의 자세한 처리 과정은\nPositionWeightedFilter Sequence Diagram 참조
+        deactivate PWF
+
+        PP -> DF: process(context)
+        activate DF
+            DF --> PP: None
+            ref over DF: DurationFilter의 자세한 처리 과정은\nDurationFilter Sequence Diagram 참조
+        deactivate DF
+
+        PP -> PF: process(context)
+        activate PF
+            PF --> PP: None
+            ref over PF: ProbabilityFilter의 자세한 처리 과정은\nProbabilityFilter Sequence Diagram 참조
+        deactivate PF
+
+        PP -> ST: select(context)
+        activate ST
+            ST --> PP: None
+            ref over ST: Selector의 자세한 처리 과정은\nSelector Sequence Diagram 참조
+        deactivate ST
+
+        PP -> CP: compose(context)
+        activate CP
+            CP --> PP: None
+            ref over CP: Composer의 자세한 처리 과정은\nComposer Sequence Diagram 참조
+        deactivate CP
+
+        PP -> TC: extract()
+        activate TC
+            TC --> PP: None
+        deactivate TC
+        PP --> AI: result
+    deactivate PP
+deactivate AI
+
+@enduml

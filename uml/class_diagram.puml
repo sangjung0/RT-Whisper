@@ -1,0 +1,27 @@
+@startuml RTWhisper
+!include ../style.puml
+
+title RTWhisper 전체 클래스 다이어그램
+
+class Singleton <<abstract>>
+class Worker <<abstract>>
+
+class Pipeline
+class streamer <<module>>
+
+class VAD
+class VADProcessor
+class VADPostProcessor
+class VADRecycle
+class VADProcessParam
+class VADProcessResult
+class VADPostParam
+class VADPostResult
+class VADRecycleParam
+class VADRecycleResult
+class VADRecycle
+class VADStorage
+
+
+@enduml
+

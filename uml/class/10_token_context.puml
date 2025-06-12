@@ -1,0 +1,85 @@
+@startuml token_context
+!include ../style.puml
+title TokenContext 클래스 다이어그램
+
+class ComposerStorage <<data>>
+class DurationFilterStorage <<data>>
+class ProbabilityFilterStorage <<data>>
+class VADStorage <<data>>
+
+class Param <<data>>{
+    + chunk: np.ndarray
+    + offset: int
+    + order: int
+    + prompt: str | None
+    + language: str | None
+    + recycle_chunk: np.ndarray
+    + recycle_segment_tokens: list<Token>
+    + recycles: dict
+    + validate_audio(self, v: np.ndarray)
+    + __post_init__(self)
+    + update(self, result: Result)
+}
+
+class Result <<data>>{
+    + completed: list<Sentence>
+    + candidate: list<Sentence>
+    + order: int
+    + offset: int
+    + recycle_chunk: np.ndarray
+    + recycle_segment_tokens: list<Token>
+    + recycles: dict<str, object>
+}
+
+class Sentence <<data>>{
+    + order: int
+    + lang: list<str>
+    + text: str
+    + tokens: list<Token>
+}
+
+class Token <<data>>{
+    + start: int
+    + end: int
+    + text: str
+    + lang: str
+    + tokens: list<int>
+    + probability: float
+    + is_word: bool
+}
+
+class TokenContext {
+    + chunk: np.ndarray
+    + prev_chunk: np.ndarray
+    + merged_chunk: np.ndarray
+    + order: int
+    + offset: int
+    + prompt: str | None
+    + language: str | None
+    + anchor_timestamp: int
+    + segment_tokens: list<Token>
+    + prev_segment_tokens: list<Token>
+    + completed: list<Sentence>
+    + candidate: list<Sentence>
+    + vad: VADStorage
+    + duration_filter: DurationFilterStorage
+    + probability_filter: ProbabilityFilterStorage
+    + composer: ComposerStorage
+    + recycle_chunk: np.ndarray
+    + recycle_offset: int
+    + recycle_segment_tokens: list<Token>
+    + get_default_value(self, field_name: str)
+    + bind(self, param: Param)
+    + extract(self) : Result
+}
+
+TokenContext --> Token
+TokenContext --> Sentence
+TokenContext --> Result
+TokenContext --> Param
+TokenContext --> ComposerStorage
+TokenContext --> DurationFilterStorage
+TokenContext --> ProbabilityFilterStorage
+TokenContext --> VADStorage
+
+@enduml
