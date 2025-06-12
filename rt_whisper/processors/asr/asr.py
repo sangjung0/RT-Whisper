@@ -9,7 +9,7 @@ class ASR(ASRRecycler):
         self,
         *args,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
-        tokenizer_encode: Callable[[str], list[int]],
+        tokenizer_encoder: Callable[[str], list[int]],
         sample_rate: int,
         within_eos: bool,
         **kwargs
@@ -17,7 +17,7 @@ class ASR(ASRRecycler):
         super().__init__(
             *args,
             transcriber=transcriber,
-            tokenizer_encode=tokenizer_encode,
+            tokenizer_encoder=tokenizer_encoder,
             sample_rate=sample_rate,
             within_eos=within_eos,
             **kwargs

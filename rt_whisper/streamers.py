@@ -28,7 +28,7 @@ def get_token_streamer(
             VAD(vad=SileroVad.get_instance().run),
             ASR(
                 transcriber=Whisper.get_instance().transcribe,
-                tokenizer_encode=Whisper.get_instance().get_tokenizer().encode,
+                tokenizer_encoder=Whisper.get_instance().get_tokenizer().encode,
                 sample_rate=model_sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["max_overlap_duration"],

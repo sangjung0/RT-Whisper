@@ -51,6 +51,7 @@ class VADProcessResult:
 class VADPostParam:
     chunk: np.ndarray
     prev_chunk: np.ndarray
+    vad_offset: int
 
     segment_tokens: list[Token]
     vad_timestamps: list[dict[str, int]]
@@ -62,6 +63,7 @@ class VADPostParam:
         return VADPostParam(
             chunk=context.vad.original_chunk,
             prev_chunk=context.vad.original_prev_chunk,
+            vad_offset=context.vad.offset,
             segment_tokens=context.segment_tokens,
             vad_timestamps=context.vad.timestamps,
             prev_vad_timestamps_mapping=context.vad.prev.timestamps_mapping,

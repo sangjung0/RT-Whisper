@@ -25,7 +25,9 @@ class VADPostProcessor(VADProcessor):
 
         merged_vad_timestamps_mapping, vad_timestamps_mapping = (
             self.__get_merged_vad_timestamps_mapping(
-                param.prev_vad_timestamps_mapping, param.vad_timestamps
+                param.prev_vad_timestamps_mapping,
+                param.vad_timestamps,
+                param.vad_offset,
             )
         )
 
@@ -64,9 +66,12 @@ class VADPostProcessor(VADProcessor):
         self,
         prev_vad_timestamps_mapping: list[dict[str, int]],
         vad_timestamps: list[dict[str, int]],
+        vad_offset: int,
     ):
         prev_end = (
-            prev_vad_timestamps_mapping[-1]["end"] if prev_vad_timestamps_mapping else 0
+            prev_vad_timestamps_mapping[-1]["end"]
+            if prev_vad_timestamps_mapping
+            else vad_offset
         )
         vad_timestamps_mapping = []
         for ts in vad_timestamps:
@@ -90,7 +95,7 @@ class VADPostProcessor(VADProcessor):
     def __find_condition(
         self, c_index: int, conditions: list[dict[str, int]], timestamp: int
     ):
-        while c_index < len(conditions) or c_index >= 0:
+        while c_index < len(conditions) and c_index >= 0:
             c = conditions[c_index]
             start = c["start"]
             end = c["end"]
@@ -102,4 +107,5 @@ class VADPostProcessor(VADProcessor):
             else:
                 c_index += 1
 
+        print(f"c_index: {c_index}, conditions: {conditions}, timestamp: {timestamp}")
         raise ValueError("Condition not found")
