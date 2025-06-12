@@ -17,13 +17,13 @@ class ASRProcessor(Worker):
     def __init__(
         self,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
-        tokenizer_encode: Callable[[str], list[int]],
+        tokenizer_encoder: Callable[[str], list[int]],
         sample_rate: int,
         within_eos: bool,
     ):
         super().__init__()
         self.__transcriber = transcriber
-        self.__tokenizer_encode = tokenizer_encode
+        self.__tokenizer_encoder = tokenizer_encoder
         self.__SAMPLE_RATE = sample_rate
         self.__WITHIN_EOS = within_eos
 
@@ -79,7 +79,7 @@ class ASRProcessor(Worker):
                     end=int(w.end * self.__SAMPLE_RATE) + offset,
                     text=w.word,
                     lang=language,
-                    tokens=self.__tokenizer_encode(w.word.lower()),
+                    tokens=self.__tokenizer_encoder(w.word.lower()),
                     probability=w.probability,
                 )
                 for w in segment.words

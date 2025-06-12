@@ -25,7 +25,7 @@ class VADProcessor(Worker):
         return VADProcessParam.from_context(context)
 
     # override
-    def _process(self, param: VADProcessParam) -> None:
+    def _process(self, param: VADProcessParam) -> VADProcessResult:
         vad_offset = param.prev_vad_offset + param.prev_vad_chunk.shape[0]
         timestamps = self.__get_timestamps(param.chunk)
 
