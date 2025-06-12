@@ -1,0 +1,28 @@
+@startuml singleton
+!include ../style.puml
+
+title 인터페이스 클래스 다이어그램
+
+class Singleton {
+    - {static} implementation: Singleton
+    + __init__(self) : None
+    + get_instance(cls, *args, **kwargs) : T
+    + object(cls, func: Any) : Callable<..., Any>
+}
+
+class Worker {
+    + process(self, context: Context) : None
+    # _can_process(self, context: Context) : Param
+    # _process(self, param: Param) : Result
+    # _update(self, context: Context, result: Result) : None
+    + post_process(self, context: Context) : None
+    # _can_post_process(self, context: Context) : Param
+    # _post_process(self, param: Param) : Result
+    # _post_update(self, context: Context, result: Result) : None
+    + recycle(self, context: Context) : None
+    # _need_recycle(self, context: Context) : Param
+    # _recycle(self, context: Param) : None
+    # _recycle_update(self, context: Context, result: Result) : None
+}
+
+@enduml

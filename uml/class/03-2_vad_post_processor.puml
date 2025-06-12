@@ -1,0 +1,30 @@
+@startuml vad_post_processor
+!include ../style.puml
+
+title VADPostProcessor Class Diagram
+
+' External Dependencies
+class VADProcessor
+class TokenContext <<data>>
+class Token <<data>>
+class VADPostParam <<data>>
+class VADPostResult <<data>>
+
+class VADPostProcessor {
+    # _can_post_process(self, context: TokenContext): VADPostParam
+    # _post_process(self, param: VADPostParam): VADPostResult
+    # _post_update(self, context: TokenContext, result: VADPostResult)
+    - __set_offset(self, segment_tokens: list<Token>, merged_vad_timestamps_mapping: list<dict<str, int>>): None
+    - __get_merged_vad_timestamps_mapping(self, prev_vad_timestamps_mapping: list<dict<str, int>>, vad_timestamps: list<dict<str, int>>): tuple<list<dict<str, int>>, list<dict<str, int>>>
+    - __find_condition(self, c_index: int, conditions: list<dict<str, int>>, timestamp: int): tuple<int, int>
+}
+
+' Relationships
+VADProcessor <|-- VADPostProcessor
+
+VADPostProcessor ..> TokenContext : uses
+VADPostProcessor ..> Token : uses
+VADPostProcessor ..> VADPostParam : uses/creates
+VADPostProcessor ..> VADPostResult : uses/returns
+
+@enduml

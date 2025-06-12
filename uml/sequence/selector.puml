@@ -1,0 +1,20 @@
+@startuml selector
+title Selector Sequence Diagram
+
+participant Pipeline as PP
+participant Selector as ST
+
+PP -> ST: process(context)
+activate PP
+    activate ST
+        ST -> ST: _can_process(context)
+        ST -> ST: _process(param)
+        ST -> ST: _update(param)
+        ST --> PP: None
+    deactivate ST
+deactivate PP
+
+@enduml
+
+
+

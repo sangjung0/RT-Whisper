@@ -1,0 +1,55 @@
+@startuml probability_filter
+!include ../style.puml
+
+title ProbabilityFilter 클래스 다이어그램
+
+class Worker <<abstract>>
+class TokenContext <<data>>
+class Token <<data>>
+
+class ProbabilityFilter {
+    - __Z_THRESH: float
+    - __MIN_PROB: float
+    + __init__(self, z_thresh: float, min_prob: float) : None
+    + _can_process(self, context: TokenContext) : ProbabilityFilterParam
+    + _process(self, param: ProbabilityFilterParam) : ProbabilityFilterResult
+    + _update(self, context: TokenContext, result: ProbabilityFilterResult) : None
+}
+
+class ProbabilityFilterParam <<data>>{
+    segment_tokens: list<Token>
+    language: str | None
+    mean: float | None
+    std: float | None
+    count: float | None
+    + from_context(context: TokenContext) : ProbabilityFilterParam
+}
+
+class ProbabilityFilterResult <<data>>{
+    segment_tokens: list<Token>
+    mean: float | None
+    std: float | None
+    count: float | None
+    + update_context(self, context: TokenContext) : None
+}
+
+class ProbabilityFilterStorage <<data>>{
+    mean: dict<str, float>
+    std: dict<str, float>
+    count: dict<str, int>
+    + update(self, recycle: ProbabilityFilterStorage) : None
+    + extract(self) : ProbabilityFilterStorage
+}
+
+ProbabilityFilterParam --> Token
+ProbabilityFilterParam --> TokenContext
+ProbabilityFilterResult --> Token
+ProbabilityFilterResult --> TokenContext
+ProbabilityFilterStorage --> ProbabilityFilterStorage
+
+ProbabilityFilter --|> Worker
+ProbabilityFilter --> TokenContext
+ProbabilityFilter --> ProbabilityFilterParam
+ProbabilityFilter --> ProbabilityFilterResult
+
+@enduml

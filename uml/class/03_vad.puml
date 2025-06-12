@@ -1,0 +1,13 @@
+@startuml vad
+!include ../style.puml
+title VAD Class Diagram
+
+class VADRecycler
+
+class VAD {
+    + __init__(vad: Callable<<np.ndarray>, list<dict<str, int>>>, *args, **kwargs)
+}
+
+VADRecycler <|-- VAD
+
+@enduml

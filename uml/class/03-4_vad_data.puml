@@ -1,0 +1,99 @@
+@startuml vad_data
+!include ../style.puml
+
+title VAD Data Classes Diagram
+
+' External Dependencies
+class TokenContext <<data>>
+class Token <<data>>
+
+class VADProcessParam <<data>> {
+    + chunk: np.ndarray
+    + offset: int
+    + prev_vad_offset: int
+    + prev_vad_chunk: np.ndarray
+    + from_context(context: TokenContext): VADProcessParam {static}
+}
+
+class VADProcessResult <<data>>{
+    + vad_chunk: np.ndarray
+    + vad_offset: int
+    + prev_vad_chunk: np.ndarray
+    + vad_timestamps: list<dict<str, int>>
+    + update_context(self, context: TokenContext): None
+}
+
+class VADPostParam <<data>>{
+    + chunk: np.ndarray
+    + prev_chunk: np.ndarray
+    + segment_tokens: list<Token>
+    + vad_timestamps: list<dict<str, int>>
+    + prev_vad_timestamps_mapping: list<dict<str, int>>
+    + from_context(context: TokenContext): VADPostParam {static}
+}
+
+class VADPostResult <<data>>{
+    + merged_chunk: np.ndarray
+    + vad_timestamps_mapping: list<dict<str, int>>
+    + merged_vad_timestamps_mapping: list<dict<str, int>>
+    + update_context(self, context: TokenContext): None
+}
+
+class VADRecycleParam <<data>>{
+    + anchor_timestamp: int
+    + vad_offset: int
+    + vad_chunk: np.ndarray
+    + vad_timestamps: list<dict<str, int>>
+    + prev_vad_timestamps: list<dict<str, int>>
+    + merged_vad_timestamps_mapping: list<dict<str, int>>
+    + from_context(context: TokenContext): VADRecycleParam {static}
+}
+
+class VADRecycleResult <<data>>{
+    + recycle_vad_offset: int
+    + recycle_vad_chunk: np.ndarray
+    + recycle_vad_timestamps: list<dict<str, int>>
+    + recycle_vad_timestamps_mapping: list<dict<str, int>>
+    + update_context(self, context: TokenContext): None
+}
+
+class VADRecycle <<data>>{
+    + vad_chunk: np.ndarray = generate_empty_chunk()
+    + vad_offset: int = 0
+    + timestamps: list<dict<str, int>> = list()
+    + timestamps_mapping: list<dict<str, int>> = list()
+}
+
+class VADStorage <<data>>{
+    + chunk: np.ndarray = generate_empty_chunk()
+    + offset: int = 0
+    + merged_chunk: np.ndarray = generate_empty_chunk()
+    + original_chunk: np.ndarray = generate_empty_chunk()
+    + original_offset: int = 0
+    + original_prev_chunk: np.ndarray = generate_empty_chunk()
+    + timestamps: list<dict<str, int>> = list()
+    + timestamps_mapping: list<dict<str, int>> = list()
+    + merged_timestamps: list<dict<str, int>> = list()
+    + merged_timestamps_mapping: list<dict<str, int>> = list()
+    + prev: VADRecycle
+    + recycle: VADRecycle
+    + update(self, recycle: VADRecycle): None
+    + extract(self): VADRecycle
+}
+
+' Relationships
+
+' Dependency from_context / update_context methods
+VADProcessParam --> TokenContext
+VADProcessResult --> TokenContext
+
+VADPostParam --> TokenContext
+VADPostParam --> Token
+VADPostResult --> TokenContext
+
+VADRecycleParam --> TokenContext
+VADRecycleResult --> TokenContext
+
+VADStorage --> VADRecycle
+
+@enduml

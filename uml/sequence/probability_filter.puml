@@ -1,0 +1,19 @@
+@startuml position_weighted_filter
+title ProbabilityFilter Sequence Diagram
+
+participant Pipeline as PP
+participant ProbabilityFilter as PF
+
+PP -> PF: process(context)
+activate PP
+    activate PF
+        PF -> PF: _can_process(context)
+        PF -> PF: _process(param)
+        PF -> PF: _update(param)
+        PF --> PP: None
+    deactivate PF
+deactivate PP
+
+@enduml
+
+

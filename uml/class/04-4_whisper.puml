@@ -1,0 +1,16 @@
+@startuml whisper
+!include ../style.puml
+title Whisper 클래스 다이어그램
+
+class Whisper {
+    - __BEAM_SIZE: int
+    - _model: WhisperModel
+    + __init__(self, model_size: str, device: str, compute_type: str, beam_size: int) : None
+    + transcribe(self, audio: np.ndarray, language: str, prompt: str)
+    + get_tokenizer(self)
+}
+
+Whisper --|> Singleton
+Whisper --> config
+
+@enduml

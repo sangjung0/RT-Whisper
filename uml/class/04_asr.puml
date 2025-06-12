@@ -1,0 +1,16 @@
+@startuml asr
+!include ../style.puml
+title ASR Class Diagram
+
+' External Dependencies
+class ASRRecycler
+
+package "ASR Module" {
+    class ASR {
+        + __init__(self, *args, transcriber: Callable, tokenizer_encode: Callable, sample_rate: int, within_eos: bool, **kwargs)
+    }
+}
+
+ASRRecycler <|-- ASR
+
+@enduml

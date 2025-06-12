@@ -1,0 +1,29 @@
+@startuml vad_processor
+!include ../style.puml
+
+title VADProcessor Class Diagram
+
+' External Dependencies
+class Worker <<abstract>>
+class TokenContext <<data>>
+class VADProcessParam <<data>>
+class VADProcessResult <<data>>
+
+class VADProcessor {
+    - __vad: Callable<<np.ndarray>, list<dict<str, int>>>
+    + __init__(self, vad: Callable<<np.ndarray>, list<dict<str, int>>>) : None
+    # _can_process(self, context: TokenContext): VADProcessParam
+    # _process(self, param: VADProcessParam): VADProcessResult
+    # _update(self, context: TokenContext, result: VADProcessResult): None
+    - __get_timestamps(self, audio: np.ndarray): list<dict<str, int>>
+    - __get_vad_chunk(self, audio: np.ndarray, timestamps: list<dict<str, int>>, offset: int): tuple<np.ndarray, list<dict<str, int>>>
+}
+
+' Relationships
+Worker <|-- VADProcessor
+
+VADProcessor ..> VADProcessParam
+VADProcessor ..> VADProcessResult
+VADProcessor ..> TokenContext
+
+@enduml

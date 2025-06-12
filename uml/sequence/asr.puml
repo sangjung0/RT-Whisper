@@ -1,0 +1,53 @@
+@startuml asr
+title ASR Sequence Diagram
+
+participant Pipeline as PP
+participant ASR as ASR
+participant ASRProcessor as ASRP
+participant ASRRecycler as ASRR
+
+PP -> ASR: process(context)
+activate PP
+    activate ASR
+        ASR -> ASRP: _can_process(context)
+        activate ASRP
+            ASRP --> ASRP: param
+        deactivate ASRP
+
+        ASR -> ASRP: _process(param)
+        activate ASRP
+            ASRP -> ASRP: __transcribe\n(merged_chunk, param.language, param.prompt)
+            ASRP -> ASRP: __get_segment_token\n(segments, language, offset)
+            ASRP --> ASR: result
+        deactivate ASRP
+
+        ASR -> ASRP: _update(param)
+        activate ASRP
+            ASRP --> ASR: None
+        deactivate ASRP
+
+        ASR --> PP: result
+    deactivate ASR
+
+    PP -> ASR: recycle(context)
+    activate ASR
+        ASR -> ASRR: _need_recycle(context)
+        activate ASRR
+            ASRR --> ASR: param
+        deactivate ASRR
+
+        ASR -> ASRR: _recycle(param)
+        activate ASRR
+            ASRR --> ASR: result
+        deactivate ASRR
+
+        ASR -> ASRR: _recycle_update(param)
+        activate ASRR
+            ASRR --> ASR: None
+        deactivate ASRR
+
+        ASR --> PP: result
+    deactivate ASR
+deactivate PP
+
+@enduml

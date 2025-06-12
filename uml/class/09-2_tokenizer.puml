@@ -1,0 +1,16 @@
+@startuml tokenizer
+!include ../style.puml
+title Tokenizer 클래스 다이어그램
+
+class KSSTokenizer {
+    + segment(self, text) : list[str] | list[list[str]]
+}
+
+class Tokenizer {
+    tokenizers: dict<pysbd.Segmenter>
+    + get_tokenizer(lang: str) : pysbd.Segmenter
+}
+
+Tokenizer *-- Tokenizer
+
+@enduml

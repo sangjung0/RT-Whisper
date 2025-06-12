@@ -1,0 +1,21 @@
+@startuml util
+!include ../style.puml
+title util 클래스 다이어그램
+
+class ReadYaml {
+    path: Path
+    dict: dict
+    namespace: SimpleNamespace
+    + __init__(self, path: Path) : None
+    - __load_yaml(self) : dict
+}
+
+class SafetyDict {
+    - __DEFAULT_VALUE: Any
+    + __init__(self, data: dict, default_value: Any, *args, **kwargs) : None
+    + __getitem__(self, key)
+    + __setitem__(self, key, value)
+    - __upload(self, d: dict)
+}
+
+@enduml

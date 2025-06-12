@@ -1,0 +1,15 @@
+@startuml silero_vad
+!include ../style.puml
+title SileroVad 클래스 다이어그램
+
+class SileroVad {
+    - __model
+    - __SAMPLE_RATE: int
+    + __init__(self, sample_rate: int) : None
+    + run(self, audio: np.ndarray) : list<dict<str, int>>
+}
+
+SileroVad --|> Singleton
+SileroVad --> config
+
+@enduml

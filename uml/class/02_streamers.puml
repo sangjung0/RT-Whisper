@@ -1,0 +1,35 @@
+@startuml streamers
+!include ../style.puml
+
+title streamers 클래스 다이어그램
+
+' 클래스
+class streamer <<module>>{
+    +get_token_streamer(model_sample_rate:int, hyperparameter_path: Path | str | None)
+}
+
+class Composer
+class DurationFilter
+class PositionWeightedFilter
+class ProbabilityFilter
+class SileroVad
+class Whisper
+class Selector
+class ReadYaml
+class SafetyDict
+class Pipeline
+
+' 연관 관계
+ASocketUC *-- Composer
+ASocketUC *-- DurationFilter
+ASocketUC *-- PositionWeightedFilter
+ASocketUC *-- ProbabilityFilter
+ASocketUC *-- SileroVad
+ASocketUC *-- Whisper
+ASocketUC *-- Selector
+ASocketUC *-- ReadYaml
+ASocketUC *-- SafetyDict
+ASocketUC *-- Pipeline
+
+@enduml
+

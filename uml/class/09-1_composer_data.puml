@@ -1,0 +1,47 @@
+@startuml composer_data
+!include ../style.puml
+title Composer 관련 클래스 다이어그램
+
+class Token <<data>>
+class TokenContext <<data>>
+class Sentence <<data>>
+
+class ComposerParam <<data>> {
+    + anchor_timestamp: int
+    + offset: int
+    + prev_completed_tokens: list<Token>
+    + segment_tokens: list<Token>
+    + language: str | None
+    + order: int
+    + {static} from_context(context: TokenContext) : ComposerParam
+}
+
+class ComposerResult <<data>> {
+    + completed: list<Sentence>
+    + candidate: list<Sentence>
+    + recycle_segment_tokens: list<Token>
+    + recycle_completed_tokens: list<Token>
+    + order: int
+    + update_context(self, context: TokenContext) : None
+}
+
+class ComposerRecycle <<data>> {
+    + completed_tokens: list<Token>
+}
+
+class ComposerStorage <<data>> {
+    + recycle: ComposerRecycle
+    + prev: ComposerRecycle
+    + update(self, recycle: ComposerRecycle) : None
+    + extract(self) : ComposerRecycle
+}
+
+ComposerParam --> Token
+ComposerParam --> TokenContext
+ComposerResult --> Token
+ComposerResult --> Sentence
+ComposerResult --> TokenContext
+ComposerRecycle --> Token
+ComposerStorage --> ComposerRecycle
+
+@enduml

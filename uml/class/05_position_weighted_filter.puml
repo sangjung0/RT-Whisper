@@ -1,0 +1,43 @@
+@startuml position_weighted_filter
+!include ../style.puml
+title PositionWeightedFilter Class Diagram
+
+class Worker <<abstract>>
+class TokenContext <<data>>
+class PositionWeightedFilterParam <<data>>
+class PositionWeightedFilterResult <<data>>
+class Token <<data>>
+
+class PositionWeightedFilter {
+    - __BOUNDARY: float
+    + __init__(self, boundary: float)
+    # _can_process(self, context: TokenContext): PositionWeightedFilterParam
+    # _process(self, param: PositionWeightedFilterParam): PositionWeightedFilterResult
+    # _update(self, context: TokenContext, result: PositionWeightedFilterResult): None
+    - __get_weighted_probability(self, probabilities: float, start: int, end: int, duration: int, boundary: int): float
+}
+
+class PositionWeightedFilterParam <<data>> {
+    offset: int
+    chunk: np.ndarray
+    segment_tokens: list[Token]
+    + {static} from_context(context: TokenContext) : PositionWeightedFilterParam
+}
+
+class PositionWeightedFilterResult <<data>> {
+    + update_context(self, context: TokenContext) : None
+}
+
+PositionWeightedFilterParam --> TokenContext
+PositionWeightedFilterParam --> Token
+PositionWeightedFilterResult --> TokenContext
+
+' Relationships
+Worker <|-- PositionWeightedFilter
+
+PositionWeightedFilter -- TokenContext
+PositionWeightedFilter --> PositionWeightedFilterParam
+PositionWeightedFilter --> PositionWeightedFilterResult
+PositionWeightedFilter --> Token
+
+@enduml

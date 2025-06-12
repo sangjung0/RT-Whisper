@@ -1,0 +1,58 @@
+@startuml asr_processor
+!include ../style.puml
+
+title ASRProcessor Class Diagram
+
+' External Dependencies
+class Worker <<abstract>>
+class TokenContext <<data>>
+class ASRParam <<data>>
+class ASRResult <<data>>
+class Token <<data>>
+class Segment <<data>>
+
+class ASRProcessor {
+    - __transcriber: Callable<<np.ndarray, str, str>, tuple<Iterable, Any>>
+    - __tokenizer_encoder: Callable<<str>, list<int>>
+    - __SAMPLE_RATE: int
+    - __WITHIN_EOS: bool
+    + __init__(self, transcriber: Callable, tokenizer_encode: Callable, sample_rate: int, within_eos: bool)
+    # _can_process(self, context: TokenContext): ASRParam
+    # _process(self, param: ASRParam): ASRResult
+    # _update(self, context: TokenContext, result: ASRResult): None
+    - __transcribe(self, chunk: np.ndarray, language: str | None, prompt: str | None): tuple<Iterable, Any>
+    - __get_segment_tokens(self, segments: list<Segment>, language: str, offset: int): list<Token>
+}
+
+class ASRParam <<data>>{
+    chunk: np.ndarray
+    prev_chunk: np.ndarray
+    offset: int
+    language: str | None
+    prompt: str | None
+    + from_context(context: TokenContext) : ASRParam
+}
+
+class ASRResult <<data>>{
+    merged_chunk: np.ndarray
+    segment_tokens: Iterator<Token>
+    language: str | None
+    + update_context(self, context: TokenContext) : None
+}
+
+' Relationships
+Worker <|-- ASRProcessor
+
+ASRProcessor ..> TokenContext : uses
+ASRProcessor ..> ASRParam : uses/creates
+ASRProcessor ..> ASRResult : uses/returns
+ASRProcessor ..> Token : creates
+ASRProcessor ..> Segment : uses
+
+ASRParam --> TokenContext
+ASRResult --> TokenContext
+ASRResult --> Token
+ASRRecycleParam --> TokenContext
+ASRRecycleResult --> TokenContext
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml token_context
+title TokenContext Sequence Diagram
+
+participant Pipeline as PP
+participant TokenContext as TC
+participant VADStorage as VS
+participant DurationFilterStorage as DFS
+participant ProbabilityFilterStorage as PFS
+participant Composer as CP
+
+PP -> TC: bind(param)
+activate PP
+    activate TC
+        TC -> VS: update(vad_recycle)
+        activate VS
+            VS --> TC: None
+        deactivate VS
+
+        TC -> DFS: update(duration_filter_recycle)
+        activate DFS
+            DFS --> TC: None
+        deactivate DFS
+
+        TC -> PFS: update(probability_filter_recycle)
+        activate PFS
+            PFS --> TC: None
+        deactivate PFS
+
+        TC -> CP: update(composer_recycle)
+        activate CP
+            CP --> TC: None
+        deactivate CP
+        TC --> PP: None
+    deactivate TC
+
+    PP -> TC:extract()
+    activate TC
+        TC -> PP: result
+    deactivate TC
+deactivate PP
+
+@enduml
+
