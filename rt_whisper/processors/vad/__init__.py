@@ -1,6 +1,9 @@
 # models/silero_vad/__init__.py
 
-from .vad import VAD
-from .data import VADState
+from . import common, v1, v2
 
-__all__ = ["VAD", "VADState"]
+__all__ = [
+    "common",
+    "v1",
+    "v2",
+]

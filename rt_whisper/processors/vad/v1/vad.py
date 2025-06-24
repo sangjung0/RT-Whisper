@@ -4,6 +4,8 @@ import numpy as np
 
 from rt_whisper.abstracts import Worker
 from rt_whisper.processors.asr import ASRState
+from rt_whisper.processors.vad.common.service import *
+
 from .data import *
 from .service import *
 
