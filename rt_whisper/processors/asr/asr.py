@@ -88,6 +88,10 @@ class ASRContextBuilder(ASRProcessor):
             max_overlap_duration=self.__MAX_OVERLAP_DURATION,
         )
 
+        anchor_timestamp = adjust_anchor_timestamp(
+            anchor_timestamp, param.segment_tokens
+        )
+
         return ASRContextBuilderResult(
             context_chunk=context_chunk,
             context_offset=context_offset,

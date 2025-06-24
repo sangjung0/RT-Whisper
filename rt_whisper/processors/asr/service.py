@@ -38,6 +38,15 @@ def generate_overlap_context(
     return context_chunk, context_offset, anchor_timestamp
 
 
+def adjust_anchor_timestamp(
+    anchor_timestamp: int, segment_tokens: list[Token], padding: int = 1600
+) -> int:
+    for token in segment_tokens:
+        if anchor_timestamp < token.start:
+            return max(0, token.start - padding)
+    return anchor_timestamp
+
+
 def segment_to_token_list(
     segments: Iterable,
     language: str,

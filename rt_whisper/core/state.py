@@ -17,8 +17,8 @@ hyperparameter = SafetyDict(
         },
         "probability_filter": {
             "z": {
-                "default": 2.0,
-                "ko": 2.0,
+                "default": 3.0,
+                "ko": 3.0,
                 "en": 2.0,
             },
             "min_prob": {

@@ -71,6 +71,7 @@ class ASRContextBuilderParam:
     offset: int
     merged_chunk: np.ndarray
     prev_chunk: np.ndarray
+    segment_tokens: list[Token] = field(default_factory=list)
 
     @staticmethod
     def from_state(state: TokenState, asr_state: ASRState) -> "ASRContextBuilderParam":
@@ -79,6 +80,7 @@ class ASRContextBuilderParam:
             offset=state.offset,
             merged_chunk=asr_state.merged_chunk,
             prev_chunk=asr_state.prev.chunk,
+            segment_tokens=state.segment_tokens,
         )
 
 
