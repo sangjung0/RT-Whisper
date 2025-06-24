@@ -7,7 +7,8 @@ from sj_utils.file import ReadYaml
 from rt_whisper.models import SileroVad, Whisper
 from rt_whisper.core.state import hyperparameter as default_hyperparameter, config
 from rt_whisper.pipeline import Pipeline
-from rt_whisper.processors import ASR, VAD
+from rt_whisper.processors import ASR
+from rt_whisper.processors.vad.v2 import VAD
 from rt_whisper.composer import SimpleComposer
 
 
