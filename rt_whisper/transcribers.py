@@ -1,17 +1,17 @@
 from pathlib import Path
+from whisper.tokenizer import get_tokenizer
 
-from rt_whisper.composer.simple_composer import SimpleComposer
-from rt_whisper.core.state import hyperparameter as default_hyperparameter, config
-from rt_whisper.util import ReadYaml, SafetyDict
+from sj_utils.collection_utils import SafetyDict
+from sj_utils.file import ReadYaml
+
 from rt_whisper.models import SileroVad, Whisper
+from rt_whisper.core.state import hyperparameter as default_hyperparameter, config
 from rt_whisper.pipeline import Pipeline
+from rt_whisper.processors import ASR, VAD
+from rt_whisper.composer import SimpleComposer
 
 
 def get_transcriber(
-    model_size: str = config.rt_whisper.model_size,
-    model_device: str = config.rt_whisper.model_device,
-    model_compute_type: str = config.rt_whisper.model_compute_type,
-    model_beam_size: int = config.rt_whisper.model_beam_size,
     model_sample_rate: int = config.rt_whisper.model_sample_rate,
     hyperparameter_path: Path | str | None = None,
 ):
@@ -24,23 +24,18 @@ def get_transcriber(
 
     worker_groups = [
         [
-            SileroVad(
-                sample_rate=model_sample_rate,
-            ),
-            Whisper(
-                beam_size=model_beam_size,
-                model_size=model_size,
-                device=model_device,
-                compute_type=model_compute_type,
+            VAD(vad=SileroVad().run),
+            ASR(
+                transcriber=Whisper().transcribe,
+                tokenizer_encoder=get_tokenizer(multilingual=True).encode,
                 sample_rate=model_sample_rate,
                 within_eos=True,
+                max_overlap_duration=hyperparameter["max_overlap_duration"],
             ),
         ],
-        [
-            SimpleComposer(),
-        ],
+        [SimpleComposer()],
     ]
 
-    pipeline = Pipeline.get_instance()
+    pipeline = Pipeline()
     pipeline.init(workers=worker_groups)
     return pipeline

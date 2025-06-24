@@ -1,13 +1,14 @@
 from abc import abstractmethod
-from typing import Union
+from typing import Union, Any
 
-from .singleton import Singleton
-from .data import Context, Param, Result
+from sj_utils.decorator_utils import singleton
 
-class AsyncWorker(Singleton):
+
+@singleton
+class AsyncWorker:
 
     # main process
-    async def process(self, context: Context) -> None:
+    async def process(self, context: Any) -> None:
         param = self._can_process(context)
         if param is None:
             return
@@ -15,16 +16,16 @@ class AsyncWorker(Singleton):
         self._update(context, result)
 
     @abstractmethod
-    def _can_process(self, context: Context) -> Union[None, Param] : ...
+    def _can_process(self, context: Any) -> Union[None, Any]: ...
 
     @abstractmethod
-    async def _process(self, param:Param) -> Result: ...
+    async def _process(self, param: Any) -> Any: ...
 
     @abstractmethod
-    def _update(self, context: Context, result: Result) -> None: ...
+    def _update(self, context: Any, result: Any) -> None: ...
 
     # post process
-    async def _post_process(self, context: Context) -> None:
+    async def _post_process(self, context: Any) -> None:
         param = self._can_post_process(context, result)
         if param is None:
             return
@@ -32,10 +33,12 @@ class AsyncWorker(Singleton):
         self._post_update(context, result)
 
     @abstractmethod
-    def _can_post_process(self, context: Context, result: Result) -> Union[None, Param]: ...
+    def _can_post_process(
+        self, context: Any, result: Any
+    ) -> Union[None, Any]: ...
 
     @abstractmethod
-    async def _post_process(self, param:Param) -> Result: ...
+    async def _post_process(self, param: Any) -> Any: ...
 
     @abstractmethod
-    def _post_update(self, context: Context, result: Result) -> None: ...
+    def _post_update(self, context: Any, result: Any) -> None: ...

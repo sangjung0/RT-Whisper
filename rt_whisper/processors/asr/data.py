@@ -1,69 +1,94 @@
 from __future__ import annotations
-from typing import Iterator, TYPE_CHECKING
-from dataclasses import dataclass
-from typing import Iterator, Union
+from typing import TYPE_CHECKING
+from dataclasses import dataclass, field
 import numpy as np
 
+from sj_utils.audio_utils import generate_empty_chunk
 
 if TYPE_CHECKING:
-    from rt_whisper.data import Token, TokenContext
+    from rt_whisper.data import Token, TokenState
+    from typing import Union
+
+
+@dataclass(slots=True)
+class ASRContext:
+    chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+
+
+@dataclass(slots=True)
+class ASRState:
+    merged_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+
+    prev: ASRContext = field(default_factory=ASRContext)
+    context: ASRContext = field(default_factory=ASRContext)
+
+    def update(self, context: ASRContext) -> None:
+        assert isinstance(
+            context, ASRContext
+        ), "context must be an instance of ASRContext"
+
+        self.__init__()
+        self.prev = context
+
+    def extract(self) -> ASRContext:
+        return self.context
 
 
 @dataclass(slots=True)
 class ASRParam:
     chunk: np.ndarray
-    prev_chunk: np.ndarray
     offset: int
     language: Union[str, None]
     prompt: Union[str, None]
+    prev_chunk: np.ndarray
 
     @staticmethod
-    def from_context(context: TokenContext) -> "ASRParam":
+    def from_state(state: TokenState, asr_state: ASRState) -> "ASRParam":
         return ASRParam(
-            chunk=context.chunk,
-            prev_chunk=context.prev_chunk,
-            offset=context.offset,
-            language=context.language,
-            prompt=context.prompt,
+            chunk=state.chunk,
+            offset=state.offset,
+            language=state.language,
+            prompt=state.prompt,
+            prev_chunk=asr_state.prev.chunk,
         )
 
 
 @dataclass(slots=True)
 class ASRResult:
     merged_chunk: np.ndarray
-    segment_tokens: Iterator[Token]
+    segment_tokens: list[Token]
     language: str | None
 
-    def update_context(self, context: TokenContext) -> None:
-        context.merged_chunk = self.merged_chunk
-        context.segment_tokens = self.segment_tokens
-        context.language = self.language
+    def update_state(self, state: TokenState, asr_state: ASRState) -> None:
+        asr_state.merged_chunk = self.merged_chunk
+        state.segment_tokens = self.segment_tokens
+        state.language = self.language
 
 
 @dataclass(slots=True)
-class ASRRecycleParam:
+class ASRContextBuilderParam:
     chunk: np.ndarray
+    offset: int
     merged_chunk: np.ndarray
     prev_chunk: np.ndarray
-    offset: int
 
     @staticmethod
-    def from_context(context: TokenContext) -> "ASRRecycleParam":
-        return ASRRecycleParam(
-            chunk=context.chunk,
-            merged_chunk=context.merged_chunk,
-            prev_chunk=context.prev_chunk,
-            offset=context.offset,
+    def from_state(state: TokenState, asr_state: ASRState) -> "ASRContextBuilderParam":
+        return ASRContextBuilderParam(
+            chunk=state.chunk,
+            offset=state.offset,
+            merged_chunk=asr_state.merged_chunk,
+            prev_chunk=asr_state.prev.chunk,
         )
 
 
 @dataclass(slots=True)
-class ASRRecycleResult:
-    recycle_chunk: np.ndarray
-    recycle_offset: int
+class ASRContextBuilderResult:
+    context_chunk: np.ndarray
+    context_offset: int
     anchor_timestamp: int
 
-    def update_context(self, context: TokenContext) -> None:
-        context.recycle_chunk = self.recycle_chunk
-        context.recycle_offset = self.recycle_offset
-        context.anchor_timestamp = self.anchor_timestamp
+    def update_state(self, state: TokenState, asr_state: ASRState) -> None:
+        asr_state.context.chunk = self.context_chunk
+        state.offset = self.context_offset
+        state.anchor_timestamp = self.anchor_timestamp

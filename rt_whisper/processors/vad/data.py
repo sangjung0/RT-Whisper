@@ -3,11 +3,72 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 import numpy as np
 
-if TYPE_CHECKING:
-    from rt_whisper.data import TokenContext
-    from rt_whisper.data import Token
+from sj_utils.audio_utils import generate_empty_chunk
 
-generate_empty_chunk = lambda: np.zeros((0,), dtype=np.float32)
+if TYPE_CHECKING:
+    from rt_whisper.data import TokenState
+    from rt_whisper.data import Token
+    from rt_whisper.processors.asr import ASRState
+
+
+@dataclass(slots=True)
+class VADContext:
+    chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    offset: int = field(default=0)
+    timestamps: list[dict[str, int]] = field(default_factory=list)
+    timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class VADState:
+    # backup state
+    chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    offset: int = field(default=0)
+    prev_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    merged_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    original_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    original_offset: int = field(default=0)
+    original_prev_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+    original_merged_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
+
+    timestamps: list[dict[str, int]] = field(default_factory=list)
+    timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
+    merged_timestamps: list[dict[str, int]] = field(default_factory=list)
+    merged_timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
+
+    prev: VADContext = field(default_factory=VADContext)
+    context: VADContext = field(default_factory=VADContext)
+
+    def update(self, context: VADContext):
+        assert isinstance(
+            context, VADContext
+        ), "recycle must be an instance of VADCache"
+
+        self.__init__()
+        self.prev = context
+
+    def extract(self) -> VADContext:
+        return self.context
+
+    def backup(self, state: TokenState, asr_state: ASRState):
+        self.original_chunk = state.chunk
+        self.original_offset = state.offset
+        self.original_prev_chunk = asr_state.prev.chunk
+
+    def replace(self, state: TokenState, asr_state: ASRState):
+        asr_state.prev.chunk = self.prev.chunk
+        state.chunk = self.chunk
+        state.offset = self.offset
+
+    def post_backup(self, state: ASRState):
+        self.merged_chunk = state.merged_chunk
+
+    def post_replace(self, state: TokenState, asr_state: ASRState):
+        state.chunk = self.original_chunk
+        state.offset = self.original_offset
+
+        asr_state.prev.chunk = self.original_prev_chunk
+        asr_state.merged_chunk = self.original_merged_chunk
 
 
 @dataclass(slots=True)
@@ -18,15 +79,12 @@ class VADProcessParam:
     prev_vad_chunk: np.ndarray
 
     @staticmethod
-    def from_context(context: TokenContext):
-        context.vad.original_chunk = context.chunk
-        context.vad.original_offset = context.offset
-        context.vad.original_prev_chunk = context.prev_chunk
+    def from_state(state: VADState):
         return VADProcessParam(
-            chunk=context.chunk,
-            offset=context.offset,
-            prev_vad_offset=context.vad.prev.vad_offset,
-            prev_vad_chunk=context.vad.prev.vad_chunk,
+            chunk=state.original_chunk,
+            offset=state.original_offset,
+            prev_vad_offset=state.prev.offset,
+            prev_vad_chunk=state.prev.chunk,
         )
 
 
@@ -37,19 +95,16 @@ class VADProcessResult:
     prev_vad_chunk: np.ndarray
     vad_timestamps: list[dict[str, int]]
 
-    def update_context(self, context: TokenContext) -> None:
-        context.vad.chunk = self.vad_chunk
-        context.vad.offset = self.vad_offset
-        context.vad.timestamps = self.vad_timestamps
-
-        context.chunk = self.vad_chunk  # 기존 chunk를 대체
-        context.offset = self.vad_offset
-        context.prev_chunk = self.prev_vad_chunk
+    def update_state(self, state: VADState) -> None:
+        state.chunk = self.vad_chunk
+        state.offset = self.vad_offset
+        state.timestamps = self.vad_timestamps
 
 
 @dataclass(slots=True)
 class VADPostParam:
     chunk: np.ndarray
+    offset: int
     prev_chunk: np.ndarray
     vad_offset: int
 
@@ -58,99 +113,64 @@ class VADPostParam:
     prev_vad_timestamps_mapping: list[dict[str, int]]
 
     @staticmethod
-    def from_context(context: TokenContext):
-        context.vad.merged_chunk = context.merged_chunk
+    def from_state(state: TokenState, vad_state: VADState):
         return VADPostParam(
-            chunk=context.vad.original_chunk,
-            prev_chunk=context.vad.original_prev_chunk,
-            vad_offset=context.vad.offset,
-            segment_tokens=context.segment_tokens,
-            vad_timestamps=context.vad.timestamps,
-            prev_vad_timestamps_mapping=context.vad.prev.timestamps_mapping,
+            chunk=vad_state.original_chunk,
+            offset=vad_state.original_offset,
+            prev_chunk=vad_state.original_prev_chunk,
+            vad_offset=vad_state.offset,
+            segment_tokens=state.segment_tokens,
+            vad_timestamps=vad_state.timestamps,
+            prev_vad_timestamps_mapping=vad_state.prev.timestamps_mapping,
         )
 
 
 @dataclass(slots=True)
 class VADPostResult:
-    merged_chunk: np.ndarray
+    original_merged_chunk: np.ndarray
     vad_timestamps_mapping: list[dict[str, int]]
     merged_vad_timestamps_mapping: list[dict[str, int]]
     # tokens: list[Token]
 
-    def update_context(self, context: TokenContext):
-        context.chunk = context.vad.original_chunk
-        context.prev_chunk = context.vad.original_prev_chunk
-        context.offset = context.vad.original_offset
-
-        context.merged_chunk = self.merged_chunk
-        context.vad.timestamps_mapping = self.vad_timestamps_mapping
-        context.vad.merged_timestamps_mapping = self.merged_vad_timestamps_mapping
+    def update_state(self, state: VADState):
+        state.original_merged_chunk = self.original_merged_chunk
+        state.timestamps_mapping = self.vad_timestamps_mapping
+        state.merged_timestamps_mapping = self.merged_vad_timestamps_mapping
         # context.merged_candidate_tokens = tokens
 
 
 @dataclass(slots=True)
-class VADRecycleParam:
+class VADContextBuilderParam:
     anchor_timestamp: int
     vad_offset: int
     vad_chunk: np.ndarray
     vad_timestamps: list[dict[str, int]]
     prev_vad_timestamps: list[dict[str, int]]
+    merged_vad_chunk: np.ndarray
     merged_vad_timestamps_mapping: list[dict[str, int]]
 
     @staticmethod
-    def from_context(context: TokenContext):
-        return VADRecycleParam(
-            anchor_timestamp=context.anchor_timestamp,
-            vad_offset=context.vad.offset,
-            vad_chunk=context.vad.chunk,
-            vad_timestamps=context.vad.timestamps,
-            prev_vad_timestamps=context.vad.prev.timestamps,
-            merged_vad_timestamps_mapping=context.vad.merged_timestamps_mapping,
+    def from_state(state: TokenState, vad_state: VADState):
+        return VADContextBuilderParam(
+            anchor_timestamp=state.anchor_timestamp,
+            vad_offset=vad_state.offset,
+            vad_chunk=vad_state.chunk,
+            vad_timestamps=vad_state.timestamps,
+            prev_vad_timestamps=vad_state.prev.timestamps,
+            merged_vad_chunk=vad_state.merged_chunk,
+            merged_vad_timestamps_mapping=vad_state.merged_timestamps_mapping,
         )
 
 
 @dataclass(slots=True)
-class VADRecycleResult:
-    recycle_vad_offset: int
-    recycle_vad_chunk: np.ndarray
-    recycle_vad_timestamps: list[dict[str, int]]
-    recycle_vad_timestamps_mapping: list[dict[str, int]]
+class VADContextBuilderResult:
+    context_vad_offset: int
+    context_vad_chunk: np.ndarray
+    context_vad_timestamps: list[dict[str, int]]
+    context_vad_timestamps_mapping: list[dict[str, int]]
 
-    def update_context(self, context: TokenContext):
-        context.vad.recycle.vad_chunk = self.recycle_vad_chunk
-        context.vad.recycle.vad_offset = self.recycle_vad_offset
-        context.vad.recycle.timestamps = self.recycle_vad_timestamps
-        context.vad.recycle.timestamps_mapping = self.recycle_vad_timestamps_mapping
-
-
-@dataclass(slots=True)
-class VADRecycle:
-    vad_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
-    vad_offset: int = field(default=0)
-    timestamps: list[dict[str, int]] = field(default_factory=list)
-    timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
-
-
-@dataclass(slots=True)
-class VADStorage:
-    chunk: np.ndarray = field(default_factory=generate_empty_chunk)
-    offset: int = field(default=0)
-    merged_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
-    original_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
-    original_offset: int = field(default=0)
-    original_prev_chunk: np.ndarray = field(default_factory=generate_empty_chunk)
-    timestamps: list[dict[str, int]] = field(default_factory=list)
-    timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
-    merged_timestamps: list[dict[str, int]] = field(default_factory=list)
-    merged_timestamps_mapping: list[dict[str, int]] = field(default_factory=list)
-
-    prev: VADRecycle = field(default_factory=VADRecycle)
-    recycle: VADRecycle = field(default_factory=VADRecycle)
-
-    def update(self, recycle: VADRecycle):
-        self.__init__()
-        if recycle is not None:
-            self.prev = recycle
-
-    def extract(self) -> VADRecycle:
-        return self.recycle
+    def update_context(self, state: VADState):
+        state.context.chunk = self.context_vad_chunk
+        state.context.offset = self.context_vad_offset
+        state.context.timestamps = self.context_vad_timestamps
+        state.context.timestamps_mapping = self.context_vad_timestamps_mapping

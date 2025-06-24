@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import numpy as np
 
 if TYPE_CHECKING:
-    from rt_whisper.data import TokenContext, Token
+    from rt_whisper.data import TokenState, Token
 
 
 @dataclass(slots=True)
@@ -15,11 +15,11 @@ class PositionWeightedFilterParam:
     segment_tokens: list[Token]
 
     @staticmethod
-    def from_context(context: TokenContext) -> "PositionWeightedFilterParam":
+    def from_context(state: TokenState) -> "PositionWeightedFilterParam":
         return PositionWeightedFilterParam(
-            offset=context.offset,
-            chunk=context.chunk,
-            segment_tokens=context.segment_tokens,
+            offset=state.offset,
+            chunk=state.chunk,
+            segment_tokens=state.segment_tokens,
         )
 
 
@@ -27,6 +27,6 @@ class PositionWeightedFilterParam:
 class PositionWeightedFilterResult:
     # tokens: list[Token]
 
-    def update_context(self, context: TokenContext) -> None:
+    def update_context(self, state: TokenState) -> None:
         # context.merged_candidate_tokens = self.tokens
         pass

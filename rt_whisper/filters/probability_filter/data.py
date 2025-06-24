@@ -3,7 +3,22 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from rt_whisper.data import TokenContext, Token
+    from rt_whisper.data import TokenState, Token
+
+
+@dataclass(slots=True)
+class ProbabilityFilterState:
+    mean: dict[str, float] = field(default_factory=dict)
+    std: dict[str, float] = field(default_factory=dict)
+    count: dict[str, int] = field(default_factory=dict)
+
+    def update(self, state: "ProbabilityFilterState") -> None:
+        self.mean.update(state.mean)
+        self.std.update(state.std)
+        self.count.update(state.count)
+
+    def extract(self) -> "ProbabilityFilterState":
+        return self
 
 
 @dataclass(slots=True)
@@ -15,14 +30,16 @@ class ProbabilityFilterParam:
     count: float | None
 
     @staticmethod
-    def from_context(context: TokenContext) -> "ProbabilityFilterParam":
-        language = context.language
+    def from_context(
+        state: TokenState, prob_state: ProbabilityFilterState
+    ) -> "ProbabilityFilterParam":
+        language = state.language
         return ProbabilityFilterParam(
-            segment_tokens=context.segment_tokens,
-            language=context.language,
-            mean=context.probability_filter.mean.get(language, None),
-            std=context.probability_filter.std.get(language, None),
-            count=context.probability_filter.count.get(language, None),
+            segment_tokens=state.segment_tokens,
+            language=state.language,
+            mean=prob_state.mean.get(language, None),
+            std=prob_state.std.get(language, None),
+            count=prob_state.count.get(language, None),
         )
 
 
@@ -33,26 +50,11 @@ class ProbabilityFilterResult:
     std: float | None
     count: float | None
 
-    def update_context(self, context: TokenContext) -> None:
-        language = context.language
-        context.segment_tokens = self.segment_tokens
-        context.probability_filter.mean[language] = self.mean
-        context.probability_filter.std[language] = self.std
-        context.probability_filter.count[language] = self.count
-
-
-@dataclass(slots=True)
-class ProbabilityFilterStorage:
-    mean: dict[str, float] = field(default_factory=dict)
-    std: dict[str, float] = field(default_factory=dict)
-    count: dict[str, int] = field(default_factory=dict)
-
-    def update(self, recycle: "ProbabilityFilterStorage") -> None:
-        if recycle is None:
-            return
-        self.mean.update(recycle.mean)
-        self.std.update(recycle.std)
-        self.count.update(recycle.count)
-
-    def extract(self) -> "ProbabilityFilterStorage":
-        return self
+    def update_context(
+        self, state: TokenState, prob_state: ProbabilityFilterState
+    ) -> None:
+        language = state.language
+        state.segment_tokens = self.segment_tokens
+        prob_state.mean[language] = self.mean
+        prob_state.std[language] = self.std
+        prob_state.count[language] = self.count

@@ -1,12 +1,13 @@
 from faster_whisper import WhisperModel
 import numpy as np
-from whisper import tokenizer
 
-from rt_whisper.abstracts import Singleton
+from sj_utils.decorator_utils import singleton
+
 from rt_whisper.core.state import config
 
 
-class Whisper(Singleton):
+@singleton
+class Whisper:
     def __init__(
         self,
         model_size: str = config.rt_whisper.model_size,
@@ -16,10 +17,7 @@ class Whisper(Singleton):
     ):
         super().__init__()
         self.__BEAM_SIZE = beam_size
-
-        self._model = WhisperModel(
-            model_size, device=device, compute_type=compute_type
-        )
+        self._model = WhisperModel(model_size, device=device, compute_type=compute_type)
 
     def transcribe(self, audio: np.ndarray, language: str, prompt: str):
         return self._model.transcribe(
@@ -30,6 +28,3 @@ class Whisper(Singleton):
             vad_filter=False,
             initial_prompt=prompt,
         )
-
-    def get_tokenizer(self):
-        return tokenizer.get_tokenizer(multilingual=True)

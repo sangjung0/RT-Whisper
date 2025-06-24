@@ -1,16 +1,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from rapidfuzz.distance import Levenshtein
 
 from rt_whisper.abstracts import Worker
 
-from .data import SelectorParam, SelectorResult
+from .data import *
+from .service import *
 
 if TYPE_CHECKING:
-    from rt_whisper.data import Token, TokenContext
+    from rt_whisper.data import TokenState
 
 
-class Selector(Worker):
+class SelectorProcessor(Worker):
     def __init__(
         self,
         search_range_sc: int,
@@ -27,9 +27,10 @@ class Selector(Worker):
         self.__SMOOTH = smooth
 
     # override
-    def _can_process(self, context: TokenContext) -> SelectorParam:
+    def _can_process(self, context: TokenState) -> SelectorParam:
         if len(context.segment_tokens) > 0 or len(context.prev_segment_tokens) > 0:
-            return SelectorParam.from_context(context)
+            sct_state = context.get_state(SelectorState)
+            return SelectorParam.from_state(context, sct_state)
         return None
 
     # override
@@ -41,98 +42,74 @@ class Selector(Worker):
         if not A:
             return SelectorResult(segment_tokens=B)
 
-        orphan_tokens = []
-        new_token_group = []
-        tail = []
-        start = A[-1].start + self.__TOLERANCE[language]
-        for t in B:
-            if not t.is_word and t.end > start:
-                tail.append(t)
-            elif t.is_word and t.start > start:
-                tail.append(t)
-            else:
-                new_token_group.append([t])
+        token_groups, rest = position_tokens(
+            source=A,
+            target=B,
+            tolerance=self.__TOLERANCE[language],
+        )
 
-        idx_A, idx_group = -1, 0
-        while True:
-            idx_A += 1
-            if idx_A >= len(A) or idx_group >= len(new_token_group):
-                break
+        token_groups, orphan_tokens = group_similar_tokens(
+            source=A,
+            token_groups=token_groups,
+            search_range=self.__SEARCH_RANGE_SC[language],
+            padding=self.__PADDING[language],
+            threshold=self.__THRESHOLD[language],
+            smooth=self.__SMOOTH,
+        )
 
-            a = A[idx_A]
-            similarities = []
-            for i in range(idx_group, len(new_token_group)):
-                token = new_token_group[i][0]
-                if token.start < a.start - self.__SEARCH_RANGE_SC[language]:
-                    continue
-                elif token.start > a.start + self.__SEARCH_RANGE_SC[language]:
-                    break
-                elif not token.is_word:
-                    similarities.append((i, 0))
-                else:
-                    similarity = self.__token_similarity(
-                        a, token, self.__PADDING[language]
-                    )
-                    similarities.append((i, similarity))
+        new_tokens = merge_tokens(
+            token_groups=token_groups,
+            orphan_tokens=orphan_tokens,
+            rest=rest,
+        )
 
-            if not similarities:
-                orphan_tokens.append(a)
-                continue
-
-            max_arg = max(range(len(similarities)), key=lambda x: similarities[x][1])
-            if similarities[max_arg][1] < self.__THRESHOLD[language]:
-                orphan_tokens.append(a)
-                continue
-            idx = similarities[max_arg][0]
-            new_token_group[idx].append(a)
-            idx_group = similarities[0][0] + 1
-
-        for i in range(idx_A, len(A)):
-            orphan_tokens.append(A[i])
-
-        tokens = [max(tk, key=lambda x: x.probability) for tk in new_token_group]
-        tokens_idx = 0
-        orphan_idx = 0
-        while True:
-            if orphan_idx >= len(orphan_tokens):
-                break
-            t = orphan_tokens[orphan_idx]
-            if tokens_idx >= len(tokens):
-                tokens.append(t)
-                orphan_idx += 1
-                continue
-            token = tokens[tokens_idx]
-            if token.is_word and token.start > t.start:
-                tokens.insert(tokens_idx, t)
-                orphan_idx += 1
-            elif not token.is_word and token.end > t.end:
-                tokens.insert(tokens_idx, t)
-                orphan_idx += 1
-            else:
-                tokens_idx += 1
-        tokens.extend(tail)
-
-        return SelectorResult(segment_tokens=tokens)
+        return SelectorResult(segment_tokens=new_tokens)
 
     # override
-    def _update(self, context: TokenContext, result: SelectorResult) -> None:
-        result.update_context(context)
+    def _update(self, context: TokenState, result: SelectorResult) -> None:
+        result.update_state(context)
 
-    def __token_iou(
-        self, A: Token, B: Token, padding: int = 3200, smooth: float = 1e-6
-    ) -> float:
-        a1 = max(0, A.start - padding)
-        b1 = A.end + padding
-        a2 = max(0, B.start - padding)
-        b2 = B.end + padding
 
-        inner = max(0, min(b1, b2) - max(a1, a2))
-        outer = max(max(b1, b2) - min(a1, a2), smooth)
+class SelectorContextBuilder(SelectorProcessor):
+    # override
+    def _can_build(self, state: TokenState) -> SelectorParam:
+        return SelectorContextBuilderParam.from_state(state)
 
-        return inner / outer
+    # override
+    def _context_build(self, param: SelectorContextBuilderParam):
+        new_segment_tokens = [
+            t
+            for t in param.segment_tokens
+            if t.is_word and t.end > param.anchor_timestamp
+        ]
 
-    def __token_similarity(self, A: Token, B: Token, padding: int) -> float:
-        # ratio = fuzz.ratio(A.text.strip().lower(), B.text.strip().lower())
-        ratio = Levenshtein.normalized_similarity(A.tokens, B.tokens)
-        iou = self.__token_iou(A, B, padding, self.__SMOOTH)
-        return (ratio + iou) / 2
+        return SelectorContextBuilderResult(context_segment_tokens=new_segment_tokens)
+
+    # override
+    def _context_update(
+        self, state: TokenState, result: SelectorContextBuilderResult
+    ) -> None:
+        sct_state = state.get_state(SelectorState)
+        result.update_state(sct_state)
+
+
+class Selector(SelectorContextBuilder):
+    def __init__(
+        self,
+        search_range_sc: int,
+        threshold: float,
+        padding: int,
+        tolerance: int,
+        smooth: float = 1e-6,
+    ):
+        super().__init__(
+            search_range_sc=search_range_sc,
+            threshold=threshold,
+            padding=padding,
+            tolerance=tolerance,
+            smooth=smooth,
+        )
+
+    # override
+    def _register_state(self, state: TokenState):
+        state.set_state(SelectorState, SelectorState())

@@ -1,10 +1,6 @@
 # models/silero_vad/__init__.py
 
 from .vad import VAD
-from .data import VADRecycle, VADStorage
+from .data import VADState
 
-__all__ = [
-    "VAD",
-    "VADRecycle",
-    "VADStorage"
-]
+__all__ = ["VAD", "VADState"]

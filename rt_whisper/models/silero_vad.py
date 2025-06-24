@@ -1,11 +1,13 @@
 import numpy as np
 from silero_vad import load_silero_vad, get_speech_timestamps
 
-from rt_whisper.abstracts import Singleton
+from sj_utils.decorator_utils import singleton
+
 from rt_whisper.core.state import config
 
 
-class SileroVad(Singleton):
+@singleton
+class SileroVad:
     def __init__(self, sample_rate: int = config.rt_whisper.model_sample_rate):
         super().__init__()
         self.__model = load_silero_vad(onnx=True)
@@ -16,7 +18,6 @@ class SileroVad(Singleton):
             audio,
             self.__model,
             sampling_rate=self.__SAMPLE_RATE,
-            threshold=0.4,
-            min_silence_duration_ms=100,
-            #   speech_pad_ms = 300
+            threshold=0.45,
+            speech_pad_ms=200,
         )

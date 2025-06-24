@@ -2,12 +2,12 @@
 
 from .data import Param, Result
 from . import streamers
-# from . import transcribers
+from . import transcribers
 
 
 __all__ = [
     "Param",
     "Result",
     "streamers",
-    # "transcribers",
+    "transcribers",
 ]

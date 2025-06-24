@@ -3,27 +3,47 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from rt_whisper.data import TokenContext, Token, Sentence
+    from rt_whisper.data import TokenState, Token, Sentence
+
+
+@dataclass(slots=True)
+class ComposerContext:
+    completed_tokens: list[Token] = field(default_factory=list)
+
+
+@dataclass(slots=True)
+class ComposerState:
+    prev: ComposerContext = field(default_factory=ComposerContext)
+    context: ComposerContext = field(default_factory=ComposerContext)
+
+    def update(self, context: ComposerContext) -> None:
+        assert isinstance(
+            context, ComposerContext
+        ), "context must be of type ComposerContext"
+
+        self.__init__()
+        self.prev = context
+
+    def extract(self) -> ComposerContext:
+        return self.context
 
 
 @dataclass(slots=True)
 class ComposerParam:
-    anchor_timestamp: int
-    offset: int
-    prev_completed_tokens: list[Token]
     segment_tokens: list[Token]
-    language: str | None
     order: int
+    language: str | None
+    anchor_timestamp: int
+    prev_completed_tokens: list[Token]
 
     @staticmethod
-    def from_context(context: TokenContext) -> "ComposerParam":
+    def from_context(state: TokenState, cps_state: ComposerState) -> "ComposerParam":
         return ComposerParam(
-            anchor_timestamp=context.anchor_timestamp,
-            offset=context.offset,
-            prev_completed_tokens=context.composer.prev.completed_tokens,
-            segment_tokens=context.segment_tokens,
-            language=context.language,
-            order=context.order,
+            anchor_timestamp=state.anchor_timestamp,
+            order=state.order,
+            language=state.language,
+            segment_tokens=state.segment_tokens,
+            prev_completed_tokens=cps_state.prev.completed_tokens,
         )
 
 
@@ -31,32 +51,30 @@ class ComposerParam:
 class ComposerResult:
     completed: list[Sentence]
     candidate: list[Sentence]
-    recycle_segment_tokens: list[Token]
-    recycle_completed_tokens: list[Token]
     order: int
 
-    def update_context(self, context: TokenContext):
-        context.completed = self.completed
-        context.candidate = self.candidate
-        context.recycle_segment_tokens = self.recycle_segment_tokens
-        context.composer.recycle.completed_tokens = self.recycle_completed_tokens
-        context.order = self.order
+    def update_context(self, state: TokenState):
+        state.completed = self.completed
+        state.candidate = self.candidate
+        state.order = self.order
 
 
 @dataclass(slots=True)
-class ComposerRecycle:
-    completed_tokens: list[Token] = field(default_factory=list)
+class ComposerContextBuilderParam:
+    candidate: list[Sentence]
+    anchor_timestamp: int
+
+    @staticmethod
+    def from_state(state: TokenState) -> "ComposerContextBuilderParam":
+        return ComposerContextBuilderParam(
+            candidate=state.candidate,
+            anchor_timestamp=state.anchor_timestamp,
+        )
 
 
 @dataclass(slots=True)
-class ComposerStorage:
-    recycle: ComposerRecycle = field(default_factory=ComposerRecycle)
-    prev: ComposerRecycle = field(default_factory=ComposerRecycle)
+class ComposerContextBuilderResult:
+    context_completed_tokens: list[Token]
 
-    def update(self, recycle: ComposerRecycle) -> None:
-        self.__init__()
-        if recycle is not None:
-            self.prev = recycle
-
-    def extract(self) -> ComposerRecycle:
-        return self.recycle
+    def update_context(self, cps_state: ComposerState):
+        cps_state.context.completed_tokens = self.context_completed_tokens

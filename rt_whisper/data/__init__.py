@@ -1,13 +1,13 @@
 # RTWhisper/data/__init__.py
 
-from .token_context import TokenContext
+from .token_state import TokenState
 from .param import Param
 from .result import Result
 from .sentence import Sentence
 from .token import Token
 
 __all__ = [
-    "TokenContext",
+    "TokenState",
     "Param",
     "Result",
     "Sentence",

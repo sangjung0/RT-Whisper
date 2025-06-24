@@ -3,7 +3,22 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 
 if TYPE_CHECKING:
-    from rt_whisper.data import TokenContext, Token
+    from rt_whisper.data import TokenState, Token
+
+
+@dataclass(slots=True)
+class DurationFilterState:
+    mean: dict[str, float] = field(default_factory=dict)
+    std: dict[str, float] = field(default_factory=dict)
+    count: dict[str, int] = field(default_factory=dict)
+
+    def update(self, state: "DurationFilterState"):
+        self.mean.update(state.mean)
+        self.std.update(state.std)
+        self.count.update(state.count)
+
+    def extract(self) -> "DurationFilterState":
+        return self
 
 
 @dataclass(slots=True)
@@ -15,14 +30,16 @@ class DurationFilterParam:
     count: int | None
 
     @staticmethod
-    def from_context(context: TokenContext) -> "DurationFilterParam":
-        language = context.language
+    def from_state(
+        state: TokenState, dfs_state: DurationFilterState
+    ) -> "DurationFilterParam":
+        language = state.language
         return DurationFilterParam(
-            segment_tokens=context.segment_tokens,
+            segment_tokens=state.segment_tokens,
             language=language,
-            mean=context.duration_filter.mean.get(language, None),
-            std=context.duration_filter.std.get(language, None),
-            count=context.duration_filter.count.get(language, None),
+            mean=dfs_state.mean.get(language, None),
+            std=dfs_state.std.get(language, None),
+            count=dfs_state.count.get(language, None),
         )
 
 
@@ -33,26 +50,9 @@ class DurationFilterResult:
     std: float
     count: float
 
-    def update_context(self, context: TokenContext):
-        language = context.language
-        context.segment_tokens = self.segment_tokens
-        context.duration_filter.mean[language] = self.mean
-        context.duration_filter.std[language] = self.std
-        context.duration_filter.count[language] = self.count
-
-
-@dataclass(slots=True)
-class DurationFilterStorage:
-    mean: dict[str, float] = field(default_factory=dict)
-    std: dict[str, float] = field(default_factory=dict)
-    count: dict[str, int] = field(default_factory=dict)
-
-    def update(self, recycle: "DurationFilterStorage"):
-        if recycle is None:
-            return
-        self.mean.update(recycle.mean)
-        self.std.update(recycle.std)
-        self.count.update(recycle.count)
-
-    def extract(self) -> "DurationFilterStorage":
-        return self
+    def update_state(self, state: TokenState, dfs_state: DurationFilterState):
+        language = state.language
+        state.segment_tokens = self.segment_tokens
+        dfs_state.mean[language] = self.mean
+        dfs_state.std[language] = self.std
+        dfs_state.count[language] = self.count

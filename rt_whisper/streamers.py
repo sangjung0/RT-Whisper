@@ -1,4 +1,8 @@
 from pathlib import Path
+from whisper.tokenizer import get_tokenizer
+
+from sj_utils.collection_utils import SafetyDict
+from sj_utils.file import ReadYaml
 
 # from rt_whisper.classifier import SentenceClassifier
 # from rt_whisper.composer import Composer, SentenceComposer
@@ -8,7 +12,6 @@ from rt_whisper.filters import DurationFilter, PositionWeightedFilter, Probabili
 from rt_whisper.models import SileroVad, Whisper
 from rt_whisper.processors import ASR, VAD
 from rt_whisper.selector import Selector
-from rt_whisper.util import ReadYaml, SafetyDict
 from rt_whisper.pipeline import Pipeline
 
 
@@ -25,10 +28,10 @@ def get_token_streamer(
 
     worker_groups = [
         [
-            VAD(vad=SileroVad.get_instance().run),
+            VAD(vad=SileroVad().run),
             ASR(
-                transcriber=Whisper.get_instance().transcribe,
-                tokenizer_encoder=Whisper.get_instance().get_tokenizer().encode,
+                transcriber=Whisper().transcribe,
+                tokenizer_encoder=get_tokenizer(multilingual=True).encode,
                 sample_rate=model_sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["max_overlap_duration"],
@@ -53,7 +56,7 @@ def get_token_streamer(
         ],
     ]
 
-    pipeline = Pipeline.get_instance()
+    pipeline = Pipeline()
     pipeline.init(workers=worker_groups)
     return pipeline
 

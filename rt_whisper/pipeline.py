@@ -1,11 +1,13 @@
-from rt_whisper.abstracts import Singleton, Worker
-from rt_whisper.data import TokenContext, Param, Result
+from rt_whisper.abstracts import Worker
+from rt_whisper.data import TokenState, Param, Result
+from sj_utils.decorator_utils import singleton
 
 
-class Pipeline(Singleton):
+@singleton
+class Pipeline:
     def __init__(self):
         super().__init__()
-        self.__workers = []
+        self.__pipeline = []
 
     def init(self, workers: list[list[Worker]]):
         if (
@@ -16,21 +18,36 @@ class Pipeline(Singleton):
             )
         ):
             raise TypeError("Workers must be a list of lists.")
+
+        new_workers = []
+        for worker_group in workers:
+            new_workers.append(
+                [
+                    worker_group,
+                    list(reversed(worker_group)),
+                    list(reversed(worker_group)),
+                ]
+            )
         self.__workers = workers
+        self.__pipeline = new_workers
 
     def process(self, param: Param) -> Result:
-        if not self.__workers:
+        if not self.__pipeline:
             raise RuntimeError("Pipeline is not initialized with workers.")
 
-        context = TokenContext()
+        context = TokenState()
+        for worker in self.__workers:
+            for w in worker:
+                w._register_state(context)
+
         context.bind(param)
 
-        for worker_group in self.__workers:
-            for worker in worker_group:
+        for worker_group in self.__pipeline:
+            for worker in worker_group[0]:
                 worker.process(context)
-            for worker in reversed(worker_group):
+            for worker in worker_group[1]:
                 worker.post_process(context)
-            for worker in reversed(worker_group):
-                worker.recycle(context)
+            for worker in worker_group[2]:
+                worker.context_build(context)
 
         return context.extract()

@@ -1,12 +1,12 @@
 # composer/__init__.py
 
 from .composer import Composer
+from .simple_composer import SimpleComposer
 
 # from .sentence_composer import SentenceComposer
-from .data import ComposerStorage
 
 __all__ = [
     "Composer",
+    "SimpleComposer",
     # "SentenceComposer",
-    "ComposerStorage",
 ]

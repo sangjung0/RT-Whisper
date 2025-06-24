@@ -1,48 +1,50 @@
 from abc import ABC
-from .data import Context, Param, Result
+from typing import Any
 
 
 class Worker(ABC):
 
+    def _register_state(self, state: Any) -> None: ...
+
     # main process
-    def process(self, context: Context) -> None:
-        param = self._can_process(context)
+    def process(self, state: Any) -> None:
+        param = self._can_process(state)
         if param is None:
             return
         result = self._process(param)
-        self._update(context, result)
+        self._update(state, result)
 
-    def _can_process(self, context: Context) -> Param:
+    def _can_process(self, state: Any) -> Any:
         return None
 
-    def _process(self, param: Param) -> Result: ...
+    def _process(self, param: Any) -> Any: ...
 
-    def _update(self, context: Context, result: Result) -> None: ...
+    def _update(self, state: Any, result: Any) -> None: ...
 
     # post process
-    def post_process(self, context: Context) -> None:
-        param = self._can_post_process(context)
+    def post_process(self, state: Any) -> None:
+        param = self._can_post_process(state)
         if param is None:
             return
         result = self._post_process(param)
-        self._post_update(context, result)
+        self._post_update(state, result)
 
-    def _can_post_process(self, context: Context) -> Param:
+    def _can_post_process(self, state: Any) -> Any:
         return None
 
-    def _post_process(self, param: Param) -> Result: ...
+    def _post_process(self, param: Any) -> Any: ...
 
-    def _post_update(self, context: Context, result: Result) -> None: ...
+    def _post_update(self, state: Any, result: Any) -> None: ...
 
-    def recycle(self, context: Context) -> None:
-        param = self._need_recycle(context)
+    def context_build(self, state: Any) -> None:
+        param = self._can_build(state)
         if param is None:
             return
-        result = self._recycle(param)
-        self._recycle_update(context, result)
+        result = self._context_build(param)
+        self._context_update(state, result)
 
-    def _need_recycle(self, context: Context) -> Param: ...
+    def _can_build(self, state: Any) -> Any: ...
 
-    def _recycle(self, context: Param) -> None: ...
+    def _context_build(self, state: Any) -> None: ...
 
-    def _recycle_update(self, context: Context, result: Result) -> None: ...
+    def _context_update(self, state: Any, result: Any) -> None: ...

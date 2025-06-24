@@ -1,0 +1,4 @@
+[submodule "modules/python-utils"]
+	path = modules/python-utils
+	url = https://github.com/sangjung0/python-utils.git
+	branch = feature/RTWhisper

@@ -1,7 +1,8 @@
 import os
 from pathlib import Path
 
-from rt_whisper.util import ReadYaml, SafetyDict
+from sj_utils.collection_utils import SafetyDict
+from sj_utils.file import ReadYaml
 
 
 config = ReadYaml(Path(os.getenv("CONFIG_PATH", "config.yml"))).namespace

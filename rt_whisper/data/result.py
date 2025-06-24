@@ -1,18 +1,18 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from dataclasses import dataclass
-import numpy as np
 
-from .sentence import Sentence
-from .token import Token
+if TYPE_CHECKING:
+    from typing import Type
+    from .sentence import Sentence
 
 
 @dataclass(slots=True, frozen=True)
 class Result:
+    order: int
+    offset: int
+
     completed: list[Sentence]
     candidate: list[Sentence]
 
-    order: int
-    offset: int
-    recycle_chunk: np.ndarray
-    recycle_segment_tokens: list[Token]
-
-    recycles: dict[str, object]
+    context_dict: dict[Type, object]
