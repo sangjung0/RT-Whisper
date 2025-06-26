@@ -2,17 +2,18 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, TYPE_CHECKING
 import numpy as np
 
-from rt_whisper.abstracts import Worker
+from rt_whisper.abstracts import AsyncWorker
 
 from .data import *
 from .mixin import *
+from .service import *
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState
     from typing import Any, Callable, Iterable
 
 
-class ASRProcessor(ASRProcessorMixin, Worker):
+class AsyncASRProcessor(ASRProcessorMixin, AsyncWorker):
     def __init__(
         self,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
@@ -26,8 +27,32 @@ class ASRProcessor(ASRProcessorMixin, Worker):
         self._SAMPLE_RATE = sample_rate
         self._WITHIN_EOS = within_eos
 
+    async def _process(self, param: ASRParam) -> ASRResult:
+        # 청크 합치기
+        merged_chunk = np.concatenate([param.prev_chunk, param.chunk], axis=0)
 
-class ASRContextBuilder(ASRContextBuilderMixin, ASRProcessor):
+        # 추론
+        segments, language = await async_transcribe(
+            merged_chunk, param.language, self._transcriber
+        )
+
+        segment_tokens = segment_to_token_list(
+            segments,
+            language,
+            param.offset - param.prev_chunk.shape[0],
+            self._SAMPLE_RATE,
+            self._WITHIN_EOS,
+            self._tokenizer_encoder,
+        )
+
+        return ASRResult(
+            merged_chunk=merged_chunk,
+            segment_tokens=segment_tokens,
+            language=language,
+        )
+
+
+class AsyncASRContextBuilder(ASRContextBuilderMixin, AsyncASRProcessor):
     def __init__(
         self,
         *args,
@@ -37,8 +62,13 @@ class ASRContextBuilder(ASRContextBuilderMixin, ASRProcessor):
         super().__init__(*args, **kwargs)
         self._MAX_OVERLAP_DURATION = max_overlap_duration
 
+    async def _context_build(
+        self, param: ASRContextBuilderParam
+    ) -> ASRContextBuilderResult:
+        return super()._context_build(param)
 
-class ASR(ASRContextBuilder):
+
+class AsyncASR(AsyncASRContextBuilder):
     def __init__(
         self,
         *args,

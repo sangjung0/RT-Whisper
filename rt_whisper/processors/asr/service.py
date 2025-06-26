@@ -1,4 +1,5 @@
 from __future__ import annotations
+from types import coroutine
 from typing import TYPE_CHECKING
 
 from rt_whisper.data import Token
@@ -105,7 +106,7 @@ def transcribe(
     language: str | None,
     prompt: str | None,
     transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
-) -> tuple[list, str]:
+) -> tuple[Iterable, str]:
     """Transcribe audio chunk into segments and update language.
 
     Args:
@@ -122,5 +123,17 @@ def transcribe(
     if chunk.shape[0] == 0:
         return [], language
     segments, info = transcriber(chunk, language, prompt)
+    language = info.language or language
+    return segments, language
+
+
+async def async_transcribe(
+    chunk: np.ndarray,
+    language: str | None,
+    transcriber: coroutine[Callable[[np.ndarray, str, str], tuple[Iterable, Any]]],
+) -> tuple[Iterable, str]:
+    if chunk.shape[0] == 0:
+        return [], None
+    segments, info = await transcriber(chunk)
     language = info.language or language
     return segments, language

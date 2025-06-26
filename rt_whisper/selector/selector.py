@@ -28,7 +28,7 @@ class SelectorProcessor(Worker):
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
-        sct_state:SelectorState = context.get_state(SelectorState)
+        sct_state: SelectorState = context.get_state(SelectorState)
         if len(context.segment_tokens) > 0 or len(sct_state.prev.segment_tokens) > 0:
             return SelectorParam.from_state(context, sct_state)
         return None
@@ -83,7 +83,9 @@ class SelectorContextBuilder(SelectorProcessor):
             if t.is_word and t.end > param.anchor_timestamp
         ]
 
-        return SelectorContextBuilderResult(context_segment_tokens=context_segment_tokens)
+        return SelectorContextBuilderResult(
+            context_segment_tokens=context_segment_tokens
+        )
 
     # override
     def _context_update(

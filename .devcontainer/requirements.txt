@@ -35,3 +35,6 @@ silero-vad
 
 # pyannote
 pyannote.audio
+
+# ray
+ray

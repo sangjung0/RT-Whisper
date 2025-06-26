@@ -1,13 +1,11 @@
 from rt_whisper.abstracts import Worker
 from rt_whisper.data import TokenState, Param, Result
-from sj_utils.decorator_utils import singleton
 
 
-@singleton
 class Pipeline:
     def __init__(self):
         super().__init__()
-        self.__pipeline = []
+        self._pipeline = []
 
     def init(self, workers: list[list[Worker]]):
         if (
@@ -28,21 +26,21 @@ class Pipeline:
                     list(reversed(worker_group)),
                 ]
             )
-        self.__workers = workers
-        self.__pipeline = new_workers
+        self._workers = workers
+        self._pipeline = new_workers
 
     def process(self, param: Param) -> Result:
-        if not self.__pipeline:
+        if not self._pipeline:
             raise RuntimeError("Pipeline is not initialized with workers.")
 
         context = TokenState()
-        for worker in self.__workers:
+        for worker in self._workers:
             for w in worker:
                 w._register_state(context)
 
         context.bind(param)
 
-        for worker_group in self.__pipeline:
+        for worker_group in self._pipeline:
             for worker in worker_group[0]:
                 worker.process(context)
             for worker in worker_group[1]:

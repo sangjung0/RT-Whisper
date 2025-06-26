@@ -1,10 +1,9 @@
 # processors/__init__.py
 
-from .asr import ASR
-from .vad import v1, v2
+from . import asr
+from . import vad
 
 __all__ = [
-    "ASR",
-    "v1",
-    "v2",
+    "asr",
+    "vad",
 ]

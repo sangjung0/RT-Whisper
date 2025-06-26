@@ -1,44 +1,35 @@
-from abc import abstractmethod
-from typing import Union, Any
+from typing import Any
 
-from sj_utils.decorator_utils import singleton
+from .worker import Worker
 
 
-@singleton
-class AsyncWorker:
+class AsyncWorker(Worker):
 
     # main process
-    async def process(self, context: Any) -> None:
-        param = self._can_process(context)
+    async def process(self, state: Any) -> None:
+        param = self._can_process(state)
         if param is None:
             return
         result = await self._process(param)
-        self._update(context, result)
+        self._update(state, result)
 
-    @abstractmethod
-    def _can_process(self, context: Any) -> Union[None, Any]: ...
-
-    @abstractmethod
     async def _process(self, param: Any) -> Any: ...
 
-    @abstractmethod
-    def _update(self, context: Any, result: Any) -> None: ...
-
     # post process
-    async def _post_process(self, context: Any) -> None:
-        param = self._can_post_process(context, result)
+    async def post_process(self, state: Any) -> None:
+        param = self._can_post_process(state)
         if param is None:
             return
         result = await self._post_process(param)
-        self._post_update(context, result)
+        self._post_update(state, result)
 
-    @abstractmethod
-    def _can_post_process(
-        self, context: Any, result: Any
-    ) -> Union[None, Any]: ...
-
-    @abstractmethod
     async def _post_process(self, param: Any) -> Any: ...
 
-    @abstractmethod
-    def _post_update(self, context: Any, result: Any) -> None: ...
+    async def context_build(self, state: Any) -> None:
+        param = self._can_build(state)
+        if param is None:
+            return
+        result = await self._context_build(param)
+        self._context_update(state, result)
+
+    async def _context_build(self, state: Any) -> None: ...

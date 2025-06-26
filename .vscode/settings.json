@@ -31,5 +31,5 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true
     },
-    "cSpell.words": ["pysbd", "silero"]
+    "cSpell.words": ["cpus", "pysbd", "silero"]
 }
