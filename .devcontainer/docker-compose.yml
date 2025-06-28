@@ -7,9 +7,11 @@ services:
         volumes:
             - ../:/workspaces/dev
             #   - ../.model/huggingface:/root/.cache/huggingface
-            - F:/Models/huggingface:/root/.cache/huggingface:rw
+            - F:/Models/huggingface:/root/.cache/huggingface
             #   - ../.model/torch:/root/.cache/torch
-            - F:/Models/torch:/root/.cache/torch:rw
+            - F:/Models/torch:/root/.cache/torch
+            # dataset
+            - F:/Datasets:/workspaces/dev/datasets
         deploy:
             resources:
                 reservations:

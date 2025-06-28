@@ -1,14 +1,18 @@
 {
+    "code-runner.executorMap": {
+        "python": "set PYTHONIOENCODING=utf8 && python3 -u"
+    },
     "python.defaultInterpreterPath": "/usr/bin/python3",
     "editor.wordWrap": "on",
     "editor.wrappingIndent": "indent",
     "jupyter.notebookFileRoot": "/workspaces/dev",
     "python.envFile": "${workspaceFolder}/.env",
-    "python.analysis.exclude": ["**/__pycache__", "**/.git"],
+    "python.analysis.exclude": ["**/__pycache__", "**/.git", "datasets"],
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
-        "**/.hg/store/**": true
+        "**/.hg/store/**": true,
+        "datasets/**": true
     },
     // Editor
     "editor.fontFamily": "IBM Plex Sans KR, IBM Plex Mono",
@@ -31,5 +35,5 @@
         "editor.tabSize": 4,
         "editor.insertSpaces": true
     },
-    "cSpell.words": ["pysbd", "silero"]
+    "cSpell.words": ["fout", "Libri", "pysbd", "sclite", "silero"]
 }
