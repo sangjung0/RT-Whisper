@@ -15,4 +15,4 @@ RUN python3 -m pip install --no-cache-dir --upgrade pip \
     && python3 -m pip install --no-cache-dir -r /requirements.txt \
     && rm /requirements.txt
 
-RUN export PATH=$PATH:/usr/lib/sctk/bin
+ENV PATH="${PATH}:/usr/lib/sctk/bin"

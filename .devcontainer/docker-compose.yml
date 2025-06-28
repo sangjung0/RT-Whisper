@@ -11,7 +11,7 @@ services:
             #   - ../.model/torch:/root/.cache/torch
             - F:/Models/torch:/root/.cache/torch
             # dataset
-            - F:/Datasets:/workspaces/dev/datasets
+            - F:/Datasets:/workspaces/dev/datasets:ro
         deploy:
             resources:
                 reservations:
