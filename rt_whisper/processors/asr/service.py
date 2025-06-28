@@ -7,6 +7,8 @@ if TYPE_CHECKING:
     from typing import Callable, Iterable, Any
     import numpy as np
 
+    from faster_whisper.transcribe import Segment
+
 
 def generate_overlap_context(
     merged_chunk: np.ndarray,
@@ -48,7 +50,7 @@ def adjust_anchor_timestamp(
 
 
 def segment_to_token_list(
-    segments: Iterable,
+    segments: Iterable[Segment],
     language: str,
     offset: int,
     sample_rate: int,
