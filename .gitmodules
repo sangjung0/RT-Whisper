@@ -2,3 +2,7 @@
 	path = modules/python-utils
 	url = https://github.com/sangjung0/python-utils.git
 	branch = feature/RTWhisper
+[submodule "modules/ai-utils"]
+	path = modules/ai-utils
+    url = https://github.com/sasngjung0/ai-utils.git
+    branch = feature/RTWhisper
