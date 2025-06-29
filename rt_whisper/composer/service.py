@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from rt_whisper.core import logger
 from rt_whisper.data import Sentence
 
 if TYPE_CHECKING:
@@ -31,13 +32,14 @@ def cut_by_tokenizer(tokenizer: Callable[[str], Iterable[str]], tokens: list[Tok
     text = "".join(token.text for token in word_tokens)
     start_idx = 0
     for sent in tokenizer.segment(text):
-        len_sent = len(sent)
+        len_sent = len(sent.replace(" ", ""))
         for i, token in enumerate(word_tokens[start_idx:]):
-            len_sent -= len(token.text)
+            len_sent -= len(token.text.replace(" ", ""))
             if len_sent <= 0:
-                assert (
-                    len_sent == 0 or len_sent == -1
-                ), f"Tokenizer did not match the segment length \n len_sent:{len_sent} \n sent:'{sent}' \n tokens:{[t.text for t in word_tokens[start_idx: i + start_idx + 1]]}"
+                if len_sent < 0:
+                    logger.warning(
+                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent:'{sent}' \n\t tokens:{[t.text for t in word_tokens[start_idx: i + start_idx + 1]]}"
+                    )
                 segments.append(word_tokens[start_idx : i + start_idx + 1])
                 start_idx = i + start_idx + 1
                 break
@@ -48,12 +50,16 @@ def cut_by_tokenizer(tokenizer: Callable[[str], Iterable[str]], tokens: list[Tok
     return segments
 
 
-def tokens_to_sentences(segments: list[list[Token]], order: int):
+def tokens_to_sentences(
+    segments: list[list[Token]], order: int
+) -> tuple[list[Sentence], int]:
     sentences = []
 
     for tokens in segments:
         lang = list(set(token.lang for token in tokens))
         text = "".join(token.text for token in tokens)
+        if len(text) == 0:
+            continue
         sentences.append(
             Sentence(
                 order=order,

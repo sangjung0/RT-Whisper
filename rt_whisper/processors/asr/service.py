@@ -82,6 +82,7 @@ def segment_to_token_list(
                 probability=w.probability,
             )
             for w in segment.words
+            if w.word.strip()
         ]
         if within_eos:
             start = tokens[0].start

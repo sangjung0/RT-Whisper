@@ -97,5 +97,6 @@ def __find_condition(
         else:
             c_index += 1
 
-    print(f"c_index: {c_index}, conditions: {conditions}, timestamp: {timestamp}")
-    raise ValueError("Condition not found")
+    raise ValueError(
+        f"Condition not found: \n\tc_index: {c_index} \n\tconditions: {conditions} \n\ttimestamp: {timestamp}"
+    )
