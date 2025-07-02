@@ -1,7 +1,7 @@
 rt_whisper:
     model_size: "large-v3"
     model_device: "cuda"
-    model_compute_type: "int8"
+    model_compute_type: "float16"
     model_beam_size: 3
     model_batch_size: 8
     model_sample_rate: 16000

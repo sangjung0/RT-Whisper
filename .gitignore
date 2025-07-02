@@ -177,3 +177,5 @@ cython_debug/
 .model/**
 datasets/**
 output/**
+
+test/modules
