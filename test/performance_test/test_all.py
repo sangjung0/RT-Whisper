@@ -6,7 +6,7 @@ paths = [
     "./modules/python-utils",
     "./modules/ai-utils",
     "./test/modules/whisper_streaming",
-    "/workspaces/dev"
+    "/workspaces/dev",
 ]
 for path in paths:
     sys.path.append(os.path.abspath(path))
@@ -20,6 +20,7 @@ from sj_ai_utils.asr.whisper_utils import *
 from sj_ai_utils.datasets.libri_speech_asr_corpus import *
 from sj_ai_utils.evaluator.sclite_utils import *
 from sj_utils.audio_utils import *
+from sj_utils.string_utils import *
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
@@ -67,6 +68,7 @@ def whisper_streaming():
     print("Running Whisper Streaming...")
 
     asr = FasterWhisperASR("en", MODEL_SIZE)
+    asr.use_vad()
     online = OnlineASRProcessor(asr)
 
     def transcriber(flac: Path) -> TRNFormat:
@@ -81,7 +83,7 @@ def whisper_streaming():
         _, _, text = online.finish()
         full_text += text
 
-        return TRNFormat(id=flac.stem, text=full_text.strip())
+        return TRNFormat(id=flac.stem, text=normalize_text_only_en(full_text).upper())
 
     return test_process(dest["whisper_streaming"], transcriber)
 
@@ -114,7 +116,7 @@ def rt_whisper():
 
         return TRNFormat(
             id=flac.stem,
-            text=" ".join([c.text for c in completed]).strip(),
+            text=normalize_text_only_en(" ".join([s.text for s in completed])).upper(),
         )
 
     return test_process(dest["rt_whisper"], transcriber)
@@ -136,7 +138,9 @@ def whisper():
             word_timestamps=True,
         )
 
-        return segments_to_sclite_trn(flac.stem, segments)
+        trn = segments_to_sclite_trn(flac.stem, segments)
+        trn.text = normalize_text_only_en(trn.text).upper()
+        return trn
 
     return test_process(dest["whisper"], transcriber)
 
