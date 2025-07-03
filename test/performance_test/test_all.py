@@ -24,41 +24,25 @@ from sj_utils.string_utils import *
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
-OUTPUT_PATH = "/workspaces/dev/output/result.json"
 SOURCE = (
     "/workspaces/dev/datasets/LibriSpeechASRcorpus/test-other/LibriSpeech/test-other/"
 )
-DESTINATION = {
-    "whisper": "/workspaces/dev/output/LibriSpeechASRcorpus/sclient/whisper/test-other/",
-    "rt_whisper": "/workspaces/dev/output/LibriSpeechASRcorpus/sclient/rt_whisper/test-other/",
-    "whisper_streaming": "/workspaces/dev/output/LibriSpeechASRcorpus/sclient/whisper_streaming/test-other/",
-}
-
-# only rt whisper
-
 
 src = Path(SOURCE)
-dest = {key: Path(value) for key, value in DESTINATION.items()}
-for value in dest.values():
-    value.mkdir(parents=True, exist_ok=True)
 
 
-def test_process(dest_path: Path, transcriber: Callable[[Path], TRNFormat]) -> dict:
-    make_all_ref_and_hyp(src, dest_path, transcriber, 1)
-    concat_trn_file(
-        list(sorted(p for p in dest_path.rglob("*.ref.trn"))),
-        dest_path / "concat.ref.trn",
+def test_process(transcriber: Callable[[Path], TRNFormat]) -> dict:
+    data = search_all_ref_and_hyp(src, transcriber, 5)
+    concat_result = {}
+    for value in data.values():
+        for k, v in value.items():
+            if k not in concat_result:
+                concat_result[k] = []
+            concat_result[k].extend(v)
+    output = sclite_trn(
+        concat_result["ref"],
+        concat_result["hyp"],
     )
-    concat_trn_file(
-        list(sorted(p for p in dest_path.rglob("*.hyp.trn"))),
-        dest_path / "concat.hyp.trn",
-    )
-
-    output = sclite_trn_run(
-        dest_path / "concat.ref.trn",
-        dest_path / "concat.hyp.trn",
-    )
-
     return parse_sclite_summary(output)
 
 
@@ -85,19 +69,19 @@ def whisper_streaming():
 
         return TRNFormat(id=flac.stem, text=normalize_text_only_en(full_text).upper())
 
-    return test_process(dest["whisper_streaming"], transcriber)
+    return test_process(transcriber)
 
 
 def rt_whisper():
     from rt_whisper import streamers
     from rt_whisper.data import Param, Result
 
-    HYPERPARAMETER_PATH = "./hyperparameters/sclite.yml"
+    HYPERPARAMETER = "./hyperparameters/sclite.yml"
 
     print("Running RT Whisper...")
 
     token_streamer = streamers.get_token_streamer_with_vad_v2(
-        hyperparameter_path=HYPERPARAMETER_PATH,
+        hyperparameter=HYPERPARAMETER,
     )
 
     def transcriber(flac: Path) -> TRNFormat:
@@ -119,7 +103,7 @@ def rt_whisper():
             text=normalize_text_only_en(" ".join([s.text for s in completed])).upper(),
         )
 
-    return test_process(dest["rt_whisper"], transcriber)
+    return test_process(transcriber)
 
 
 def whisper():
@@ -142,11 +126,13 @@ def whisper():
         trn.text = normalize_text_only_en(trn.text).upper()
         return trn
 
-    return test_process(dest["whisper"], transcriber)
+    return test_process(transcriber)
 
 
 if __name__ == "__main__":
     import json
+
+    OUTPUT_PATH = "/workspaces/dev/output/result.json"
 
     print("Starting performance tests...")
 
