@@ -2,26 +2,22 @@ from pathlib import Path
 from whisper.tokenizer import get_tokenizer
 
 from sj_utils.collection_utils import SafetyDict
-from sj_utils.file import ReadYaml
 
 from rt_whisper.models import SileroVad, Whisper
-from rt_whisper.core.state import hyperparameter as default_hyperparameter, config
+from rt_whisper.core.state import config
 from rt_whisper.pipeline import Pipeline
 from rt_whisper.processors import ASR
 from rt_whisper.processors.vad.v2 import VAD
 from rt_whisper.composer import SimpleComposer
+from rt_whisper.utils import init_hyperparameter
 
 
 def get_transcriber(
     model_sample_rate: int = config.rt_whisper.model_sample_rate,
-    hyperparameter_path: Path | str | None = None,
+    hyperparameter: SafetyDict | Path | str | None = None,
 ):
-    if hyperparameter_path is None:
-        hyperparameter = default_hyperparameter
-    else:
-        if isinstance(hyperparameter_path, str):
-            hyperparameter_path = Path(hyperparameter_path)
-        hyperparameter = SafetyDict(ReadYaml(hyperparameter_path).dict)
+
+    hyperparameter = init_hyperparameter(hyperparameter)
 
     worker_groups = [
         [
