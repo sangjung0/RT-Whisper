@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from sj_utils.string_utils import remove_spaces_and_symbols
+
 from rt_whisper.core import logger
 from rt_whisper.data import Sentence
 
@@ -32,13 +34,13 @@ def cut_by_tokenizer(tokenizer: Callable[[str], Iterable[str]], tokens: list[Tok
     text = "".join(token.text for token in word_tokens)
     start_idx = 0
     for sent in tokenizer.segment(text):
-        len_sent = len(sent.replace(" ", ""))
+        len_sent = len(remove_spaces_and_symbols(sent))
         for i, token in enumerate(word_tokens[start_idx:]):
-            len_sent -= len(token.text.replace(" ", ""))
+            len_sent -= len(remove_spaces_and_symbols(token.text))
             if len_sent <= 0:
                 if len_sent < 0:
                     logger.warning(
-                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent:'{sent}' \n\t tokens:{[t.text for t in word_tokens[start_idx: i + start_idx + 1]]}"
+                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent:'{remove_spaces_and_symbols(sent)}' \n\t tokens:{[remove_spaces_and_symbols(t.text) for t in word_tokens[start_idx: i + start_idx + 1]]}"
                     )
                 segments.append(word_tokens[start_idx : i + start_idx + 1])
                 start_idx = i + start_idx + 1
@@ -93,3 +95,4 @@ def context_tokens(candidate: list[Sentence], anchor_timestamp: int):
                 break
 
     return completed_tokens
+
