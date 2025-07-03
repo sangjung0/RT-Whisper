@@ -12,8 +12,11 @@ for path in paths:
     sys.path.append(os.path.abspath(path))
 print(f"Current Python version: {sys.version}")
 
-from pathlib import Path
+import time
 import librosa
+import numpy as np
+
+from pathlib import Path
 from typing import Callable
 
 from sj_ai_utils.asr.whisper_utils import *
@@ -24,15 +27,13 @@ from sj_utils.string_utils import *
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
-SOURCE = (
-    "/workspaces/dev/datasets/LibriSpeechASRcorpus/test-other/LibriSpeech/test-other/"
-)
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/"
 
 src = Path(SOURCE)
 
 
 def test_process(transcriber: Callable[[Path], TRNFormat]) -> dict:
-    data = search_all_ref_and_hyp(src, transcriber, 1)
+    data = search_all_ref_and_hyp(src, transcriber, 2)
     concat_result = {}
     for value in data.values():
         for k, v in value.items():
@@ -55,21 +56,32 @@ def whisper_streaming():
     asr.use_vad()
     online = OnlineASRProcessor(asr)
 
+    rng = np.random.default_rng(42)
+    transcribe_time = 0
+
     def transcriber(flac: Path) -> TRNFormat:
+        nonlocal transcribe_time
+
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
         online.init()
 
         full_text = ""
-        for segment in segment_audio(audio):
+        for segment in segment_audio(audio, rng=rng):
+            start_time = time.perf_counter()
             online.insert_audio_chunk(segment)
             _, _, text = online.process_iter()
+            transcribe_time += time.perf_counter() - start_time
             full_text += text
         _, _, text = online.finish()
         full_text += text
 
         return TRNFormat(id=flac.stem, text=normalize_text_only_en(full_text).upper())
 
-    return test_process(transcriber)
+    start_time = time.perf_counter()
+    result = test_process(transcriber)
+    result["processed_time"] = time.perf_counter() - start_time
+    result["transcribe_time"] = transcribe_time
+    return result
 
 
 def rt_whisper():
@@ -84,16 +96,23 @@ def rt_whisper():
         hyperparameter=HYPERPARAMETER,
     )
 
+    rng = np.random.default_rng(42)
+    transcribe_time = 0
+
     def transcriber(flac: Path) -> TRNFormat:
+        nonlocal transcribe_time
+
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
 
         completed = []
         param = Param()
 
-        for segment in segment_audio(audio):
+        for segment in segment_audio(audio, rng=rng):
             param.chunk = segment
             param.language = "en"
+            start_time = time.perf_counter()
             result: Result = token_streamer.process(param)
+            transcribe_time += time.perf_counter() - start_time
             completed.extend(result.completed)
             param.update(result)
         completed.extend(result.candidate)
@@ -103,7 +122,11 @@ def rt_whisper():
             text=normalize_text_only_en(" ".join([s.text for s in completed])).upper(),
         )
 
-    return test_process(transcriber)
+    start_time = time.perf_counter()
+    result = test_process(transcriber)
+    result["processed_time"] = time.perf_counter() - start_time
+    result["transcribe_time"] = transcribe_time
+    return result
 
 
 def whisper():
@@ -113,20 +136,31 @@ def whisper():
 
     model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
 
+    transcribe_time = 0
+
     def transcriber(flac: Path) -> TRNFormat:
+        nonlocal transcribe_time
+
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
+
+        start_time = time.perf_counter()
         segments, _ = model.transcribe(
             audio,
             beam_size=5,
             language="en",
             word_timestamps=True,
         )
+        transcribe_time += time.perf_counter() - start_time
 
         trn = segments_to_sclite_trn(flac.stem, segments)
         trn.text = normalize_text_only_en(trn.text).upper()
         return trn
 
-    return test_process(transcriber)
+    start_time = time.perf_counter()
+    result = test_process(transcriber)
+    result["processed_time"] = time.perf_counter() - start_time
+    result["transcribe_time"] = transcribe_time
+    return result
 
 
 if __name__ == "__main__":
