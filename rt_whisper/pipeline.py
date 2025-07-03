@@ -31,7 +31,7 @@ class Pipeline:
         self.__workers = workers
         self.__pipeline = new_workers
 
-    def process(self, param: Param) -> Result:
+    def process(self, param: Param, get_context: bool = False) -> Result:
         if not self.__pipeline:
             raise RuntimeError("Pipeline is not initialized with workers.")
 
@@ -50,4 +50,6 @@ class Pipeline:
             for worker in worker_group[2]:
                 worker.context_build(context)
 
+        if get_context:
+            return context
         return context.extract()
