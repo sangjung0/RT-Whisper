@@ -35,3 +35,7 @@ silero-vad
 
 # pyannote
 pyannote.audio
+
+
+# optuna
+optuna

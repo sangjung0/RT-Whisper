@@ -32,7 +32,7 @@ src = Path(SOURCE)
 
 
 def test_process(transcriber: Callable[[Path], TRNFormat]) -> dict:
-    data = search_all_ref_and_hyp(src, transcriber, 5)
+    data = search_all_ref_and_hyp(src, transcriber, 1)
     concat_result = {}
     for value in data.values():
         for k, v in value.items():
@@ -142,7 +142,9 @@ if __name__ == "__main__":
         "whisper_streaming": whisper_streaming(),
     }
 
-    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+    output_path = Path(OUTPUT_PATH)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
 
     print("Performance tests completed.")
