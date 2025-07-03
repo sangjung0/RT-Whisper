@@ -35,12 +35,14 @@ def cut_by_tokenizer(tokenizer: Callable[[str], Iterable[str]], tokens: list[Tok
     start_idx = 0
     for sent in tokenizer.segment(text):
         len_sent = len(remove_spaces_and_symbols(sent))
+        if len_sent == 0:
+            continue
         for i, token in enumerate(word_tokens[start_idx:]):
             len_sent -= len(remove_spaces_and_symbols(token.text))
             if len_sent <= 0:
                 if len_sent < 0:
                     logger.warning(
-                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent:'{remove_spaces_and_symbols(sent)}' \n\t tokens:{[remove_spaces_and_symbols(t.text) for t in word_tokens[start_idx: i + start_idx + 1]]}"
+                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent: {sent} \n\t tokens: {[t.text for t in word_tokens[start_idx: i + start_idx + 1]]} \n\t normalize sent:'{remove_spaces_and_symbols(sent)}' \n\t normalize tokens:{[remove_spaces_and_symbols(t.text) for t in word_tokens[start_idx: i + start_idx + 1]]}"
                     )
                 segments.append(word_tokens[start_idx : i + start_idx + 1])
                 start_idx = i + start_idx + 1
