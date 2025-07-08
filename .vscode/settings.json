@@ -43,5 +43,13 @@
         "editor.insertSpaces": true,
         "files.trimTrailingWhitespace": false,
     },
-    "cSpell.words": ["flac", "fout", "Libri", "pysbd", "sclite", "silero"]
+    "cSpell.words": [
+        "flac",
+        "fout",
+        "Libri",
+        "nhead",
+        "pysbd",
+        "sclite",
+        "silero"
+    ]
 }
