@@ -1,0 +1,35 @@
+sentence_max_prev_sentence: 1
+weighted_and_offset_token_boundary: 6900
+duration_filter_z:
+    default: 2.0
+    ko: 2.0
+    en: 4.4
+probability_filter:
+    z:
+        default: 3.0
+        ko: 3.0
+        en: 4.1
+    min_prob:
+        default: 1.0
+        ko: 0.4
+        en: 0.1
+selector:
+    search_range_sc:
+        default: 24000
+        ko: 24000
+        en: 19000
+    threshold:
+        default: 0.5
+        ko: 0.25
+        en: 0.25
+    padding:
+        default: 3200
+        ko: 3200
+        en: 1500
+    tolerance:
+        default: 8000
+        ko: 8000
+        en: 1900
+max_overlap_duration: 96000
+
+
