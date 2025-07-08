@@ -39,3 +39,7 @@ pyannote.audio
 
 # optuna
 optuna
+
+
+# Hugging Face
+transformers

@@ -12,6 +12,7 @@ services:
             - F:/Models/torch:/root/.cache/torch
             # dataset
             - F:/Datasets:/workspaces/dev/datasets:ro
+            - F:/Datasets/asr-rankformer-datasets:/workspaces/dev/datasets/asr-rankformer-datasets:rw
         deploy:
             resources:
                 reservations:
