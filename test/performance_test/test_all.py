@@ -114,7 +114,7 @@ def rt_whisper():
             result: Result = token_streamer.process(param)
             transcribe_time += time.perf_counter() - start_time
             completed.extend(result.completed)
-            param.update(result)
+            param.update(result, update_prompt=True)
         completed.extend(result.candidate)
 
         return TRNFormat(

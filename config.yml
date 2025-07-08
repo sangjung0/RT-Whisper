@@ -6,6 +6,9 @@ rt_whisper:
     model_batch_size: 8
     model_sample_rate: 16000
 
+    # huggingface model path
+    model_huggingface_path: "openai/whisper-large-v3"
+
     default_hyperparameter_path: "./default_hyperparameter.yml"
 
     log_level: 20 # INFO: 20, DEBUG: 10
