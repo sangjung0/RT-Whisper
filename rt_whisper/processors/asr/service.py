@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+import torch
 
 from rt_whisper.data import Token
 
@@ -55,7 +56,7 @@ def segment_to_token_list(
     offset: int,
     sample_rate: int,
     within_eos: bool,
-    tokenizer_encoder: Callable[[str], list[int]],
+    embed: Callable[[str], torch.Tensor],
 ) -> list[Token]:
     """Convert segments to a list of tokens.
 
@@ -72,13 +73,15 @@ def segment_to_token_list(
     """
     segment_tokens = []
     for segment in segments:
+        if not segment.words:
+            continue
         tokens = [
             Token(
                 start=int(w.start * sample_rate) + offset,
                 end=int(w.end * sample_rate) + offset,
                 text=w.word,
                 lang=language,
-                tokens=tokenizer_encoder(w.word),
+                embedding=embed(w.word),
                 probability=w.probability,
             )
             for w in segment.words
@@ -93,7 +96,7 @@ def segment_to_token_list(
                     end=end,
                     text=segment.text,
                     lang="",
-                    tokens=[],
+                    embedding=None,
                     probability=1,
                     is_word=False,
                 )

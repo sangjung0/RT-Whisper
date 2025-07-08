@@ -1,5 +1,4 @@
 from pathlib import Path
-from whisper.tokenizer import get_tokenizer
 
 from sj_utils.collection_utils import SafetyDict
 
@@ -12,7 +11,7 @@ from rt_whisper.processors.vad.v1 import VAD as VADv1
 from rt_whisper.processors.vad.v2 import VAD as VADv2
 from rt_whisper.selector import Selector
 from rt_whisper.pipeline import Pipeline
-from rt_whisper.utils import init_hyperparameter
+from rt_whisper.utils import init_hyperparameter, whisper_embed
 
 
 def get_token_streamer(
@@ -26,7 +25,7 @@ def get_token_streamer(
             VADv1(vad=SileroVad().run),
             ASR(
                 transcriber=Whisper().transcribe,
-                tokenizer_encoder=get_tokenizer(multilingual=True).encode,
+                embed=whisper_embed(),
                 sample_rate=model_sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["max_overlap_duration"],
@@ -67,7 +66,7 @@ def get_token_streamer_with_vad_v2(
             VADv2(vad=SileroVad().run),
             ASR(
                 transcriber=Whisper().transcribe,
-                tokenizer_encoder=get_tokenizer(multilingual=True).encode,
+                embed=whisper_embed(),
                 sample_rate=model_sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["max_overlap_duration"],

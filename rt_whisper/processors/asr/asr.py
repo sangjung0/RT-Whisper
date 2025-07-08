@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Any, Callable, Iterable, TYPE_CHECKING
 import numpy as np
+import torch
 
 from rt_whisper.abstracts import Worker
 
@@ -17,13 +18,13 @@ class ASRProcessor(Worker):
     def __init__(
         self,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
-        tokenizer_encoder: Callable[[str], list[int]],
+        embed: Callable[[str], torch.Tensor],
         sample_rate: int,
         within_eos: bool,
     ):
         super().__init__()
         self.__transcriber = transcriber
-        self.__tokenizer_encoder = tokenizer_encoder
+        self.__embed = embed
         self.__SAMPLE_RATE = sample_rate
         self.__WITHIN_EOS = within_eos
 
@@ -48,7 +49,7 @@ class ASRProcessor(Worker):
             param.offset - param.prev_chunk.shape[0],
             self.__SAMPLE_RATE,
             self.__WITHIN_EOS,
-            self.__tokenizer_encoder,
+            self.__embed,
         )
 
         return ASRResult(
@@ -111,7 +112,7 @@ class ASR(ASRContextBuilder):
         self,
         *args,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
-        tokenizer_encoder: Callable[[str], list[int]],
+        embed: Callable[[str], torch.Tensor],
         sample_rate: int,
         within_eos: bool,
         **kwargs,
@@ -119,7 +120,7 @@ class ASR(ASRContextBuilder):
         super().__init__(
             *args,
             transcriber=transcriber,
-            tokenizer_encoder=tokenizer_encoder,
+            embed=embed,
             sample_rate=sample_rate,
             within_eos=within_eos,
             **kwargs,

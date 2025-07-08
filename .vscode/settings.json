@@ -44,9 +44,12 @@
         "files.trimTrailingWhitespace": false,
     },
     "cSpell.words": [
+        "cuda",
         "flac",
         "fout",
+        "huggingface",
         "Libri",
+        "ndarray",
         "nhead",
         "pysbd",
         "sclite",
