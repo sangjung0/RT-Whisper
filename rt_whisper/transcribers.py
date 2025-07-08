@@ -1,5 +1,4 @@
 from pathlib import Path
-from whisper.tokenizer import get_tokenizer
 
 from sj_utils.collection_utils import SafetyDict
 
@@ -9,7 +8,7 @@ from rt_whisper.pipeline import Pipeline
 from rt_whisper.processors import ASR
 from rt_whisper.processors.vad.v2 import VAD
 from rt_whisper.composer import SimpleComposer
-from rt_whisper.utils import init_hyperparameter
+from rt_whisper.utils import init_hyperparameter, whisper_embed
 
 
 def get_transcriber(
@@ -24,7 +23,7 @@ def get_transcriber(
             VAD(vad=SileroVad().run),
             ASR(
                 transcriber=Whisper().transcribe,
-                tokenizer_encoder=get_tokenizer(multilingual=True).encode,
+                embed=whisper_embed(),
                 sample_rate=model_sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["max_overlap_duration"],

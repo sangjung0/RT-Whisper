@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from rapidfuzz.distance import Levenshtein
+import torch
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
@@ -48,6 +48,8 @@ def group_similar_tokens(
                 break
             elif not token.is_word:
                 similarities.append((i, 0))
+            elif not group_token.is_word:
+                continue
             else:
                 similarity = __token_similarity(token, group_token, padding, smooth)
                 similarities.append((i, similarity))
@@ -99,10 +101,9 @@ def merge_tokens(
 
 
 def __token_similarity(A: Token, B: Token, padding: int, smooth: float) -> float:
-    # ratio = fuzz.ratio(A.text.strip().lower(), B.text.strip().lower())
-    ratio = Levenshtein.normalized_similarity(A.tokens, B.tokens)
+    sim = torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0)
     iou = __token_iou(A, B, padding, smooth)
-    return (ratio + iou) / 2
+    return (sim + iou) / 2
 
 
 def __token_iou(A: Token, B: Token, padding: int = 3200, smooth: float = 1e-6) -> float:
