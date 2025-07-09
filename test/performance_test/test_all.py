@@ -147,6 +147,7 @@ def whisper():
         segments, _ = model.transcribe(
             audio,
             beam_size=5,
+            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
             language="en",
             word_timestamps=True,
         )

@@ -23,6 +23,7 @@ class Whisper:
         return self._model.transcribe(
             audio,
             beam_size=self.__BEAM_SIZE,
+            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
             language=language,
             word_timestamps=True,
             vad_filter=False,
