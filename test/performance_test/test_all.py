@@ -27,13 +27,16 @@ from sj_utils.string_utils import *
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
-SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/"
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
 
 src = Path(SOURCE)
 
 
-def test_process(transcriber: Callable[[Path], TRNFormat]) -> dict:
-    data = search_all_ref_and_hyp(src, transcriber, 2)
+def test_process(
+    transcriber: Callable[[Path], TRNFormat],
+    preprocess: Callable[[Path], Path] = lambda x: x,
+) -> dict:
+    data = search_all_ref_and_hyp(src, transcriber, preprocess, 2)
     concat_result = {}
     for value in data.values():
         for k, v in value.items():
@@ -78,7 +81,7 @@ def whisper_streaming():
         return TRNFormat(id=flac.stem, text=normalize_text_only_en(full_text).upper())
 
     start_time = time.perf_counter()
-    result = test_process(transcriber)
+    result = test_process(transcriber, lambda x: normalize_text_only_en(x).upper())
     result["processed_time"] = time.perf_counter() - start_time
     result["transcribe_time"] = transcribe_time
     return result
@@ -123,7 +126,7 @@ def rt_whisper():
         )
 
     start_time = time.perf_counter()
-    result = test_process(transcriber)
+    result = test_process(transcriber, lambda x: normalize_text_only_en(x).upper())
     result["processed_time"] = time.perf_counter() - start_time
     result["transcribe_time"] = transcribe_time
     return result
@@ -158,7 +161,10 @@ def whisper():
         return trn
 
     start_time = time.perf_counter()
-    result = test_process(transcriber)
+    result = test_process(
+        transcriber,
+        lambda x: normalize_text_only_en(x).upper(),
+    )
     result["processed_time"] = time.perf_counter() - start_time
     result["transcribe_time"] = transcribe_time
     return result

@@ -45,14 +45,18 @@
     },
     "cSpell.words": [
         "cuda",
+        "ESIC",
         "flac",
         "fout",
         "huggingface",
+        "iinfo",
         "Libri",
         "ndarray",
         "nhead",
+        "orto",
         "pysbd",
         "sclite",
-        "silero"
+        "silero",
+        "wavfile"
     ]
 }
