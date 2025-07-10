@@ -138,7 +138,7 @@ def rt_whisper():
     from rt_whisper import streamers
     from rt_whisper.data import Param, Result
 
-    HYPERPARAMETER = "./hyperparameters/avg_2_1.yml"
+    HYPERPARAMETER = "./hyperparameters/libri/avg_2_1.yml"
 
     print("Running RT Whisper...")
 
