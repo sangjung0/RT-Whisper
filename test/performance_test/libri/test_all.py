@@ -33,7 +33,7 @@ SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
 src = Path(SOURCE)
 
 MAX_COUNT = 1
-TEST_ALL = True
+TEST_ALL = False
 
 
 def test_process_all(
@@ -75,23 +75,25 @@ def test_process_each(
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    transcriber = lambda x: transcriber(x, transcribe_time)
+    t = lambda x: transcriber(x, transcribe_time)
 
     processed_time.start()
-    data = search_all_ref_and_hyp(src, transcriber, preprocess, max_count)
+    data = search_all_ref_and_hyp(src, t, preprocess, max_count)
     processed_time.check()
 
     result = {}
-    for key, value in data.values():
+    for key, value in data.items():
         output = sclite_trn(value["ref"], value["hyp"])
         result[key] = parse_sclite_summary(output)
     result["processed_time"] = processed_time.metric()
     result["transcribe_time"] = transcribe_time.metric()
     return result
 
+
 @lru_cache(maxsize=128)
 def load_audio(audio, sr=SAMPLE_RATE):
     return librosa.load(audio, sr=sr)
+
 
 def normalize_text(text: str):
     return normalize_text_only_en(text).upper()
@@ -109,7 +111,7 @@ def whisper_streaming():
 
     def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ =  load_audio(flac, sr=SAMPLE_RATE)
+        audio, _ = load_audio(flac, sr=SAMPLE_RATE)
         online.init()
 
         full_text = ""

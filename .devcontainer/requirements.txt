@@ -11,6 +11,7 @@ python-multipart
 python-dotenv
 pydantic
 beartype
+ffmpeg-python
 
 # torch
 torch

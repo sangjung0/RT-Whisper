@@ -32,7 +32,7 @@ SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 src = Path(SOURCE)
 
 MAX_COUNT = 1
-TEST_ALL = True
+TEST_ALL = False
 
 
 def test_process_all(
@@ -74,15 +74,15 @@ def test_process_each(
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    transcriber = lambda x: transcriber(x, transcribe_time)
+    t = lambda x: transcriber(x, transcribe_time)
 
     processed_time.start()
-    data = search_all_ref_and_hyp(src, transcriber, preprocess, max_count)
+    data = search_all_ref_and_hyp(src, t, preprocess, max_count)
     processed_time.check()
 
     result = {}
-    for key, value in data.values():
-        output = sclite_trn(value["ref"], value["hyp"])
+    for key, value in data.items():
+        output = sclite_trn([value["ref"]], [value["hyp"]])
         result[key] = parse_sclite_summary(output)
     result["processed_time"] = processed_time.metric()
     result["transcribe_time"] = transcribe_time.metric()
