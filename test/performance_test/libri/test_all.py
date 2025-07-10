@@ -12,7 +12,6 @@ for path in paths:
     sys.path.append(os.path.abspath(path))
 print(f"Current Python version: {sys.version}")
 
-import time
 import librosa
 import numpy as np
 
@@ -24,6 +23,7 @@ from sj_ai_utils.datasets.libri_speech_asr_corpus import *
 from sj_ai_utils.evaluator.sclite_utils import *
 from sj_utils.audio_utils import *
 from sj_utils.string_utils import *
+from sj_utils.evaluator import TimeChecker
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
@@ -31,12 +31,24 @@ SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
 
 src = Path(SOURCE)
 
+MAX_COUNT = 2
+TEST_ALL = True
 
-def test_process(
-    transcriber: Callable[[Path], TRNFormat],
+
+def test_process_all(
+    transcriber: Callable[[Path, TimeChecker], TRNFormat],
     preprocess: Callable[[Path], Path] = lambda x: x,
+    max_count: int = -1,
 ) -> dict:
-    data = search_all_ref_and_hyp(src, transcriber, preprocess, 2)
+    processed_time = TimeChecker()
+    transcribe_time = TimeChecker()
+
+    t = lambda x: transcriber(x, transcribe_time)
+
+    processed_time.start()
+    data = search_all_ref_and_hyp(src, t, preprocess, max_count)
+    processed_time.check()
+
     concat_result = {}
     for value in data.values():
         for k, v in value.items():
@@ -47,7 +59,38 @@ def test_process(
         concat_result["ref"],
         concat_result["hyp"],
     )
-    return parse_sclite_summary(output)
+    result = parse_sclite_summary(output)
+    result["processed_time"] = processed_time.metric()
+    result["transcribe_time"] = transcribe_time.metric()
+
+    return result
+
+
+def test_process_each(
+    transcriber: Callable[[Path, TimeChecker], TRNFormat],
+    preprocess: Callable[[Path], Path] = lambda x: x,
+    max_count: int = -1,
+) -> dict:
+    processed_time = TimeChecker()
+    transcribe_time = TimeChecker()
+
+    transcriber = lambda x: transcriber(x, transcribe_time)
+
+    processed_time.start()
+    data = search_all_ref_and_hyp(src, transcriber, preprocess, max_count)
+    processed_time.check()
+
+    result = {}
+    for key, value in data.values():
+        output = sclite_trn(value["ref"], value["hyp"])
+        result[key] = parse_sclite_summary(output)
+    result["processed_time"] = processed_time.metric()
+    result["transcribe_time"] = transcribe_time.metric()
+    return result
+
+
+def normalize_text(text: str):
+    return normalize_text_only_en(text).upper()
 
 
 def whisper_streaming():
@@ -58,32 +101,32 @@ def whisper_streaming():
     asr = FasterWhisperASR("en", MODEL_SIZE)
     asr.use_vad()
     online = OnlineASRProcessor(asr)
-
     rng = np.random.default_rng(42)
-    transcribe_time = 0
 
-    def transcriber(flac: Path) -> TRNFormat:
-        nonlocal transcribe_time
+    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
         online.init()
 
         full_text = ""
         for segment in segment_audio(audio, rng=rng):
-            start_time = time.perf_counter()
+            transcribe_time.start()
             online.insert_audio_chunk(segment)
             _, _, text = online.process_iter()
-            transcribe_time += time.perf_counter() - start_time
+            transcribe_time.check()
             full_text += text
         _, _, text = online.finish()
         full_text += text
 
-        return TRNFormat(id=flac.stem, text=normalize_text_only_en(full_text).upper())
+        text = normalize_text(full_text)
+        return TRNFormat(id=flac.stem, text=text)
 
-    start_time = time.perf_counter()
-    result = test_process(transcriber, lambda x: normalize_text_only_en(x).upper())
-    result["processed_time"] = time.perf_counter() - start_time
-    result["transcribe_time"] = transcribe_time
+    result = (
+        test_process_all(transcriber, normalize_text, MAX_COUNT)
+        if TEST_ALL
+        else test_process_each(transcriber, normalize_text, MAX_COUNT)
+    )
+
     return result
 
 
@@ -91,44 +134,40 @@ def rt_whisper():
     from rt_whisper import streamers
     from rt_whisper.data import Param, Result
 
-    HYPERPARAMETER = "./hyperparameters/sclite.yml"
+    HYPERPARAMETER = "./hyperparameters/avg_2_1.yml"
 
     print("Running RT Whisper...")
 
     token_streamer = streamers.get_token_streamer_with_vad_v2(
         hyperparameter=HYPERPARAMETER,
     )
-
     rng = np.random.default_rng(42)
-    transcribe_time = 0
 
-    def transcriber(flac: Path) -> TRNFormat:
-        nonlocal transcribe_time
+    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
 
         completed = []
         param = Param()
-
         for segment in segment_audio(audio, rng=rng):
             param.chunk = segment
             param.language = "en"
-            start_time = time.perf_counter()
+            transcribe_time.start()
             result: Result = token_streamer.process(param)
-            transcribe_time += time.perf_counter() - start_time
+            transcribe_time.check()
             completed.extend(result.completed)
             param.update(result, update_prompt=True)
         completed.extend(result.candidate)
+        text = " ".join([s.text for s in completed])
+        text = normalize_text(text)
+        return TRNFormat(id=flac.stem, text=text)
 
-        return TRNFormat(
-            id=flac.stem,
-            text=normalize_text_only_en(" ".join([s.text for s in completed])).upper(),
-        )
+    result = (
+        test_process_all(transcriber, normalize_text, MAX_COUNT)
+        if TEST_ALL
+        else test_process_each(transcriber, normalize_text, MAX_COUNT)
+    )
 
-    start_time = time.perf_counter()
-    result = test_process(transcriber, lambda x: normalize_text_only_en(x).upper())
-    result["processed_time"] = time.perf_counter() - start_time
-    result["transcribe_time"] = transcribe_time
     return result
 
 
@@ -139,14 +178,11 @@ def whisper():
 
     model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
 
-    transcribe_time = 0
-
-    def transcriber(flac: Path) -> TRNFormat:
-        nonlocal transcribe_time
+    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
         audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
 
-        start_time = time.perf_counter()
+        transcribe_time.start()
         segments, _ = model.transcribe(
             audio,
             beam_size=5,
@@ -154,26 +190,25 @@ def whisper():
             language="en",
             word_timestamps=True,
         )
-        transcribe_time += time.perf_counter() - start_time
+        transcribe_time.check()
 
         trn = segments_to_sclite_trn(flac.stem, segments)
-        trn.text = normalize_text_only_en(trn.text).upper()
+        trn.text = normalize_text(trn.text)
         return trn
 
-    start_time = time.perf_counter()
-    result = test_process(
-        transcriber,
-        lambda x: normalize_text_only_en(x).upper(),
+    result = (
+        test_process_all(transcriber, normalize_text, MAX_COUNT)
+        if TEST_ALL
+        else test_process_each(transcriber, normalize_text, MAX_COUNT)
     )
-    result["processed_time"] = time.perf_counter() - start_time
-    result["transcribe_time"] = transcribe_time
+
     return result
 
 
 if __name__ == "__main__":
     import json
 
-    OUTPUT_PATH = "/workspaces/dev/output/result.json"
+    OUTPUT_PATH = "/workspaces/dev/output/libri/overall_result.json"
 
     print("Starting performance tests...")
 

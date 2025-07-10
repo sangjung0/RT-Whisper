@@ -18,6 +18,6 @@ class SileroVad:
             audio,
             self.__model,
             sampling_rate=self.__SAMPLE_RATE,
-            threshold=0.45,
-            speech_pad_ms=200,
+            # threshold=0.45,
+            # speech_pad_ms=200,
         )
