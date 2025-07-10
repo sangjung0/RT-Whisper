@@ -17,6 +17,7 @@ import numpy as np
 
 from pathlib import Path
 from typing import Callable
+from functools import lru_cache
 
 from sj_ai_utils.asr.whisper_utils import *
 from sj_ai_utils.datasets.libri_speech_asr_corpus import *
@@ -31,7 +32,7 @@ SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
 
 src = Path(SOURCE)
 
-MAX_COUNT = 2
+MAX_COUNT = 1
 TEST_ALL = True
 
 
@@ -88,6 +89,9 @@ def test_process_each(
     result["transcribe_time"] = transcribe_time.metric()
     return result
 
+@lru_cache(maxsize=128)
+def load_audio(audio, sr=SAMPLE_RATE):
+    return librosa.load(audio, sr=sr)
 
 def normalize_text(text: str):
     return normalize_text_only_en(text).upper()
@@ -105,7 +109,7 @@ def whisper_streaming():
 
     def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
+        audio, _ =  load_audio(flac, sr=SAMPLE_RATE)
         online.init()
 
         full_text = ""
@@ -145,7 +149,7 @@ def rt_whisper():
 
     def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
+        audio, _ = load_audio(flac, sr=SAMPLE_RATE)
 
         completed = []
         param = Param()
@@ -180,7 +184,7 @@ def whisper():
 
     def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = librosa.load(flac, sr=SAMPLE_RATE)
+        audio, _ = load_audio(flac, sr=SAMPLE_RATE)
 
         transcribe_time.start()
         segments, _ = model.transcribe(

@@ -16,6 +16,7 @@ import numpy as np
 
 from pathlib import Path
 from typing import Callable
+from functools import lru_cache
 
 from sj_ai_utils.asr.whisper_utils import *
 from sj_ai_utils.datasets.esic_v1 import *
@@ -30,7 +31,7 @@ SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 
 src = Path(SOURCE)
 
-MAX_COUNT = 2
+MAX_COUNT = 1
 TEST_ALL = True
 
 
@@ -88,6 +89,11 @@ def test_process_each(
     return result
 
 
+@lru_cache(maxsize=128)
+def load_mp4(mp4, sr=SAMPLE_RATE):
+    return load_audio_from_mp4(mp4, sr=sr)
+
+
 def normalize_text(text: str):
     return normalize_text_only_en(text).upper()
 
@@ -104,7 +110,7 @@ def whisper_streaming():
 
     def transcriber(mp4: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = load_audio_from_mp4(mp4, sr=SAMPLE_RATE)
+        audio, _ = load_mp4(mp4, sr=SAMPLE_RATE)
         online.init()
 
         full_text = ""
@@ -143,7 +149,7 @@ def rt_whisper():
 
     def transcriber(mp4: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = load_audio_from_mp4(mp4, sr=SAMPLE_RATE)
+        audio, _ = load_mp4(mp4, sr=SAMPLE_RATE)
 
         completed = []
         param = Param()
@@ -179,7 +185,7 @@ def whisper():
 
     def transcriber(mp4: Path, transcribe_time: TimeChecker) -> TRNFormat:
 
-        audio, _ = load_audio_from_mp4(mp4, sr=SAMPLE_RATE)
+        audio, _ = load_mp4(mp4, sr=SAMPLE_RATE)
 
         transcribe_time.start()
         segments, _ = model.transcribe(
