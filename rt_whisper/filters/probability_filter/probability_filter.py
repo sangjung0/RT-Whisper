@@ -1,22 +1,29 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from rt_whisper.abstracts import Worker
+from logging import Logger
 
-from .data import *
-from .service import *
+from rt_whisper.abstracts import Worker
+from rt_whisper.filters.probability_filter.service import (
+    filter_probability_by_min_prob,
+    filter_tokens_by_probability_outliers,
+    update_statistics,
+)
+from rt_whisper.filters.probability_filter.data import (
+    ProbabilityFilterParam,
+    ProbabilityFilterResult,
+    ProbabilityFilterState,
+)
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState
 
 
 class ProbabilityFilter(Worker):
-    def __init__(
-        self,
-        z_thresh: float,
-        min_prob: float,
-    ):
+    def __init__(self, z_thresh: float, min_prob: float, logger: Logger):
         super().__init__()
+        self.logger = logger
+
         self.__Z_THRESH = z_thresh
         self.__MIN_PROB = min_prob
 
@@ -33,16 +40,24 @@ class ProbabilityFilter(Worker):
 
     # override
     def _process(self, param: ProbabilityFilterParam) -> ProbabilityFilterResult:
+        self.logger.debug(f"\tProcessing Probability Filter")
 
+        self.logger.debug(f"\t\tFiltering tokens by minimum probability")
+        self.logger.debug(f"\t\tBefore: {param.segment_tokens}")
         tokens = filter_probability_by_min_prob(
             param.segment_tokens, self.__MIN_PROB[param.language]
         )
-        X = [t.probability for t in tokens if t.is_word]
+        self.logger.debug(f"\t\tAfter: {tokens}")
 
+        X = [t.probability for t in tokens if t.is_word]
         mean, std, N = update_statistics(X, param.mean, param.std, param.count)
+
+        self.logger.debug(f"\t\tFiltering tokens by probability outliers")
+        self.logger.debug(f"\t\tBefore: {tokens}")
         new_tokens = filter_tokens_by_probability_outliers(
             tokens, mean, std, self.__Z_THRESH[param.language]
         )
+        self.logger.debug(f"\t\tAfter: {new_tokens}")
 
         return ProbabilityFilterResult(
             segment_tokens=new_tokens, mean=mean, std=std, count=N

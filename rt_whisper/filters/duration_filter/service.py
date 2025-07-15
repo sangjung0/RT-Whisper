@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import statistics
 
 from sj_utils.statistics_utils import update_mean_std

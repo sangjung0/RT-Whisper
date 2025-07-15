@@ -1,13 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+
 import numpy as np
+
+from dataclasses import dataclass, field
+from typing import Union
 
 from sj_utils.audio_utils import generate_empty_chunk
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token, TokenState
-    from typing import Union
 
 
 @dataclass(slots=True)

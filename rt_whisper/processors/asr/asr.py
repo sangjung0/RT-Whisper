@@ -1,17 +1,30 @@
 from __future__ import annotations
-from typing import Any, Callable, Iterable, TYPE_CHECKING
-import numpy as np
+from typing import TYPE_CHECKING
+
 import torch
+import numpy as np
+
+from logging import Logger
+from typing import Any, Callable, Iterable
 
 from rt_whisper.abstracts import Worker
-
-from .data import *
-from .service import *
+from rt_whisper.processors.asr.data import (
+    ASRParam,
+    ASRResult,
+    ASRState,
+    ASRContextBuilderParam,
+    ASRContextBuilderResult,
+)
+from rt_whisper.processors.asr.service import (
+    transcribe,
+    segment_to_token_list,
+    generate_overlap_context,
+    adjust_anchor_timestamp,
+)
 
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState
-    from typing import Any, Callable, Iterable
 
 
 class ASRProcessor(Worker):
@@ -19,10 +32,13 @@ class ASRProcessor(Worker):
         self,
         transcriber: Callable[[np.ndarray, str, str], tuple[Iterable, Any]],
         embed: Callable[[str], torch.Tensor],
+        logger: Logger,
         sample_rate: int,
         within_eos: bool,
     ):
         super().__init__()
+        self.logger = logger
+
         self.__transcriber = transcriber
         self.__embed = embed
         self.__SAMPLE_RATE = sample_rate
@@ -35,8 +51,13 @@ class ASRProcessor(Worker):
 
     # override
     def _process(self, param: ASRParam) -> ASRResult:
+        self.logger.debug(f"\tProcessing ASR")
+
         # 청크 합치기
         merged_chunk = np.concatenate([param.prev_chunk, param.chunk], axis=0)
+        self.logger.debug(
+            f"\t\tMerged chunk: {param.prev_chunk.shape} + {param.chunk.shape} = {merged_chunk.shape}"
+        )
 
         # 추론
         segments, language = transcribe(
@@ -51,6 +72,7 @@ class ASRProcessor(Worker):
             self.__WITHIN_EOS,
             self.__embed,
         )
+        self.logger.debug(f"\t\tSegment tokens: {segment_tokens}")
 
         return ASRResult(
             merged_chunk=merged_chunk,
@@ -81,6 +103,8 @@ class ASRContextBuilder(ASRProcessor):
 
     # override
     def _context_build(self, param: ASRContextBuilderParam) -> ASRContextBuilderResult:
+        self.logger.debug(f"\tBuilding ASR context")
+
         context_chunk, context_offset, anchor_timestamp = generate_overlap_context(
             merged_chunk=param.merged_chunk,
             current_chunk=param.chunk,
@@ -88,10 +112,16 @@ class ASRContextBuilder(ASRProcessor):
             offset=param.offset,
             max_overlap_duration=self.__MAX_OVERLAP_DURATION,
         )
+        self.logger.debug(
+            f"\t\tcontext_chunk: {context_chunk.shape}"
+            f"\t\tcontext_offset: {context_offset}"
+            f"\t\tanchor_timestamp: {anchor_timestamp}"
+        )
 
         anchor_timestamp = adjust_anchor_timestamp(
             anchor_timestamp, param.segment_tokens
         )
+        self.logger.debug(f"\t\tAdjusted anchor timestamp: {anchor_timestamp}")
 
         return ASRContextBuilderResult(
             context_chunk=context_chunk,
@@ -115,6 +145,7 @@ class ASR(ASRContextBuilder):
         embed: Callable[[str], torch.Tensor],
         sample_rate: int,
         within_eos: bool,
+        logger: Logger,
         **kwargs,
     ):
         super().__init__(
@@ -123,6 +154,7 @@ class ASR(ASRContextBuilder):
             embed=embed,
             sample_rate=sample_rate,
             within_eos=within_eos,
+            logger=logger,
             **kwargs,
         )
 

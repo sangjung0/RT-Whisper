@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from dataclasses import dataclass
 
 import numpy as np
+
+from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState, Token
@@ -25,8 +26,7 @@ class PositionWeightedFilterParam:
 
 @dataclass(slots=True)
 class PositionWeightedFilterResult:
-    # tokens: list[Token]
+    segment_tokens: list[Token]
 
     def update_context(self, state: TokenState) -> None:
-        # context.merged_candidate_tokens = self.tokens
-        pass
+        state.segment_tokens = self.segment_tokens

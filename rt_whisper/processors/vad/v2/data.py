@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+
 import numpy as np
+
+from dataclasses import dataclass, field
 
 from sj_utils.audio_utils import generate_empty_chunk
 

@@ -1,13 +1,26 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 from logging import Logger
 
-from rt_whisper.core import logger_wrap
 from rt_whisper.abstracts import Worker
 from rt_whisper.tokenizers import Tokenizer
+from rt_whisper.composer.data import (
+    ComposerParam,
+    ComposerResult,
+    ComposerContextBuilderParam,
+    ComposerContextBuilderResult,
+    ComposerState,
+)
+from rt_whisper.composer.service import (
+    select_language,
+    cut_by_eos,
+    cut_by_tokenizer,
+    tokens_to_sentences,
+    classify_candidate_completed,
+    context_tokens,
+)
 
-from .data import *
-from .service import *
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState
@@ -15,7 +28,6 @@ if TYPE_CHECKING:
 
 class Composer(Worker):
 
-    @logger_wrap
     def __init__(self, logger: Logger):
         super().__init__()
         self.logger = logger
@@ -33,20 +45,28 @@ class Composer(Worker):
 
     # override
     def _process(self, param: ComposerParam) -> ComposerResult:
+        self.logger.debug(f"\tProcessing composer")
 
         tokens = param.prev_completed_tokens + param.segment_tokens
+        self.logger.debug(f"\t\tTokens: {len(tokens)}")
+
         language = select_language(param.language, tokens)
+        self.logger.debug(f"\t\tLanguage: {language}")
+
         tokenizer = Tokenizer.get_tokenizer(language)
 
         if tokenizer is None:
             segments = cut_by_eos(tokens)
         else:
-            segments = cut_by_tokenizer(tokenizer, tokens)
+            segments = cut_by_tokenizer(tokenizer, tokens, self.logger)
+        self.logger.debug(f"\t\tSegments: {segments}")
 
         sentences, order = tokens_to_sentences(segments, param.order)
         completed, candidate = classify_candidate_completed(
             sentences, param.anchor_timestamp
         )
+        self.logger.debug(f"\t\tCompleted: {completed}")
+        self.logger.debug(f"\t\tCandidate: {candidate}")
 
         order -= len(candidate)
 
@@ -66,7 +86,9 @@ class Composer(Worker):
 
     # override
     def _context_build(self, param: ComposerContextBuilderParam):
+        self.logger.debug(f"\tBuilding context for composer")
         completed_tokens = context_tokens(param.candidate, param.anchor_timestamp)
+        self.logger.debug(f"\t\tCompleted tokens: {completed_tokens}")
         return ComposerContextBuilderResult(
             context_completed_tokens=completed_tokens,
         )

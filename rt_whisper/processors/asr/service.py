@@ -1,14 +1,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import torch
+import numpy as np
+
+from typing import Callable, Iterable, Any
+from faster_whisper.transcribe import Segment
 
 from rt_whisper.data import Token
 
 if TYPE_CHECKING:
-    from typing import Callable, Iterable, Any
-    import numpy as np
-
-    from faster_whisper.transcribe import Segment
+    pass
 
 
 def generate_overlap_context(

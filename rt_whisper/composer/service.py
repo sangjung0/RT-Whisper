@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from sj_utils.string_utils import remove_spaces_and_symbols
+from logging import Logger
 
-from rt_whisper.core import logger
+from sj_utils.string_utils import remove_spaces_and_symbols
 from rt_whisper.data import Sentence
 
 if TYPE_CHECKING:
@@ -27,7 +27,9 @@ def cut_by_eos(tokens: list[Token]):
     return segments
 
 
-def cut_by_tokenizer(tokenizer: Callable[[str], Iterable[str]], tokens: list[Token]):
+def cut_by_tokenizer(
+    tokenizer: Callable[[str], Iterable[str]], tokens: list[Token], logger: Logger
+):
     segments = []
 
     word_tokens = [t for t in tokens if t.is_word]
@@ -97,4 +99,3 @@ def context_tokens(candidate: list[Sentence], anchor_timestamp: int):
                 break
 
     return completed_tokens
-

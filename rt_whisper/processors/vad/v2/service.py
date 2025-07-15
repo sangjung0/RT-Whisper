@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import numpy as np
 
 if TYPE_CHECKING:
@@ -22,7 +23,6 @@ def slice_vad_chunk(
         else:
             adjusted_slice_point = slice_point - offset
             break
-
 
     return vad_chunk[:adjusted_slice_point], vad_chunk[adjusted_slice_point:]
 

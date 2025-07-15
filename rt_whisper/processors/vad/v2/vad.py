@@ -1,23 +1,42 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import numpy as np
+
+from typing import Callable
+from logging import Logger
 
 from rt_whisper.abstracts import Worker
 from rt_whisper.processors.asr import ASRState
-from rt_whisper.processors.vad.common.service import *
-
-from .data import *
-from .service import *
+from rt_whisper.processors.vad.common.service import (
+    vad,
+    generate_vad_timestamps_mapping,
+    merge_audio_from_timestamps,
+    set_offset,
+)
+from rt_whisper.processors.vad.v2.service import (
+    slice_vad_chunk,
+    add_offset,
+)
+from rt_whisper.processors.vad.v2.data import (
+    VADState,
+    VADProcessParam,
+    VADProcessResult,
+    VADPostParam,
+    VADPostResult,
+)
 
 if TYPE_CHECKING:
-    from typing import Callable
-
     from rt_whisper.data import TokenState
 
 
 class VAD(Worker):
-    def __init__(self, vad: Callable[[np.ndarray], list[dict[str, int]]]):
+    def __init__(
+        self, vad: Callable[[np.ndarray], list[dict[str, int]]], logger: Logger
+    ):
         super().__init__()
+        self.logger = logger
+
         self.__vad = vad
 
     # override
@@ -35,7 +54,13 @@ class VAD(Worker):
 
     # override
     def _process(self, param: VADProcessParam) -> VADProcessResult:
+        self.logger.debug(f"\tProcessing VAD")
+
         merged_chunk = np.concatenate([param.prev_chunk, param.chunk], axis=0)
+        self.logger.debug(
+            f"\t\tMerged chunk: {param.prev_chunk.shape} + {param.chunk.shape} = {merged_chunk.shape}"
+        )
+
         timestamps = vad(merged_chunk, self.__vad)
         merged_vad_chunk = merge_audio_from_timestamps(merged_chunk, timestamps)
 
@@ -72,6 +97,8 @@ class VAD(Worker):
 
     # override
     def _post_process(self, param: VADPostParam):
+        self.logger.debug(f"\tPost-processing VAD")
+
         set_offset(param.segment_tokens, param.vad_timestamps_mapping)
         add_offset(param.segment_tokens, param.offset - param.prev_chunk.shape[0])
 
