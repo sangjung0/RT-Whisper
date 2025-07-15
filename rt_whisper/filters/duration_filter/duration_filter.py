@@ -1,8 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from logging import Logger
-
 from rt_whisper.abstracts import Worker
 from rt_whisper.filters.duration_filter.service import (
     filter_tokens_by_duration_outliers,
@@ -16,11 +14,12 @@ from rt_whisper.filters.duration_filter.data import (
 from rt_whisper.filters.duration_filter.service import calculate_length_ratio
 
 if TYPE_CHECKING:
+    from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
 
 
 class DurationFilter(Worker):
-    def __init__(self, z_thresh: dict[str:float], logger: Logger):
+    def __init__(self, z_thresh: dict[str:float], logger: RTWhisperLogger):
         super().__init__()
         self.logger = logger
         self.__Z_THRESH = z_thresh
@@ -38,16 +37,18 @@ class DurationFilter(Worker):
 
     # override
     def _process(self, param: DurationFilterParam) -> DurationFilterResult:
-        self.logger.debug(f"\tProcessing Duration Filter")
+        self.logger.debug(f"Processing Duration Filter", group_level=1)
 
         X = calculate_length_ratio(param.segment_tokens)
         mean, std, n = update_statistics(X, param.mean, param.std, param.count)
 
-        self.logger.debug(f"\t\tBefore: {param.segment_tokens}")
+        self.logger.debug(
+            f"Before: {', '.join(str(t) for t in param.segment_tokens)}", group_level=2
+        )
         tokens = filter_tokens_by_duration_outliers(
             param.segment_tokens, X, mean, std, self.__Z_THRESH[param.language]
         )
-        self.logger.debug(f"\t\tAfter: {tokens}")
+        self.logger.debug(f"After: {', '.join(str(t) for t in tokens)}", group_level=2)
 
         return DurationFilterResult(
             segment_tokens=tokens,

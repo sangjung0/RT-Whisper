@@ -8,3 +8,6 @@ class Sentence(BaseModel):
     lang: list[str]
     text: str
     tokens: list[Token]
+
+    def __str__(self):
+        return f"[{self.order}] {self.text}"

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from typing import Callable
-from logging import Logger
 
 from rt_whisper.abstracts import Worker
 from rt_whisper.processors.asr import ASRState
@@ -27,12 +26,13 @@ from rt_whisper.processors.vad.v2.data import (
 )
 
 if TYPE_CHECKING:
+    from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
 
 
 class VAD(Worker):
     def __init__(
-        self, vad: Callable[[np.ndarray], list[dict[str, int]]], logger: Logger
+        self, vad: Callable[[np.ndarray], list[dict[str, int]]], logger: RTWhisperLogger
     ):
         super().__init__()
         self.logger = logger
@@ -54,11 +54,12 @@ class VAD(Worker):
 
     # override
     def _process(self, param: VADProcessParam) -> VADProcessResult:
-        self.logger.debug(f"\tProcessing VAD")
+        self.logger.debug(f"Processing VAD", group_level=1)
 
         merged_chunk = np.concatenate([param.prev_chunk, param.chunk], axis=0)
         self.logger.debug(
-            f"\t\tMerged chunk: {param.prev_chunk.shape} + {param.chunk.shape} = {merged_chunk.shape}"
+            f"Merged chunk: {param.prev_chunk.shape} + {param.chunk.shape} = {merged_chunk.shape}",
+            group_level=2,
         )
 
         timestamps = vad(merged_chunk, self.__vad)
@@ -97,7 +98,7 @@ class VAD(Worker):
 
     # override
     def _post_process(self, param: VADPostParam):
-        self.logger.debug(f"\tPost-processing VAD")
+        self.logger.debug(f"Post-processing VAD", group_level=1)
 
         set_offset(param.segment_tokens, param.vad_timestamps_mapping)
         add_offset(param.segment_tokens, param.offset - param.prev_chunk.shape[0])

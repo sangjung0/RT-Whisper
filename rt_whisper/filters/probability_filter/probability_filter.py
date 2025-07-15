@@ -40,24 +40,28 @@ class ProbabilityFilter(Worker):
 
     # override
     def _process(self, param: ProbabilityFilterParam) -> ProbabilityFilterResult:
-        self.logger.debug(f"\tProcessing Probability Filter")
+        self.logger.debug(f"Processing Probability Filter", group_level=1)
 
-        self.logger.debug(f"\t\tFiltering tokens by minimum probability")
-        self.logger.debug(f"\t\tBefore: {param.segment_tokens}")
+        self.logger.debug(f"Filtering tokens by minimum probability", group_level=2)
+        self.logger.debug(
+            f"Before: {', '.join(str(t) for t in param.segment_tokens)}", group_level=2
+        )
         tokens = filter_probability_by_min_prob(
             param.segment_tokens, self.__MIN_PROB[param.language]
         )
-        self.logger.debug(f"\t\tAfter: {tokens}")
+        self.logger.debug(f"After: {', '.join(str(t) for t in tokens)}", group_level=2)
 
         X = [t.probability for t in tokens if t.is_word]
         mean, std, N = update_statistics(X, param.mean, param.std, param.count)
 
-        self.logger.debug(f"\t\tFiltering tokens by probability outliers")
-        self.logger.debug(f"\t\tBefore: {tokens}")
+        self.logger.debug(f"Filtering tokens by probability outliers", group_level=2)
+        self.logger.debug(f"Before: {', '.join(str(t) for t in tokens)}", group_level=2)
         new_tokens = filter_tokens_by_probability_outliers(
             tokens, mean, std, self.__Z_THRESH[param.language]
         )
-        self.logger.debug(f"\t\tAfter: {new_tokens}")
+        self.logger.debug(
+            f"After: {', '.join(str(t) for t in new_tokens)}", group_level=2
+        )
 
         return ProbabilityFilterResult(
             segment_tokens=new_tokens, mean=mean, std=std, count=N

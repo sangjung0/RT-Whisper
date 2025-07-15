@@ -1,8 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from logging import Logger
-
 from rt_whisper.abstracts import Worker
 from rt_whisper.selector.data import (
     SelectorParam,
@@ -18,7 +16,10 @@ from rt_whisper.selector.service import (
 )
 
 if TYPE_CHECKING:
+    from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
+
+N = "\n\t\t\t"
 
 
 class SelectorProcessor(Worker):
@@ -28,7 +29,7 @@ class SelectorProcessor(Worker):
         threshold: float,
         padding: int,
         tolerance: int,
-        logger: Logger,
+        logger: RTWhisperLogger,
         smooth: float = 1e-6,
     ):
         super().__init__()
@@ -49,13 +50,13 @@ class SelectorProcessor(Worker):
 
     # override
     def _process(self, param: SelectorParam) -> SelectorResult:
-        self.logger.debug(f"\tProcessing Selector")
+        self.logger.debug(f"Processing Selector", group_level=1)
 
         B = param.segment_tokens
         A = param.prev_segment_tokens
         language = param.language
-        self.logger.debug(f"\t\tCurrent: {B}")
-        self.logger.debug(f"\t\tPrevious: {A}")
+        self.logger.debug(f"Current: {', '.join(str(t) for t in B)}", group_level=2)
+        self.logger.debug(f"Previous: {', '.join(str(t) for t in A)}", group_level=2)
 
         if not A:
             return SelectorResult(segment_tokens=B)
@@ -65,8 +66,13 @@ class SelectorProcessor(Worker):
             target=B,
             tolerance=self.__TOLERANCE[language],
         )
-        self.logger.debug(f"\t\tToken groups: {token_groups}")
-        self.logger.debug(f"\t\tRest tokens: {rest}")
+        self.logger.debug(
+            f"Token groups: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
+            group_level=2,
+        )
+        self.logger.debug(
+            f"Rest tokens: {', '.join(str(t) for t in rest)}", group_level=2
+        )
 
         token_groups, orphan_tokens = group_similar_tokens(
             source=A,
@@ -76,15 +82,22 @@ class SelectorProcessor(Worker):
             threshold=self.__THRESHOLD[language],
             smooth=self.__SMOOTH,
         )
-        self.logger.debug(f"\t\tGrouped tokens: {token_groups}")
-        self.logger.debug(f"\t\tOrphan tokens: {orphan_tokens}")
+        self.logger.debug(
+            f"Grouped tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
+            group_level=2,
+        )
+        self.logger.debug(
+            f"Orphan tokens: {', '.join(str(t) for t in orphan_tokens)}", group_level=2
+        )
 
         new_tokens = merge_tokens(
             token_groups=token_groups,
             orphan_tokens=orphan_tokens,
             rest=rest,
         )
-        self.logger.debug(f"\t\tNew tokens: {new_tokens}")
+        self.logger.debug(
+            f"New tokens: {', '.join(str(t) for t in new_tokens)}", group_level=2
+        )
 
         return SelectorResult(segment_tokens=new_tokens)
 
@@ -100,14 +113,17 @@ class SelectorContextBuilder(SelectorProcessor):
 
     # override
     def _context_build(self, param: SelectorContextBuilderParam):
-        self.logger.debug(f"\tBuilding SelectorContext")
+        self.logger.debug(f"Building SelectorContext", group_level=1)
 
         context_segment_tokens = [
             t
             for t in param.segment_tokens
             if t.is_word and t.end > param.anchor_timestamp
         ]
-        self.logger.debug(f"\t\tContext segment tokens: {context_segment_tokens}")
+        self.logger.debug(
+            f"Context segment tokens: {', '.join(str(t) for t in context_segment_tokens)}",
+            group_level=2,
+        )
 
         return SelectorContextBuilderResult(
             context_segment_tokens=context_segment_tokens
@@ -128,7 +144,7 @@ class Selector(SelectorContextBuilder):
         threshold: float,
         padding: int,
         tolerance: int,
-        logger: Logger,
+        logger: RTWhisperLogger,
         smooth: float = 1e-6,
     ):
         super().__init__(

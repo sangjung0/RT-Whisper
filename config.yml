@@ -1,10 +1,10 @@
 rt_whisper:
-    hyperparameter_path: "./default_hyperparameter.yml"
+    default_hyperparameter_path: "./default_hyperparameter.yml"
 
     huggingface:
         path: "openai/whisper-large-v3"
 
     log:
-        level: 20 # INFO: 20, DEBUG: 10
+        level: 10 # INFO: 20, DEBUG: 10
         dir_path: ${RT_WHISPER_LOG_DIR:./logs}
-        file_level: 20 # INFO: 20, DEBUG: 10
+        file_level: 10 # INFO: 20, DEBUG: 10

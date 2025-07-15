@@ -1,12 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from logging import Logger
-
 from sj_utils.string_utils import remove_spaces_and_symbols
 from rt_whisper.data import Sentence
 
 if TYPE_CHECKING:
+    from rt_whisper import RTWhisperLogger
     from rt_whisper.data import Token
     from typing import Callable, Iterable
 
@@ -28,7 +27,9 @@ def cut_by_eos(tokens: list[Token]):
 
 
 def cut_by_tokenizer(
-    tokenizer: Callable[[str], Iterable[str]], tokens: list[Token], logger: Logger
+    tokenizer: Callable[[str], Iterable[str]],
+    tokens: list[Token],
+    logger: RTWhisperLogger,
 ):
     segments = []
 
@@ -44,7 +45,8 @@ def cut_by_tokenizer(
             if len_sent <= 0:
                 if len_sent < 0:
                     logger.warning(
-                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent: {sent} \n\t tokens: {[t.text for t in word_tokens[start_idx: i + start_idx + 1]]} \n\t normalize sent:'{remove_spaces_and_symbols(sent)}' \n\t normalize tokens:{[remove_spaces_and_symbols(t.text) for t in word_tokens[start_idx: i + start_idx + 1]]}"
+                        f"Tokenizer did not match the segment length \n\t len_sent:{len_sent} \n\t sent: {sent} \n\t tokens: {[t.text for t in word_tokens[start_idx: i + start_idx + 1]]} \n\t normalize sent:'{remove_spaces_and_symbols(sent)}' \n\t normalize tokens:{[remove_spaces_and_symbols(t.text) for t in word_tokens[start_idx: i + start_idx + 1]]}",
+                        group_level=3,
                     )
                 segments.append(word_tokens[start_idx : i + start_idx + 1])
                 start_idx = i + start_idx + 1

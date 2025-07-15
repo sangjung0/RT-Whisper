@@ -21,13 +21,13 @@
         "output/**": true
     },
     // Editor
-    "editor.fontFamily": "IBM Plex Sans KR, IBM Plex Mono",
+    "editor.fontFamily": "JetBrains Mono, D2Coding",
     "editor.fontLigatures": true,
     "editor.fontSize": 18,
-    "editor.letterSpacing": 2,
+    "editor.letterSpacing": 0,
     "editor.detectIndentation": false,
     "editor.trimAutoWhitespace": true,
-    "terminal.integrated.fontFamily": "Consolas",
+    "terminal.integrated.fontFamily": "JetBrains Mono, D2Coding",
     "files.trimTrailingWhitespace": true,
     "files.insertFinalNewline": true,
     "files.eol": "\n",

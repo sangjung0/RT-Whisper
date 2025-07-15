@@ -30,7 +30,7 @@ def get_token_streamer(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = SileroVad(
-        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -43,7 +43,7 @@ def get_token_streamer(
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
-                sample_rate=Whisper.sample_rate,
+                sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
                 logger=logger,
@@ -73,7 +73,7 @@ def get_token_streamer(
         ],
     ]
 
-    pipeline = Pipeline()
+    pipeline = Pipeline(logger)
     pipeline.init(workers=worker_groups)
     return pipeline
 
@@ -88,7 +88,7 @@ def get_token_streamer_with_vad_v2(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = SileroVad(
-        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -100,7 +100,7 @@ def get_token_streamer_with_vad_v2(
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
-                sample_rate=Whisper.sample_rate,
+                sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
                 logger=logger,
@@ -130,6 +130,6 @@ def get_token_streamer_with_vad_v2(
         ],
     ]
 
-    pipeline = Pipeline()
+    pipeline = Pipeline(logger)
     pipeline.init(workers=worker_groups)
     return pipeline

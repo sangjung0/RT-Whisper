@@ -43,6 +43,6 @@ def get_transcriber(
         [SimpleComposer()],
     ]
 
-    pipeline = Pipeline()
+    pipeline = Pipeline(logger)
     pipeline.init(workers=worker_groups)
     return pipeline

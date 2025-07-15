@@ -1,6 +1,6 @@
 whisper:
     model_options:
-        model: "large-v3"
+        model_size_or_path: "large-v3"
         device: "cuda"
         compute_type: "float16"
     transcribe_options:
@@ -9,8 +9,8 @@ whisper:
         temperature: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
 
 silero_vad:
-    model_options:
-    run_options:
+    model_options: {}
+    run_options: {}
 
 asr:
     max_overlap_duration: 96000

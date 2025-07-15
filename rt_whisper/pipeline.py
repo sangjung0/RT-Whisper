@@ -1,3 +1,5 @@
+from logging import Logger
+
 from rt_whisper.abstracts import Worker
 from rt_whisper.data import TokenState, Param, Result
 from sj_utils.decorator_utils import singleton
@@ -5,8 +7,9 @@ from sj_utils.decorator_utils import singleton
 
 @singleton
 class Pipeline:
-    def __init__(self):
+    def __init__(self, logger: Logger):
         super().__init__()
+        self.logger = logger
         self.__pipeline = []
 
     def init(self, workers: list[list[Worker]]):
@@ -42,6 +45,9 @@ class Pipeline:
 
         context.bind(param)
 
+        self.logger.debug(" ")
+        self.logger.debug(" ")
+        self.logger.debug("Starting pipeline processing.")
         for worker_group in self.__pipeline:
             for worker in worker_group[0]:
                 worker.process(context)
