@@ -1,15 +1,10 @@
 rt_whisper:
-    model_size: "large-v3"
-    model_device: "cuda"
-    model_compute_type: "float16"
-    model_beam_size: 3
-    model_batch_size: 8
-    model_sample_rate: 16000
+    hyperparameter_path: "./default_hyperparameter.yml"
 
-    # huggingface model path
-    model_huggingface_path: "openai/whisper-large-v3"
+    huggingface:
+        path: "openai/whisper-large-v3"
 
-    default_hyperparameter_path: "./default_hyperparameter.yml"
-
-    log_level: 20 # INFO: 20, DEBUG: 10
-    log_dir: ${RT_WHISPER_LOG_DIR:./logs}
+    log:
+        level: 20 # INFO: 20, DEBUG: 10
+        dir_path: ${RT_WHISPER_LOG_DIR:./logs}
+        file_level: 20 # INFO: 20, DEBUG: 10

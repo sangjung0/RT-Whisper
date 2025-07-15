@@ -145,6 +145,7 @@ class ASR(ASRContextBuilder):
         embed: Callable[[str], torch.Tensor],
         sample_rate: int,
         within_eos: bool,
+        max_overlap_duration: int,
         logger: Logger,
         **kwargs,
     ):
@@ -154,6 +155,7 @@ class ASR(ASRContextBuilder):
             embed=embed,
             sample_rate=sample_rate,
             within_eos=within_eos,
+            max_overlap_duration=max_overlap_duration,
             logger=logger,
             **kwargs,
         )

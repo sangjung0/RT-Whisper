@@ -1,12 +1,13 @@
-from transformers import WhisperTokenizer, WhisperModel
 import torch
 
 from pathlib import Path
+from transformers import WhisperTokenizer, WhisperModel
+from functools import lru_cache
 
 from sj_utils.collection_utils import SafetyDict
 from sj_utils.file import ReadYaml
 
-from rt_whisper.core.state import hyperparameter as default_hyperparameter, config
+from rt_whisper.core import hyperparameter as default_hyperparameter, config
 
 
 def init_hyperparameter(
@@ -24,10 +25,11 @@ def init_hyperparameter(
     return hyperparameter
 
 
-def whisper_embed(model_size: str = config.rt_whisper.model_huggingface_path):
+def whisper_embed(model_size: str = config.rt_whisper.huggingface.path):
     tokenizer = WhisperTokenizer.from_pretrained(model_size)
     embedding_table = _whisper_embedding_weight(model_size)
 
+    @lru_cache(maxsize=4096)
     def embed(text: str):
         tokens = torch.tensor(tokenizer.encode(text))
         if len(tokens) == 0:
@@ -40,7 +42,7 @@ def whisper_embed(model_size: str = config.rt_whisper.model_huggingface_path):
 
 
 def _whisper_embedding_weight(
-    model_size: str = config.rt_whisper.model_huggingface_path,
+    model_size: str = config.rt_whisper.huggingface.path,
 ):
     model = WhisperModel.from_pretrained(model_size)
     embedding = model.decoder.embed_tokens.weight.detach().cpu().clone()

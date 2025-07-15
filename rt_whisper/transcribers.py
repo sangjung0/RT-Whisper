@@ -2,8 +2,8 @@ from pathlib import Path
 
 from sj_utils.collection_utils import SafetyDict
 
+from rt_whisper.core import logger
 from rt_whisper.models import SileroVad, Whisper
-from rt_whisper.core.state import config
 from rt_whisper.pipeline import Pipeline
 from rt_whisper.processors import ASR
 from rt_whisper.processors.vad.v2 import VAD
@@ -12,23 +12,34 @@ from rt_whisper.utils import init_hyperparameter, whisper_embed
 
 
 def get_transcriber(
-    model_sample_rate: int = config.rt_whisper.model_sample_rate,
     hyperparameter: SafetyDict | Path | str | None = None,
 ):
-
     hyperparameter = init_hyperparameter(hyperparameter)
+
+    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    transcribe = lambda audio, language, prompt: whisper.transcribe(
+        audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
+    )
+    silero_vad = SileroVad(
+        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+    )
+    vad = lambda audio: silero_vad.run(
+        audio, hyperparameter["silero_vad"]["run_options"]
+    )
 
     worker_groups = [
         [
-            VAD(vad=SileroVad().run),
+            VAD(vad=vad, logger=logger),
             ASR(
-                transcriber=Whisper().transcribe,
+                transcriber=transcribe,
                 embed=whisper_embed(),
-                sample_rate=model_sample_rate,
+                sample_rate=Whisper.sample_rate,
                 within_eos=True,
-                max_overlap_duration=hyperparameter["max_overlap_duration"],
+                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                logger=logger,
             ),
         ],
+        # NOTE SimpleComposer는 로거를 추가하지 않음
         [SimpleComposer()],
     ]
 

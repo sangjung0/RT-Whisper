@@ -1,9 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from pathlib import Path
 
 from sj_utils.collection_utils import SafetyDict
 
+from rt_whisper.core import logger
 from rt_whisper.composer import Composer
-from rt_whisper.core.state import config
 from rt_whisper.filters import DurationFilter, PositionWeightedFilter, ProbabilityFilter
 from rt_whisper.models import SileroVad, Whisper
 from rt_whisper.processors import ASR
@@ -13,40 +16,60 @@ from rt_whisper.selector import Selector
 from rt_whisper.pipeline import Pipeline
 from rt_whisper.utils import init_hyperparameter, whisper_embed
 
+if TYPE_CHECKING:
+    pass
+
 
 def get_token_streamer(
-    model_sample_rate: int = config.rt_whisper.model_sample_rate,
     hyperparameter: SafetyDict | Path | str | None = None,
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
+    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    transcribe = lambda audio, language, prompt: whisper.transcribe(
+        audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
+    )
+    silero_vad = SileroVad(
+        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+    )
+    vad = lambda audio: silero_vad.run(
+        audio, hyperparameter["silero_vad"]["run_options"]
+    )
+
     worker_groups = [
         [
-            VADv1(vad=SileroVad().run),
+            # NOTE v1에는 로거 추가하지 않음
+            VADv1(vad=vad),
             ASR(
-                transcriber=Whisper().transcribe,
+                transcriber=transcribe,
                 embed=whisper_embed(),
-                sample_rate=model_sample_rate,
+                sample_rate=Whisper.sample_rate,
                 within_eos=True,
-                max_overlap_duration=hyperparameter["max_overlap_duration"],
+                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                logger=logger,
             ),
         ],
         [
             PositionWeightedFilter(
-                boundary=hyperparameter["weighted_and_offset_token_boundary"]
+                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                logger=logger,
             ),
-            DurationFilter(z_thresh=hyperparameter["duration_filter_z"]),
+            DurationFilter(
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=logger
+            ),
             ProbabilityFilter(
-                z_thresh=hyperparameter["probability_filter"]["z"],
+                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
+                logger=logger,
             ),
             Selector(
                 search_range_sc=hyperparameter["selector"]["search_range_sc"],
                 threshold=hyperparameter["selector"]["threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 tolerance=hyperparameter["selector"]["tolerance"],
+                logger=logger,
             ),
-            Composer(),
+            Composer(logger),
         ],
     ]
 
@@ -56,38 +79,54 @@ def get_token_streamer(
 
 
 def get_token_streamer_with_vad_v2(
-    model_sample_rate: int = config.rt_whisper.model_sample_rate,
     hyperparameter: SafetyDict | Path | str | None = None,
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
+    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    transcribe = lambda audio, language, prompt: whisper.transcribe(
+        audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
+    )
+    silero_vad = SileroVad(
+        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+    )
+    vad = lambda audio: silero_vad.run(
+        audio, hyperparameter["silero_vad"]["run_options"]
+    )
+
     worker_groups = [
         [
-            VADv2(vad=SileroVad().run),
+            VADv2(vad=vad, logger=logger),
             ASR(
-                transcriber=Whisper().transcribe,
+                transcriber=transcribe,
                 embed=whisper_embed(),
-                sample_rate=model_sample_rate,
+                sample_rate=Whisper.sample_rate,
                 within_eos=True,
-                max_overlap_duration=hyperparameter["max_overlap_duration"],
+                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                logger=logger,
             ),
         ],
         [
             PositionWeightedFilter(
-                boundary=hyperparameter["weighted_and_offset_token_boundary"]
+                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                logger=logger,
             ),
-            DurationFilter(z_thresh=hyperparameter["duration_filter_z"]),
+            DurationFilter(
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=logger
+            ),
             ProbabilityFilter(
-                z_thresh=hyperparameter["probability_filter"]["z"],
+                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
+                logger=logger,
             ),
             Selector(
                 search_range_sc=hyperparameter["selector"]["search_range_sc"],
                 threshold=hyperparameter["selector"]["threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 tolerance=hyperparameter["selector"]["tolerance"],
+                logger=logger,
             ),
-            Composer(),
+            Composer(logger),
         ],
     ]
 

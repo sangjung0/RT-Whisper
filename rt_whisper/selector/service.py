@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import torch
+
+from functools import lru_cache
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
@@ -9,8 +12,8 @@ if TYPE_CHECKING:
 def position_tokens(
     source: list[Token],
     target: list[Token],
-    tolerance: int = 0,
-):
+    tolerance: int,
+) -> tuple[list[list[Token]], list[Token]]:
     token_groups = []
     rest = []
     start = source[-1].start + tolerance
@@ -30,7 +33,7 @@ def group_similar_tokens(
     padding: int,
     threshold: float,
     smooth: float,
-):
+) -> tuple[list[list[Token]], list[Token]]:
     orphan_tokens = []
     idx, idx_group = -1, 0
     while True:
@@ -75,7 +78,7 @@ def merge_tokens(
     token_groups: list[list[Token]],
     orphan_tokens: list[Token],
     rest: list[Token],
-):
+) -> list[Token]:
     tokens = [max(tk, key=lambda x: x.probability) for tk in token_groups]
     tokens_idx = 0
     orphan_idx = 0
@@ -101,12 +104,17 @@ def merge_tokens(
 
 
 def __token_similarity(A: Token, B: Token, padding: int, smooth: float) -> float:
-    sim = torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0)
+    sim = __cosine_similarity(A, B)
     iou = __token_iou(A, B, padding, smooth)
     return (sim + iou) / 2
 
 
-def __token_iou(A: Token, B: Token, padding: int = 3200, smooth: float = 1e-6) -> float:
+@lru_cache(maxsize=4096)
+def __cosine_similarity(A: Token, B: Token) -> float:
+    return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
+
+
+def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float:
     a1 = max(0, A.start - padding)
     b1 = A.end + padding
     a2 = max(0, B.start - padding)

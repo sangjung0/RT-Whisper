@@ -3,29 +3,25 @@ import numpy as np
 
 from sj_utils.decorator_utils import singleton
 
-from rt_whisper.core.state import config
-
 
 @singleton
 class Whisper:
-    def __init__(
-        self,
-        model_size: str = config.rt_whisper.model_size,
-        device: str = config.rt_whisper.model_device,
-        compute_type: str = config.rt_whisper.model_compute_type,
-        beam_size: int = config.rt_whisper.model_beam_size,
-    ):
+    def __init__(self, options: dict = {}):
         super().__init__()
-        self.__BEAM_SIZE = beam_size
-        self._model = WhisperModel(model_size, device=device, compute_type=compute_type)
+        self._model = WhisperModel(**options)
 
-    def transcribe(self, audio: np.ndarray, language: str, prompt: str):
+    def transcribe(
+        self, audio: np.ndarray, language: str, prompt: str, options: dict = {}
+    ):
         return self._model.transcribe(
             audio,
-            beam_size=self.__BEAM_SIZE,
-            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
             language=language,
-            word_timestamps=True,
-            vad_filter=False,
+            **options,
             initial_prompt=prompt,
+            word_timestamps=True,
         )
+
+    @staticmethod
+    @property
+    def sample_rate():
+        return 16000  # WhisperModel의 샘플레이트는 16000Hz로 고정되어 있음
