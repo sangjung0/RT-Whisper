@@ -43,12 +43,12 @@ class DurationFilter(Worker):
         mean, std, n = update_statistics(X, param.mean, param.std, param.count)
 
         self.logger.debug(
-            f"Before: {', '.join(str(t) for t in param.segment_tokens)}", group_level=2
+            f"Before: {''.join(str(t) for t in param.segment_tokens if t.is_word)}", group_level=2
         )
         tokens = filter_tokens_by_duration_outliers(
             param.segment_tokens, X, mean, std, self.__Z_THRESH[param.language]
         )
-        self.logger.debug(f"After: {', '.join(str(t) for t in tokens)}", group_level=2)
+        self.logger.debug(f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2)
 
         return DurationFilterResult(
             segment_tokens=tokens,

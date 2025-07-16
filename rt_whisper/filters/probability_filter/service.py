@@ -28,7 +28,7 @@ def update_statistics(X: list[float], prev_mean: float, prev_std: float, prev_n:
 
 def filter_tokens_by_probability_outliers(
     tokens: list[Token], mean: float, std: float, z_thresh: float
-):
+) -> list[Token]:
     new_tokens = []
     for t in tokens:
         if t.is_word and t.probability < mean and mean - t.probability > z_thresh * std:

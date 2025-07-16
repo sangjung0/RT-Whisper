@@ -50,7 +50,7 @@ class Composer(Worker):
 
         tokens = param.prev_completed_tokens + param.segment_tokens
         self.logger.debug(
-            f"Tokens: {', '.join([str(t) for t in tokens])}", group_level=2
+            f"Tokens: {''.join([str(t) for t in tokens if t.is_word])}", group_level=2
         )
 
         language = select_language(param.language, tokens)
@@ -95,7 +95,7 @@ class Composer(Worker):
         self.logger.debug(f"Building context for composer", group_level=1)
         completed_tokens = context_tokens(param.candidate, param.anchor_timestamp)
         self.logger.debug(
-            f"Completed tokens: {', '.join(str(t) for t in completed_tokens)}",
+            f"Completed tokens: {''.join(str(t) for t in completed_tokens if t.is_word)}",
             group_level=2,
         )
         return ComposerContextBuilderResult(

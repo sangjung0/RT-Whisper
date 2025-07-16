@@ -74,7 +74,7 @@ class ASRProcessor(Worker):
             self.__embed,
         )
         self.logger.debug(
-            f"Segment tokens: {', '.join(str(t) for t in segment_tokens)}",
+            f"Segment tokens: {''.join(str(t) for t in segment_tokens if t.is_word)}",
             group_level=2,
         )
 

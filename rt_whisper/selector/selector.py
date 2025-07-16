@@ -55,8 +55,12 @@ class SelectorProcessor(Worker):
         B = param.segment_tokens
         A = param.prev_segment_tokens
         language = param.language
-        self.logger.debug(f"Current: {', '.join(str(t) for t in B)}", group_level=2)
-        self.logger.debug(f"Previous: {', '.join(str(t) for t in A)}", group_level=2)
+        self.logger.debug(
+            f"Current: {''.join(str(t) for t in B if t.is_word)}", group_level=2
+        )
+        self.logger.debug(
+            f"Previous: {''.join(str(t) for t in A if t.is_word)}", group_level=2
+        )
 
         if not A:
             return SelectorResult(segment_tokens=B)
@@ -71,7 +75,7 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
         self.logger.debug(
-            f"Rest tokens: {', '.join(str(t) for t in rest)}", group_level=2
+            f"Rest tokens: {''.join(str(t) for t in rest if t.is_word)}", group_level=2
         )
 
         token_groups, orphan_tokens = group_similar_tokens(
@@ -87,7 +91,8 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
         self.logger.debug(
-            f"Orphan tokens: {', '.join(str(t) for t in orphan_tokens)}", group_level=2
+            f"Orphan tokens: {''.join(str(t) for t in orphan_tokens if t.is_word)}",
+            group_level=2,
         )
 
         new_tokens = merge_tokens(
@@ -96,7 +101,8 @@ class SelectorProcessor(Worker):
             rest=rest,
         )
         self.logger.debug(
-            f"New tokens: {', '.join(str(t) for t in new_tokens)}", group_level=2
+            f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
+            group_level=2,
         )
 
         return SelectorResult(segment_tokens=new_tokens)
