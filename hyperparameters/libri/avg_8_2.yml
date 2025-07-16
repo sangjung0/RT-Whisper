@@ -1,11 +1,31 @@
-sentence_max_prev_sentence: 1
-weighted_and_offset_token_boundary: 14500
-duration_filter_z:
-    default: 2.0
-    ko: 2.0
-    en: 3.3
+whisper:
+    model_options:
+        model_size_or_path: "large-v3"
+        device: "cuda"
+        compute_type: "float16"
+    transcribe_options:
+        beam_size: 5
+        vad_filter: False
+        temperature: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+
+silero_vad:
+    model_options: {}
+    run_options: {}
+
+asr:
+    max_overlap_duration: 96000
+
+position_weighted_filter:
+    boundary: 14500
+
+duration_filter:
+    z_thresh:
+        default: 2.0
+        ko: 2.0
+        en: 3.3
+
 probability_filter:
-    z:
+    z_thresh:
         default: 3.0
         ko: 3.0
         en: 4.9
@@ -13,6 +33,7 @@ probability_filter:
         default: 1.0
         ko: 0.4
         en: 0
+
 selector:
     search_range_sc:
         default: 24000
@@ -30,6 +51,3 @@ selector:
         default: 8000
         ko: 8000
         en: 13600
-max_overlap_duration: 96000
-
-

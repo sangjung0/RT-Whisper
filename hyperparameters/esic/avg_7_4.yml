@@ -16,38 +16,41 @@ asr:
     max_overlap_duration: 96000
 
 position_weighted_filter:
-    boundary: 5800
+    boundary: 8300
 
 duration_filter:
     z_thresh:
         default: 2.0
         ko: 2.0
-        en: 3.1
+        en: 4.6
 
 probability_filter:
     z_thresh:
         default: 3.0
         ko: 3.0
-        en: 4.3
+        en: 3.4
     min_prob:
         default: 1.0
         ko: 0.4
-        en: 0.45
+        en: 0.2
 
 selector:
     search_range_sc:
         default: 24000
         ko: 24000
-        en: 45000
+        en: 23000
     threshold:
         default: 0.5
         ko: 0.25
-        en: 0.1
+        en: 0.65
     padding:
         default: 3200
         ko: 3200
-        en: 15200
+        en: 4300
     tolerance:
         default: 8000
         ko: 8000
-        en: 15600
+        en: 100
+
+
+

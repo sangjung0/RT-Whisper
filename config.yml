@@ -7,4 +7,5 @@ rt_whisper:
     log:
         level: 20 # INFO: 20, DEBUG: 10
         dir_path: ${RT_WHISPER_LOG_DIR:./logs}
-        file_level: 10 # INFO: 20, DEBUG: 10
+        # 용량 엄청 큼. 따라서 필요시 활성화
+        file_level: 20 # INFO: 20, DEBUG: 10
