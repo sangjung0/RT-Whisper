@@ -20,3 +20,9 @@ class Token(BaseModel):
     def __hash__(self):
         # NOTE **절대 key로 사용하지 말 것. 이거는 단순히 코사인 유사도의 lru 캐시를 사용하기 위한 임시 조치임**
         return hash(self.text)
+
+    def __eq__(self, other):
+        # NOTE **절대 key로 사용하지 말 것. 이거는 단순히 코사인 유사도의 lru 캐시를 사용하기 위한 임시 조치임**
+        if isinstance(other, Token):
+            return self.text == other.text
+        return False
