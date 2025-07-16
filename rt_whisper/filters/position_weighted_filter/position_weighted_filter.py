@@ -34,7 +34,7 @@ class PositionWeightedFilter(Worker):
         self.logger.debug(f"Processing Position Weighted Filter", group_level=1)
 
         self.logger.debug(
-            f"Before: {', '.join(str(t) for t in param.segment_tokens)}", group_level=2
+            f"Before: {''.join(str(t) for t in param.segment_tokens if t.is_word)}", group_level=2
         )
         tokens = filter_by_position_weighted(
             param.segment_tokens,
@@ -42,7 +42,7 @@ class PositionWeightedFilter(Worker):
             param.chunk.shape[0],
             self.__BOUNDARY,
         )
-        self.logger.debug(f"After: {', '.join(str(t) for t in tokens)}", group_level=2)
+        self.logger.debug(f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2)
 
         return PositionWeightedFilterResult(
             segment_tokens=tokens,

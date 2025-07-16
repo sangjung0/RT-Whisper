@@ -32,7 +32,7 @@ def update_statistics(
 
 def filter_tokens_by_duration_outliers(
     tokens: list[Token], X: list[float], mean: float, std: float, z_thresh: float
-):
+) -> list[Token]:
     new_tokens = []
     X_iter = iter(X)
     for t in tokens:
