@@ -45,9 +45,7 @@ class Pipeline:
 
         context.bind(param)
 
-        self.logger.debug(" ")
-        self.logger.debug(" ")
-        self.logger.debug("Starting pipeline processing.")
+        self.logger.debug("🟢Starting pipeline processing.")
         for worker_group in self.__pipeline:
             for worker in worker_group[0]:
                 worker.process(context)

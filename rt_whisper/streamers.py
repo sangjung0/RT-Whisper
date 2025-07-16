@@ -36,6 +36,9 @@ def get_token_streamer(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
 
+    logger.debug("\n✅Creating token streamer with VADv1")
+    c_logger = logger.get_child()
+
     worker_groups = [
         [
             # NOTE v1에는 로거 추가하지 않음
@@ -46,34 +49,34 @@ def get_token_streamer(
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
-                logger=logger,
+                logger=c_logger,
             ),
         ],
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                logger=logger,
+                logger=c_logger,
             ),
             DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=logger
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=c_logger
             ),
             ProbabilityFilter(
                 z_thresh=hyperparameter["probability_filter"]["z_thresh"],
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
-                logger=logger,
+                logger=c_logger,
             ),
             Selector(
                 search_range_sc=hyperparameter["selector"]["search_range_sc"],
                 threshold=hyperparameter["selector"]["threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 tolerance=hyperparameter["selector"]["tolerance"],
-                logger=logger,
+                logger=c_logger,
             ),
-            Composer(logger),
+            Composer(c_logger),
         ],
     ]
 
-    pipeline = Pipeline(logger)
+    pipeline = Pipeline(c_logger)
     pipeline.init(workers=worker_groups)
     return pipeline
 
@@ -94,42 +97,45 @@ def get_token_streamer_with_vad_v2(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
 
+    logger.debug("\n✅Creating token streamer with VADv2")
+    c_logger = logger.get_child()
+
     worker_groups = [
         [
-            VADv2(vad=vad, logger=logger),
+            VADv2(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
-                logger=logger,
+                logger=c_logger,
             ),
         ],
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                logger=logger,
+                logger=c_logger,
             ),
             DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=logger
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=c_logger
             ),
             ProbabilityFilter(
                 z_thresh=hyperparameter["probability_filter"]["z_thresh"],
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
-                logger=logger,
+                logger=c_logger,
             ),
             Selector(
                 search_range_sc=hyperparameter["selector"]["search_range_sc"],
                 threshold=hyperparameter["selector"]["threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 tolerance=hyperparameter["selector"]["tolerance"],
-                logger=logger,
+                logger=c_logger,
             ),
-            Composer(logger),
+            Composer(c_logger),
         ],
     ]
 
-    pipeline = Pipeline(logger)
+    pipeline = Pipeline(c_logger)
     pipeline.init(workers=worker_groups)
     return pipeline

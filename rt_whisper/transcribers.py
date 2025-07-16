@@ -27,22 +27,25 @@ def get_transcriber(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
 
+    logger.debug("\n✅Creating transcriber with VADv2")
+    c_logger = logger.get_child()
+
     worker_groups = [
         [
-            VAD(vad=vad, logger=logger),
+            VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
                 sample_rate=Whisper.sample_rate,
                 within_eos=True,
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
-                logger=logger,
+                logger=c_logger,
             ),
         ],
         # NOTE SimpleComposer는 로거를 추가하지 않음
         [SimpleComposer()],
     ]
 
-    pipeline = Pipeline(logger)
+    pipeline = Pipeline(c_logger)
     pipeline.init(workers=worker_groups)
     return pipeline
