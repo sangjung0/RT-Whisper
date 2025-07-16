@@ -28,11 +28,13 @@ from sj_utils.evaluator import TimeChecker
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
+HYPERPARAMETER = "./hyperparameters/libri/sentence_error_47_4.yml"
+OUTPUT_PATH = "/workspaces/dev/output/esic/v_overall.json"
 
 src = Path(SOURCE)
 
 MAX_COUNT = 1
-TEST_ALL = False
+TEST_ALL = True
 
 
 def test_process_all(
@@ -138,7 +140,6 @@ def rt_whisper():
     from rt_whisper import streamers
     from rt_whisper.data import Param, Result
 
-    HYPERPARAMETER = "./hyperparameters/libri/avg_2_1.yml"
 
     print("Running RT Whisper...")
 
@@ -213,7 +214,6 @@ def whisper():
 if __name__ == "__main__":
     import json
 
-    OUTPUT_PATH = "/workspaces/dev/output/esic/overall_result.json"
 
     print("Starting performance tests...")
 
