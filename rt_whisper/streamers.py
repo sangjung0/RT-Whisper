@@ -58,7 +58,9 @@ def get_token_streamer(
                 logger=c_logger,
             ),
             DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=c_logger
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
+                min_dur=hyperparameter["duration_filter"]["min_dur"],
+                logger=c_logger
             ),
             ProbabilityFilter(
                 z_thresh=hyperparameter["probability_filter"]["z_thresh"],
@@ -118,7 +120,9 @@ def get_token_streamer_with_vad_v2(
                 logger=c_logger,
             ),
             DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"], logger=c_logger
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
+                min_dur=hyperparameter["duration_filter"]["min_dur"],
+                logger=c_logger,
             ),
             ProbabilityFilter(
                 z_thresh=hyperparameter["probability_filter"]["z_thresh"],

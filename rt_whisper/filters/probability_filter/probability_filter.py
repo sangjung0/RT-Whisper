@@ -44,18 +44,20 @@ class ProbabilityFilter(Worker):
 
         self.logger.debug(f"Filtering tokens by minimum probability", group_level=2)
         self.logger.debug(
-            f"Before: {''.join(str(t) for t in param.segment_tokens if t.is_word)}", group_level=2
+            f"Before: {''.join(str(t) for t in param.segment_tokens if t.is_word)}",
+            group_level=2,
         )
         tokens = filter_probability_by_min_prob(
             param.segment_tokens, self.__MIN_PROB[param.language]
         )
-        self.logger.debug(f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2)
+        self.logger.debug(
+            f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2
+        )
 
         X = [t.probability for t in tokens if t.is_word]
         mean, std, N = update_statistics(X, param.mean, param.std, param.count)
 
         self.logger.debug(f"Filtering tokens by probability outliers", group_level=2)
-        self.logger.debug(f"Before: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2)
         new_tokens = filter_tokens_by_probability_outliers(
             tokens, mean, std, self.__Z_THRESH[param.language]
         )

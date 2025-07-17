@@ -64,6 +64,7 @@ class ASRProcessor(Worker):
         segments, language = transcribe(
             merged_chunk, param.language, param.prompt, self.__transcriber
         )
+        self.logger.debug(f"Prompt: {param.prompt}", group_level=2)
 
         segment_tokens = segment_to_token_list(
             segments,

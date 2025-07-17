@@ -23,6 +23,10 @@ duration_filter:
         default: 2.0
         ko: 2.0
         en: 3.7
+    min_dur:
+        default: 160
+        ko: 160
+        en: 160
 
 probability_filter:
     z_thresh:
