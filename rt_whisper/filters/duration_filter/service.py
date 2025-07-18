@@ -32,10 +32,9 @@ def update_statistics(
     if not X:
         return prev_mean, prev_std, prev_n
 
-    adjusted_X = [x for x in X if x > 0]
-    N = len(adjusted_X)
-    mean = statistics.mean(adjusted_X)
-    std = statistics.stdev(adjusted_X) if len(adjusted_X) > 1 else 0.0
+    N = len(X)
+    mean = statistics.mean(X)
+    std = statistics.stdev(X) if len(X) > 1 else 0.0
     if prev_mean is not None and prev_std is not None and prev_n is not None:
         mean, std = update_mean_std(prev_mean, prev_std, prev_n, mean, std, N)
         N += prev_n

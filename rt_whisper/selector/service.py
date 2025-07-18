@@ -49,8 +49,6 @@ def group_similar_tokens(
                 continue
             elif group_token.start > token.start + search_range:
                 break
-            elif not token.is_word:
-                similarities.append((i, 0))
             elif not group_token.is_word:
                 continue
             else:
@@ -79,7 +77,7 @@ def merge_tokens(
     orphan_tokens: list[Token],
     rest: list[Token],
 ) -> list[Token]:
-    tokens = [max(tk, key=lambda x: x.probability) for tk in token_groups]
+    tokens = [__select_best(tk) for tk in token_groups]
     tokens_idx = 0
     orphan_idx = 0
     while True:
@@ -101,6 +99,20 @@ def merge_tokens(
             tokens_idx += 1
 
     return tokens + rest
+
+
+def __select_best(group: list[Token]) -> Token:
+    tokens = [t for t in group if t.is_word]
+    if not tokens:
+        return group[0]
+    tensors = [t.embedding for t in tokens]
+    mean = torch.mean(torch.stack(tensors), dim=0)
+    similarities = [
+        torch.nn.functional.cosine_similarity(mean, t.embedding, dim=0).item()
+        for t in tokens
+    ]
+    best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
+    return tokens[best_idx]
 
 
 def __token_similarity(A: Token, B: Token, padding: int, smooth: float) -> float:

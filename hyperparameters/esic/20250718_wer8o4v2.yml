@@ -50,7 +50,7 @@ selector:
     padding:
         default: 3200
         ko: 3200
-        en: 11300
+        en: 11200
     tolerance:
         default: 8000
         ko: 8000

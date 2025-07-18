@@ -13,7 +13,7 @@ silero_vad:
     run_options: {}
 
 asr:
-    max_overlap_duration: 96000
+    max_overlap_duration: 112000
 
 position_weighted_filter:
     boundary: 0
@@ -26,7 +26,7 @@ duration_filter:
     min_dur:
         default: 160
         ko: 160
-        en: 160
+        en: 0
 
 probability_filter:
     z_thresh:
@@ -42,16 +42,16 @@ selector:
     search_range_sc:
         default: 24000
         ko: 24000
-        en: 68000
+        en: 88000
     threshold:
         default: 0.5
         ko: 0.25
-        en: 0.45
+        en: 0.0
     padding:
         default: 3200
         ko: 3200
-        en: 11300
+        en: 3300
     tolerance:
         default: 8000
         ko: 8000
-        en: 31800
+        en: 2500
