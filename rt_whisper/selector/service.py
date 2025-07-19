@@ -19,18 +19,19 @@ def group_similar_tokens(
 ) -> tuple[list[list[Token]], list[Token]]:
     orphan_tokens = []
     idx_group = 0
+    # print(f"similarity grouping")
     for token in source:
         if not token.is_word:
             orphan_tokens.append(token)
             continue
 
-        # print(f"Processing token: {token.text}")
+        # print(f"\tProcessing token: {token.text}")
 
         similarities = []
         for i in range(idx_group, len(token_groups)):
             group_token = token_groups[i][0]
             iou = __token_iou(token, group_token, padding, smooth)
-            # print(f"\tToken: {token.text}, Group Token: {group_token.text}: IOU: {iou}")
+            # print(f"\t\tToken: {token.text}, Group Token: {group_token.text}: IOU: {iou}")
             if iou < iou_threshold:
                 if group_token.start < token.start or group_token.end < token.end:
                     continue
@@ -39,13 +40,13 @@ def group_similar_tokens(
             else:
                 similarity = __cosine_similarity(token, group_token)
                 similarities.append((i, similarity))
-                # print(f"\t\tSimilarity: {similarity}")
+                # print(f"\t\t\tSimilarity: {similarity}")
 
         if not similarities:
             orphan_tokens.append(token)
             continue
 
-        # print(f"\tSimilarities: {similarities}")
+        # print(f"\t\tSimilarities: {similarities}")
         max_arg = max(range(len(similarities)), key=lambda i: similarities[i][1])
         if similarities[max_arg][1] < cos_threshold:
             orphan_tokens.append(token)
@@ -94,6 +95,7 @@ def __select_best(group: list[Token]) -> Token:
     mean = torch.mean(torch.stack(tensors), dim=0)
     similarities = [
         torch.nn.functional.cosine_similarity(mean, t.embedding, dim=0).item()
+        * t.probability
         for t in tokens
     ]
     best_idx = max(range(len(similarities)), key=lambda i: similarities[i])

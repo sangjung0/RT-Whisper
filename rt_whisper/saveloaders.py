@@ -70,8 +70,18 @@ def get_token_streamer_saver(
             )
         ],
         [
-            DurationMinFilter(
+            PositionWeightedFilter(
+                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                logger=c_logger,
+            ),
+            DurationFilter(
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
                 min_dur=hyperparameter["duration_filter"]["min_dur"],
+                logger=c_logger,
+            ),
+            ProbabilityFilter(
+                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
+                min_prob=hyperparameter["probability_filter"]["min_prob"],
                 logger=c_logger,
             ),
             Selector(
@@ -101,8 +111,18 @@ def get_token_streamer_loader(
     worker_groups = [
         [DataLoader(saved_path=saved_path, logger=c_logger)],
         [
-            DurationMinFilter(
+            PositionWeightedFilter(
+                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                logger=c_logger,
+            ),
+            DurationFilter(
+                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
                 min_dur=hyperparameter["duration_filter"]["min_dur"],
+                logger=c_logger,
+            ),
+            ProbabilityFilter(
+                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
+                min_prob=hyperparameter["probability_filter"]["min_prob"],
                 logger=c_logger,
             ),
             Selector(
