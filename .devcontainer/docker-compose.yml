@@ -13,6 +13,7 @@ services:
             # dataset
             - F:/Datasets:/workspaces/dev/datasets:ro
             - F:/Datasets/asr-rankformer-datasets:/workspaces/dev/datasets/asr-rankformer-datasets:rw
+            - F:/Models/storage/rt-whisper:/workspaces/dev/storage:rw
         deploy:
             resources:
                 reservations:
