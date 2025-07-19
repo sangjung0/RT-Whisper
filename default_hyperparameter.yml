@@ -46,7 +46,7 @@ selector:
     cos_threshold:
         default: 0.5
         ko: 0.85
-        en: 0.78
+        en: 0.75
     padding:
         default: 3200
         ko: 3200
