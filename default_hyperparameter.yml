@@ -23,6 +23,10 @@ duration_filter:
         default: 2.0
         ko: 2.0
         en: 2.0
+    min_dur:
+        default: 160
+        ko: 160
+        en: 160
 
 probability_filter:
     z_thresh:
@@ -35,19 +39,15 @@ probability_filter:
         en: 0.4
 
 selector:
-    search_range_sc:
-        default: 24000
-        ko: 24000
-        en: 24000
-    threshold:
+    iou_threshold:
         default: 0.5
-        ko: 0.25
+        ko: 0.4
+        en: 0.5
+    cos_threshold:
+        default: 0.5
+        ko: 0.85
         en: 0.5
     padding:
         default: 3200
         ko: 3200
-        en: 3200
-    tolerance:
-        default: 8000
-        ko: 8000
         en: 8000

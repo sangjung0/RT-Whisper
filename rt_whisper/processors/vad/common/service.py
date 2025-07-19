@@ -100,3 +100,10 @@ def __find_condition(
     raise ValueError(
         f"Condition not found: \n\tc_index: {c_index} \n\tconditions: {conditions} \n\ttimestamp: {timestamp}"
     )
+
+__all__ = [
+    "vad",
+    "merge_audio_from_timestamps",
+    "generate_vad_timestamps_mapping",
+    "set_offset",
+]

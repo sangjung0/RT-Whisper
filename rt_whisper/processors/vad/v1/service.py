@@ -5,7 +5,7 @@ import numpy as np
 from sj_utils.audio_utils import generate_empty_chunk
 
 if TYPE_CHECKING:
-    from rt_whisper.data import Token
+    pass
 
 
 def generate_vad_offset(prev_vad_offset: int, prev_vad_chunk: np.ndarray) -> int:
@@ -42,8 +42,6 @@ def apply_offset_to_timestamps(
         if timestamps
         else []
     )
-
-
 
 
 def generate_context_vad_timestamps(
@@ -91,3 +89,13 @@ def generate_context_vad_offset(
     vad_offset: int, vad_chunk: np.ndarray, context_vad_chunk: np.ndarray
 ) -> int:
     return vad_offset + vad_chunk.shape[0] - context_vad_chunk.shape[0]
+
+
+__all__ = [
+    "generate_vad_offset",
+    "apply_offset_to_timestamps",
+    "generate_context_vad_timestamps",
+    "generate_context_vad_timestamps_mapping",
+    "generate_context_vad_chunk",
+    "generate_context_vad_offset",
+]

@@ -33,7 +33,7 @@ class ProbabilityFilter(Worker):
 
     # override
     def _can_process(self, context: TokenState) -> ProbabilityFilterParam:
-        if context.chunk.shape[0] > 0 and len(context.segment_tokens) > 0:
+        if len(context.segment_tokens) > 0:
             prob_state = context.get_state(ProbabilityFilterState)
             return ProbabilityFilterParam.from_context(context, prob_state)
         return None

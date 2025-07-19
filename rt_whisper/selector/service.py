@@ -9,65 +9,49 @@ if TYPE_CHECKING:
     from rt_whisper.data import Token
 
 
-def position_tokens(
-    source: list[Token],
-    target: list[Token],
-    tolerance: int,
-) -> tuple[list[list[Token]], list[Token]]:
-    token_groups = []
-    rest = []
-    start = source[-1].start + tolerance
-    for t in target:
-        if (not t.is_word and t.end > start) or (t.is_word and t.start > start):
-            rest.append(t)
-        else:
-            token_groups.append([t])
-
-    return token_groups, rest
-
-
 def group_similar_tokens(
     source: list[Token],
     token_groups: list[list[Token]],
-    search_range: int,
     padding: int,
-    threshold: float,
+    iou_threshold: float,
+    cos_threshold: float,
     smooth: float,
 ) -> tuple[list[list[Token]], list[Token]]:
     orphan_tokens = []
-    idx, idx_group = -1, 0
-    while True:
-        idx += 1
-        if idx >= len(source) or idx_group >= len(token_groups):
-            break
+    idx_group = 0
+    for token in source:
+        if not token.is_word:
+            orphan_tokens.append(token)
+            continue
 
-        token = source[idx]
+        # print(f"Processing token: {token.text}")
+
         similarities = []
         for i in range(idx_group, len(token_groups)):
             group_token = token_groups[i][0]
-            if group_token.start < token.start - search_range:
-                continue
-            elif group_token.start > token.start + search_range:
-                break
-            elif not group_token.is_word:
-                continue
+            iou = __token_iou(token, group_token, padding, smooth)
+            # print(f"\tToken: {token.text}, Group Token: {group_token.text}: IOU: {iou}")
+            if iou < iou_threshold:
+                if group_token.start < token.start or group_token.end < token.end:
+                    continue
+                else:
+                    break
             else:
-                similarity = __token_similarity(token, group_token, padding, smooth)
+                similarity = __cosine_similarity(token, group_token)
                 similarities.append((i, similarity))
+                # print(f"\t\tSimilarity: {similarity}")
 
         if not similarities:
             orphan_tokens.append(token)
             continue
 
+        # print(f"\tSimilarities: {similarities}")
         max_arg = max(range(len(similarities)), key=lambda i: similarities[i][1])
-        if similarities[max_arg][1] < threshold:
+        if similarities[max_arg][1] < cos_threshold:
             orphan_tokens.append(token)
             continue
         token_groups[similarities[max_arg][0]].append(token)
         idx_group = similarities[max_arg][0]
-
-    for i in range(idx, len(source)):
-        orphan_tokens.append(source[i])
 
     return token_groups, orphan_tokens
 
@@ -75,36 +59,37 @@ def group_similar_tokens(
 def merge_tokens(
     token_groups: list[list[Token]],
     orphan_tokens: list[Token],
-    rest: list[Token],
 ) -> list[Token]:
     tokens = [__select_best(tk) for tk in token_groups]
-    tokens_idx = 0
-    orphan_idx = 0
-    while True:
-        if orphan_idx >= len(orphan_tokens):
-            break
-        t = orphan_tokens[orphan_idx]
-        if tokens_idx >= len(tokens):
-            tokens.append(t)
-            orphan_idx += 1
-            continue
-        token = tokens[tokens_idx]
-        if token.is_word and token.start > t.start:
-            tokens.insert(tokens_idx, t)
-            orphan_idx += 1
-        elif not token.is_word and token.end > t.end:
-            tokens.insert(tokens_idx, t)
-            orphan_idx += 1
-        else:
-            tokens_idx += 1
+    t_idx = 0
+    o_idx = 0
+    for o_idx in range(len(orphan_tokens)):
+        o_token = orphan_tokens[o_idx]
+        while t_idx < len(tokens):
+            token = tokens[t_idx]
+            if o_token.is_word and token.start > o_token.start:
+                tokens.insert(t_idx, o_token)
+                t_idx += 2
+                break
+            elif not o_token.is_word and token.end > o_token.end:
+                tokens.insert(t_idx, o_token)
+                t_idx += 2
+                break
+            t_idx += 1
+        break
+    for o_idx in range(o_idx, len(orphan_tokens)):
+        tokens.append(orphan_tokens[o_idx])
 
-    return tokens + rest
+    return tokens
 
 
 def __select_best(group: list[Token]) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
         return group[0]
+    elif len(set(t.text for t in tokens)) == 1:
+        return max(tokens, key=lambda t: t.probability)
+
     tensors = [t.embedding for t in tokens]
     mean = torch.mean(torch.stack(tensors), dim=0)
     similarities = [
@@ -115,14 +100,14 @@ def __select_best(group: list[Token]) -> Token:
     return tokens[best_idx]
 
 
-def __token_similarity(A: Token, B: Token, padding: int, smooth: float) -> float:
-    sim = __cosine_similarity(A, B)
-    iou = __token_iou(A, B, padding, smooth)
-    return (sim + iou) / 2
+def __cosine_similarity(A: Token, B: Token) -> float:
+    if hash(A) < hash(B):
+        A, B = B, A
+    return __lru_cosine_similarity(A, B)
 
 
 @lru_cache(maxsize=4096)
-def __cosine_similarity(A: Token, B: Token) -> float:
+def __lru_cosine_similarity(A: Token, B: Token) -> float:
     return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
 
 

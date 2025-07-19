@@ -4,10 +4,29 @@ import numpy as np
 
 from rt_whisper.abstracts import Worker
 from rt_whisper.processors.asr import ASRState
-from rt_whisper.processors.vad.common.service import *
-
-from .data import *
-from .service import *
+from rt_whisper.processors.vad.common.service import (
+    vad,
+    merge_audio_from_timestamps,
+    generate_vad_timestamps_mapping,
+    set_offset,
+)
+from rt_whisper.processors.vad.v1.data import (
+    VADProcessParam,
+    VADProcessResult,
+    VADPostParam,
+    VADPostResult,
+    VADContextBuilderParam,
+    VADContextBuilderResult,
+    VADState,
+)
+from rt_whisper.processors.vad.v1.service import (
+    generate_vad_offset,
+    apply_offset_to_timestamps,
+    generate_context_vad_timestamps,
+    generate_context_vad_timestamps_mapping,
+    generate_context_vad_chunk,
+    generate_context_vad_offset,
+)
 
 if TYPE_CHECKING:
     from typing import Callable

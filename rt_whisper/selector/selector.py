@@ -10,7 +10,6 @@ from rt_whisper.selector.data import (
     SelectorContextBuilderResult,
 )
 from rt_whisper.selector.service import (
-    position_tokens,
     group_similar_tokens,
     merge_tokens,
 )
@@ -25,65 +24,54 @@ N = "\n\t\t\t"
 class SelectorProcessor(Worker):
     def __init__(
         self,
-        search_range_sc: int,
-        threshold: float,
+        iou_threshold: float,
+        cos_threshold: float,
         padding: int,
-        tolerance: int,
         logger: RTWhisperLogger,
         smooth: float = 1e-6,
     ):
         super().__init__()
         self.logger = logger
 
-        self.__SEARCH_RANGE_SC = search_range_sc
-        self.__THRESHOLD = threshold
+        self.__IOU_THRESHOLD = iou_threshold
+        self.__COS_THRESHOLD = cos_threshold
         self.__PADDING = padding
-        self.__TOLERANCE = tolerance
         self.__SMOOTH = smooth
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
         sct_state: SelectorState = context.get_state(SelectorState)
-        if len(context.segment_tokens) > 0 or len(sct_state.prev.segment_tokens) > 0:
-            return SelectorParam.from_state(context, sct_state)
-        return None
+        current = context.segment_tokens
+        prev = sct_state.prev.segment_tokens
+        if len(prev) == 0:
+            return None
+        elif len(current) >= len(prev) and all(
+            c.text == p.text for c, p in zip(current[: len(prev)], prev)
+        ):
+            return None
+        return SelectorParam.from_state(context, sct_state)
 
     # override
     def _process(self, param: SelectorParam) -> SelectorResult:
         self.logger.debug(f"Processing Selector", group_level=1)
 
-        B = param.segment_tokens
-        A = param.prev_segment_tokens
+        current = param.segment_tokens
+        prev = param.prev_segment_tokens
         language = param.language
         self.logger.debug(
-            f"Current: {''.join(str(t) for t in B if t.is_word)}", group_level=2
+            f"Current: {''.join(str(t) for t in current if t.is_word)}", group_level=2
         )
         self.logger.debug(
-            f"Previous: {''.join(str(t) for t in A if t.is_word)}", group_level=2
+            f"Previous: {''.join(str(t) for t in prev if t.is_word)}", group_level=2
         )
 
-        if not A:
-            return SelectorResult(segment_tokens=B)
-
-        token_groups, rest = position_tokens(
-            source=A,
-            target=B,
-            tolerance=self.__TOLERANCE[language],
-        )
-        self.logger.debug(
-            f"Token groups: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
-            group_level=2,
-        )
-        self.logger.debug(
-            f"Rest tokens: {''.join(str(t) for t in rest if t.is_word)}", group_level=2
-        )
-
+        token_groups = [[t] for t in prev]
         token_groups, orphan_tokens = group_similar_tokens(
-            source=A,
+            source=current,
             token_groups=token_groups,
-            search_range=self.__SEARCH_RANGE_SC[language],
             padding=self.__PADDING[language],
-            threshold=self.__THRESHOLD[language],
+            iou_threshold=self.__IOU_THRESHOLD[language],
+            cos_threshold=self.__COS_THRESHOLD[language],
             smooth=self.__SMOOTH,
         )
         self.logger.debug(
@@ -98,7 +86,6 @@ class SelectorProcessor(Worker):
         new_tokens = merge_tokens(
             token_groups=token_groups,
             orphan_tokens=orphan_tokens,
-            rest=rest,
         )
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
@@ -127,7 +114,7 @@ class SelectorContextBuilder(SelectorProcessor):
             if t.is_word and t.end > param.anchor_timestamp
         ]
         self.logger.debug(
-            f"Context segment tokens: {', '.join(str(t) for t in context_segment_tokens)}",
+            f"Context segment tokens: {''.join(str(t) for t in context_segment_tokens)}",
             group_level=2,
         )
 
@@ -146,18 +133,16 @@ class SelectorContextBuilder(SelectorProcessor):
 class Selector(SelectorContextBuilder):
     def __init__(
         self,
-        search_range_sc: int,
-        threshold: float,
+        iou_threshold: float,
+        cos_threshold: float,
         padding: int,
-        tolerance: int,
         logger: RTWhisperLogger,
         smooth: float = 1e-6,
     ):
         super().__init__(
-            search_range_sc=search_range_sc,
-            threshold=threshold,
+            iou_threshold=iou_threshold,
+            cos_threshold=cos_threshold,
             padding=padding,
-            tolerance=tolerance,
             logger=logger,
             smooth=smooth,
         )

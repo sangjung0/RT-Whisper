@@ -57,3 +57,33 @@ class DurationFilterResult:
         dfs_state.mean[language] = self.mean
         dfs_state.std[language] = self.std
         dfs_state.count[language] = self.count
+
+
+@dataclass(slots=True)
+class DurationMinFilterParam:
+    segment_tokens: list[Token]
+    language: str | None
+
+    @staticmethod
+    def from_state(state: TokenState) -> "DurationMinFilterParam":
+        return DurationMinFilterParam(
+            segment_tokens=state.segment_tokens,
+            language=state.language,
+        )
+
+
+@dataclass(slots=True)
+class DurationMinFilterResult:
+    segment_tokens: list[Token]
+
+    def update_state(self, state: TokenState):
+        state.segment_tokens = self.segment_tokens
+
+
+__all__ = [
+    "DurationFilterState",
+    "DurationFilterParam",
+    "DurationFilterResult",
+    "DurationMinFilterParam",
+    "DurationMinFilterResult",
+]
