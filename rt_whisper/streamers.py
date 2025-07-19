@@ -13,13 +13,18 @@ from rt_whisper.filters import (
     ProbabilityFilter,
     DurationMinFilter,
 )
-from rt_whisper.models import SileroVad, Whisper
+from rt_whisper.models import Whisper
 from rt_whisper.processors import ASR
 from rt_whisper.processors.vad.v1 import VAD as VADv1
-from rt_whisper.processors.vad.v2 import VAD as VADv2
+from rt_whisper.processors.vad.v2 import VAD as VAD
 from rt_whisper.selector import Selector
 from rt_whisper.pipeline import Pipeline
-from rt_whisper.utils import init_hyperparameter, whisper_embed
+from rt_whisper.utils import (
+    init_hyperparameter,
+    whisper_embed,
+    get_silero_vad,
+    get_whisper,
+)
 
 if TYPE_CHECKING:
     pass
@@ -30,11 +35,11 @@ def get_token_streamer(
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
-    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
-    silero_vad = SileroVad(
+    silero_vad = get_silero_vad(
         Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
     )
     vad = lambda audio: silero_vad.run(
@@ -92,11 +97,11 @@ def get_token_streamer_with_vad_v2(
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
-    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
-    silero_vad = SileroVad(
+    silero_vad = get_silero_vad(
         Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
     )
     vad = lambda audio: silero_vad.run(
@@ -108,7 +113,7 @@ def get_token_streamer_with_vad_v2(
 
     worker_groups = [
         [
-            VADv2(vad=vad, logger=c_logger),
+            VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
@@ -153,11 +158,11 @@ def get_token_streamer_with_vad_v2_dur_min_filter(
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
-    whisper = Whisper(hyperparameter["whisper"]["model_options"])
+    whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
-    silero_vad = SileroVad(
+    silero_vad = get_silero_vad(
         Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
     )
     vad = lambda audio: silero_vad.run(
@@ -169,7 +174,7 @@ def get_token_streamer_with_vad_v2_dur_min_filter(
 
     worker_groups = [
         [
-            VADv2(vad=vad, logger=c_logger),
+            VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
                 embed=whisper_embed(),
@@ -197,3 +202,10 @@ def get_token_streamer_with_vad_v2_dur_min_filter(
     pipeline = Pipeline(c_logger)
     pipeline.init(workers=worker_groups)
     return pipeline
+
+
+__all__ = [
+    "get_token_streamer",
+    "get_token_streamer_with_vad_v2",
+    "get_token_streamer_with_vad_v2_dur_min_filter",
+]

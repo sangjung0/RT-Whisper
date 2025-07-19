@@ -6,8 +6,10 @@ from functools import lru_cache
 
 from sj_utils.collection_utils import SafetyDict
 from sj_utils.file import ReadYaml
+from sj_utils.decorator_utils import lru_dict_cache
 
 from rt_whisper.core import hyperparameter as default_hyperparameter, config
+from rt_whisper.models import Whisper, SileroVad
 
 
 def init_hyperparameter(
@@ -25,6 +27,7 @@ def init_hyperparameter(
     return hyperparameter
 
 
+@lru_cache(maxsize=1)
 def whisper_embed(model_size: str = config.rt_whisper.huggingface.path):
     tokenizer = WhisperTokenizer.from_pretrained(model_size)
     embedding_table = _whisper_embedding_weight(model_size)
@@ -54,7 +57,19 @@ def _whisper_embedding_weight(
     return embedding
 
 
+@lru_dict_cache()
+def get_whisper(options: dict = {}) -> Whisper:
+    return Whisper(options)
+
+
+@lru_dict_cache()
+def get_silero_vad(sample_rate: int, options: dict = {}) -> SileroVad:
+    return SileroVad(sample_rate, options)
+
+
 __all__ = [
     "init_hyperparameter",
     "whisper_embed",
+    "get_whisper",
+    "get_silero_vad",
 ]

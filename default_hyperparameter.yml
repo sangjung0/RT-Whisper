@@ -42,12 +42,12 @@ selector:
     iou_threshold:
         default: 0.5
         ko: 0.4
-        en: 0.5
+        en: 0.4
     cos_threshold:
         default: 0.5
         ko: 0.85
-        en: 0.5
+        en: 0.78
     padding:
         default: 3200
         ko: 3200
-        en: 8000
+        en: 3200
