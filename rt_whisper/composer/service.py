@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from sj_utils.string_utils import remove_spaces_and_symbols
+from sj_utils.string import remove_spaces_and_symbols
 from rt_whisper.data import Sentence
 
 if TYPE_CHECKING:

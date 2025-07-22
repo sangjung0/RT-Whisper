@@ -1,7 +1,7 @@
 import numpy as np
 from silero_vad import load_silero_vad, get_speech_timestamps
 
-from sj_utils.decorator_utils import singleton
+from sj_utils.decorator import singleton
 
 
 @singleton

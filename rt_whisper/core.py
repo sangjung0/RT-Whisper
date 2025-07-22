@@ -1,16 +1,16 @@
 import os
 from pathlib import Path
 
-from sj_utils.collection_utils import SafetyDict
-from sj_utils.file import ReadYaml
+from sj_utils.collection import SafetyDict
+from sj_utils.file.yaml import read_yaml_namespace, read_yaml
 from sj_utils.logger import generate
 
 from rt_whisper import RTWhisperLogger
 
 
-config = ReadYaml(Path(os.getenv("CONFIG_PATH", "config.yml"))).namespace
+config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
 hyperparameter = SafetyDict(
-    ReadYaml(Path(config.rt_whisper.default_hyperparameter_path)).dict
+    read_yaml(Path(config.rt_whisper.default_hyperparameter_path))
 )
 logger = RTWhisperLogger(
     generate(

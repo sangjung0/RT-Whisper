@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from dataclasses import dataclass, field
 import numpy as np
 
-from sj_utils.audio_utils import generate_empty_chunk
+from sj_utils.audio import generate_empty_chunk
 
 from .result import Result
 

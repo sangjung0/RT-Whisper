@@ -1,7 +1,7 @@
 from faster_whisper import WhisperModel
 import numpy as np
 
-from sj_utils.decorator_utils import singleton
+from sj_utils.decorator import singleton
 
 
 @singleton

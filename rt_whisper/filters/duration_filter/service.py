@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import statistics
 
-from sj_utils.statistics_utils import update_mean_std
+from sj_utils.statistics import update_mean_std
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token

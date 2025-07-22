@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from pathlib import Path
 
-from sj_utils.collection_utils import SafetyDict
+from sj_utils.collection import SafetyDict
 
 from rt_whisper.core import logger
 from rt_whisper.composer import Composer

@@ -5,7 +5,7 @@ import numpy as np
 
 from dataclasses import dataclass, field
 
-from sj_utils.audio_utils import generate_empty_chunk
+from sj_utils.audio import generate_empty_chunk
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState

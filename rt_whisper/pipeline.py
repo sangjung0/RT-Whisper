@@ -2,7 +2,7 @@ from logging import Logger
 
 from rt_whisper.abstracts import Worker
 from rt_whisper.data import TokenState, Param, Result
-from sj_utils.decorator_utils import singleton
+from sj_utils.decorator import singleton
 
 
 @singleton

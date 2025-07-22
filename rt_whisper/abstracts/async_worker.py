@@ -1,7 +1,7 @@
 from abc import abstractmethod
 from typing import Union, Any
 
-from sj_utils.decorator_utils import singleton
+from sj_utils.decorator import singleton
 
 
 @singleton

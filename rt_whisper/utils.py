@@ -4,9 +4,9 @@ from pathlib import Path
 from transformers import WhisperTokenizer, WhisperModel
 from functools import lru_cache
 
-from sj_utils.collection_utils import SafetyDict
-from sj_utils.file import ReadYaml
-from sj_utils.decorator_utils import lru_dict_cache
+from sj_utils.collection import SafetyDict
+from sj_utils.file.yaml import read_yaml
+from sj_utils.decorator import lru_dict_cache
 
 from rt_whisper.core import hyperparameter as default_hyperparameter, config
 from rt_whisper.models import Whisper, SileroVad
@@ -18,7 +18,7 @@ def init_hyperparameter(
     if hyperparameter is None:
         hyperparameter = default_hyperparameter
     elif isinstance(hyperparameter, str) or isinstance(hyperparameter, Path):
-        hyperparameter = SafetyDict(ReadYaml(Path(hyperparameter)).dict)
+        hyperparameter = SafetyDict(read_yaml(Path(hyperparameter)))
     elif not isinstance(hyperparameter, SafetyDict):
         raise TypeError(
             f"Expected hyperparameter to be SafetyDict, Path, or str, got {type(hyperparameter)}"
