@@ -12,6 +12,8 @@ python-dotenv
 pydantic
 beartype
 ffmpeg-python
+plotly
+nbformat
 
 # torch
 torch
