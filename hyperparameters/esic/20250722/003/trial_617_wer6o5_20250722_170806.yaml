@@ -1,0 +1,67 @@
+metadata:
+  description: '
+
+    20250722 기점으로 수정된 RT Whisper 알고리즘을 사용함
+
+    saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
+
+    overlap_duration: 16000~112000, 16000 단위로 설정
+
+    배치 16
+
+    20250722/001 결과 기반 하이퍼파라미터 탐색 범위를 좁힘
+
+    '
+  generated_date:
+    year: 2025
+    month: 7
+    day: 22
+    hour: 17
+    minute: 8
+    second: 6
+    microsecond: 91227
+data:
+  whisper:
+    model_options:
+      model_size_or_path: large-v3
+      device: cuda
+      compute_type: float16
+    transcribe_options:
+      beam_size: 5
+      vad_filter: false
+      temperature:
+      - 0.0
+      - 0.2
+      - 0.4
+      - 0.6
+      - 0.8
+      - 1.0
+  silero_vad:
+    model_options: {}
+    run_options: {}
+  asr:
+    max_overlap_duration: 96000
+  position_weighted_filter:
+    boundary: 8900
+  duration_filter:
+    z_thresh:
+      default: 2.0
+    min_dur:
+      default: 160
+      en: 640.0
+  probability_filter:
+    z_thresh:
+      default: 3.0
+    min_prob:
+      default: 1.0
+      en: 0.4
+  selector:
+    iou_threshold:
+      default: 0.5
+      en: 0.22999999999999998
+    cos_threshold:
+      default: 0.5
+      en: 0.6
+    padding:
+      default: 3200
+      en: 900
