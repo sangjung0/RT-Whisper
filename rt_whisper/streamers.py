@@ -12,6 +12,7 @@ from rt_whisper.filters import (
     PositionWeightedFilter,
     ProbabilityFilter,
     DurationMinFilter,
+    ProbabilityMinFilter,
 )
 from rt_whisper.models import Whisper
 from rt_whisper.processors import ASR
@@ -153,7 +154,7 @@ def get_token_streamer_with_vad_v2(
     return pipeline
 
 
-def get_token_streamer_with_vad_v2_dur_min_filter(
+def get_token_streamer_with_vad_v2_min_filter(
     hyperparameter: SafetyDict | Path | str | None = None,
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
@@ -185,8 +186,16 @@ def get_token_streamer_with_vad_v2_dur_min_filter(
             ),
         ],
         [
+            PositionWeightedFilter(
+                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                logger=c_logger,
+            ),
             DurationMinFilter(
                 min_dur=hyperparameter["duration_filter"]["min_dur"],
+                logger=c_logger,
+            ),
+            ProbabilityMinFilter(
+                min_prob=hyperparameter["probability_filter"]["min_prob"],
                 logger=c_logger,
             ),
             Selector(
@@ -207,5 +216,5 @@ def get_token_streamer_with_vad_v2_dur_min_filter(
 __all__ = [
     "get_token_streamer",
     "get_token_streamer_with_vad_v2",
-    "get_token_streamer_with_vad_v2_dur_min_filter",
+    "get_token_streamer_with_vad_v2_min_filter",
 ]

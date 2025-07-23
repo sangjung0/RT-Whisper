@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class ProbabilityFilter(Worker):
-    def __init__(self, z_thresh: float, min_prob: float, logger: Logger):
+    def __init__(self, z_thresh: dict[str, float], min_prob: dict[str, float], logger: Logger):
         super().__init__()
         self.logger = logger
 

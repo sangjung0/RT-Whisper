@@ -59,3 +59,31 @@ class ProbabilityFilterResult:
         prob_state.mean[language] = self.mean
         prob_state.std[language] = self.std
         prob_state.count[language] = self.count
+
+
+@dataclass(slots=True)
+class ProbabilityMinFilterParam:
+    segment_tokens: float
+    language: str | None
+
+    @staticmethod
+    def from_context(state: TokenState) -> "ProbabilityMinFilterParam":
+        return ProbabilityMinFilterParam(
+            segment_tokens=state.segment_tokens, language=state.language
+        )
+
+
+@dataclass(slots=True)
+class ProbabilityMinFilterResult:
+    segment_tokens: list[Token]
+
+    def update_context(self, state: TokenState) -> None:
+        state.segment_tokens = self.segment_tokens
+
+__all__ = [
+    "ProbabilityFilterState",
+    "ProbabilityFilterParam",
+    "ProbabilityFilterResult",
+    "ProbabilityMinFilterParam",
+    "ProbabilityMinFilterResult",
+]

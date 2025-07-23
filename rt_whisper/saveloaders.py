@@ -12,6 +12,7 @@ from rt_whisper.filters import (
     PositionWeightedFilter,
     ProbabilityFilter,
     DurationMinFilter,
+    ProbabilityMinFilter,
 )
 from rt_whisper.models import Whisper
 from rt_whisper.processors import ASR
@@ -74,13 +75,11 @@ def get_token_streamer_saver(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
                 logger=c_logger,
             ),
-            DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
+            DurationMinFilter(
                 min_dur=hyperparameter["duration_filter"]["min_dur"],
                 logger=c_logger,
             ),
-            ProbabilityFilter(
-                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
+            ProbabilityMinFilter(
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
                 logger=c_logger,
             ),
@@ -115,13 +114,11 @@ def get_token_streamer_loader(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
                 logger=c_logger,
             ),
-            DurationFilter(
-                z_thresh=hyperparameter["duration_filter"]["z_thresh"],
+            DurationMinFilter(
                 min_dur=hyperparameter["duration_filter"]["min_dur"],
                 logger=c_logger,
             ),
-            ProbabilityFilter(
-                z_thresh=hyperparameter["probability_filter"]["z_thresh"],
+            ProbabilityMinFilter(
                 min_prob=hyperparameter["probability_filter"]["min_prob"],
                 logger=c_logger,
             ),
