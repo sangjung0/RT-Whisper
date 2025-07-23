@@ -26,17 +26,26 @@ from util import (
     test_process_each,
     normalize_text,
 )
+from sj_utils.file.yaml import load_yaml
+from sj_utils.file.json import JsonSaver
+from sj_utils.collection import SafetyDict
 
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
-OVERLAP = 96000
+RANDOM_SEED = 42
+
 MAX_COUNT = 2
 TEST_ALL = True
+USE_SAVE_LOADER = True
+
+DESCRIPTION = """
+테스트
+"""
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "./hyperparameters/esic/20250721/20250721_wer10o1v4.yml"
+HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250722/003/trial_617_wer6o5_20250722_170806.yaml"
 OUTPUT_PATH = "/workspaces/dev/output/esic/test.json"
 
 # result_key = ["rt_whisper"]
@@ -44,6 +53,7 @@ result_key = ["whisper", "rt_whisper", "whisper_streaming"]
 
 src = Path(SOURCE)
 storage = Path(STORAGE)
+json_saver = JsonSaver(DESCRIPTION)
 
 
 def whisper_streaming():
@@ -54,7 +64,7 @@ def whisper_streaming():
     asr = FasterWhisperASR("en", MODEL_SIZE)
     asr.use_vad()
     online = OnlineASRProcessor(asr)
-    rng = np.random.default_rng(42)
+    rng = np.random.default_rng(RANDOM_SEED)
 
     transcriber = get_whisper_streaming_transcriber(online, SAMPLE_RATE, rng)
 
@@ -74,17 +84,26 @@ def whisper_streaming():
 def rt_whisper():
     print("Running RT Whisper...")
 
-    # from rt_whisper import streamers
-    # token_streamer = streamers.get_token_streamer_with_vad_v2(
-    #     hyperparameter=HYPERPARAMETER,
-    # )
-    # rng = np.random.default_rng(42)
-    # transcriber = get_rt_whisper_transcriber(token_streamer, rng, SAMPLE_RATE)
+    hyperparameter = Path(HYPERPARAMETER)
+    _, hyperparameter = load_yaml(hyperparameter)
+    hyperparameter = SafetyDict(hyperparameter)
 
-    _transcriber = get_token_saver_loader_transcriber(src, storage, SAMPLE_RATE)
-    transcriber = lambda mp4, transcribe_time: _transcriber(
-        mp4, transcribe_time, HYPERPARAMETER, OVERLAP
-    )
+    if USE_SAVE_LOADER:
+        _transcriber = get_token_saver_loader_transcriber(src, storage, SAMPLE_RATE)
+        transcriber = lambda mp4, transcribe_time: _transcriber(
+            mp4,
+            transcribe_time,
+            hyperparameter,
+            hyperparameter["asr"]["max_overlap_duration"],
+        )
+    else:
+        from rt_whisper import streamers
+
+        token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(
+            hyperparameter=hyperparameter,
+        )
+        rng = np.random.default_rng(RANDOM_SEED)
+        transcriber = get_rt_whisper_transcriber(token_streamer, rng, SAMPLE_RATE)
 
     result = (
         test_process_all(src, transcriber, normalize_text, MAX_COUNT)
@@ -93,7 +112,6 @@ def rt_whisper():
     )
 
     del transcriber
-    del _transcriber
 
     return result
 
@@ -120,8 +138,6 @@ def whisper():
 
 
 if __name__ == "__main__":
-    import json
-
     print("Starting performance tests...")
 
     results = {}
@@ -135,7 +151,7 @@ if __name__ == "__main__":
 
     output_path = Path(OUTPUT_PATH)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(results, f, indent=4, ensure_ascii=False)
+
+    json_saver.save(results, output_path)
 
     print("Performance tests completed.")
