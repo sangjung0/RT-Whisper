@@ -38,7 +38,10 @@ def group_similar_tokens(
                 else:
                     break
             else:
-                similarity = __cosine_similarity(token, group_token)
+                if token.text == group_token.text:
+                    similarity = 1.0
+                else:
+                    similarity = __cosine_similarity(token, group_token)
                 similarities.append((i, similarity))
                 # print(f"\t\t\tSimilarity: {similarity}")
 
@@ -61,30 +64,21 @@ def merge_tokens(
     token_groups: list[list[Token]],
     orphan_tokens: list[Token],
 ) -> list[Token]:
-    tokens = [__select_best(tk) for tk in token_groups]
-    t_idx = 0
-    o_idx = 0
-    for o_idx in range(len(orphan_tokens)):
-        o_token = orphan_tokens[o_idx]
-        while t_idx < len(tokens):
-            token = tokens[t_idx]
-            if o_token.is_word and token.start > o_token.start:
-                tokens.insert(t_idx, o_token)
-                t_idx += 2
-                break
-            elif not o_token.is_word and token.end > o_token.end:
-                tokens.insert(t_idx, o_token)
-                t_idx += 2
-                break
-            t_idx += 1
-        break
-    for o_idx in range(o_idx, len(orphan_tokens)):
-        tokens.append(orphan_tokens[o_idx])
+    best_tokens = []
+    prev = None
+    for tg in token_groups:
+        best = __select_best(tg, prev)
+        # prev = best
+        prev = best.embedding
+        best_tokens.append(best)
+    tokens = best_tokens + orphan_tokens
+    tokens.sort(key=lambda t: t.start if t.is_word else t.end)
 
     return tokens
 
 
-def __select_best(group: list[Token]) -> Token:
+# def __select_best(group: list[Token], prev: Token | None) -> Token:
+def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
         return group[0]
@@ -93,11 +87,28 @@ def __select_best(group: list[Token]) -> Token:
 
     tensors = [t.embedding for t in tokens]
     mean = torch.mean(torch.stack(tensors), dim=0)
-    similarities = [
-        torch.nn.functional.cosine_similarity(mean, t.embedding, dim=0).item()
-        * t.probability
-        for t in tokens
-    ]
+
+    similarities = []
+    # print(f"Selecting best token from group of {len(tokens)} tokens")
+    for t in tokens:
+        # print(f"\tToken: {t.text}")
+        mean_sim = torch.nn.functional.cosine_similarity(
+            mean, t.embedding, dim=0
+        ).item()
+        prev_sim = (
+            1
+            if prev is None
+            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
+        )
+        mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
+        prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
+
+        sim = mean_sim * t.probability * prev_sim
+        # print(
+            # f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim}, Probability: {t.probability}, Combined: {sim}"
+        # )
+        similarities.append(sim)
+
     best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
     return tokens[best_idx]
 
