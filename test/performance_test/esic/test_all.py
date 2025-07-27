@@ -24,7 +24,6 @@ from util import (
     get_faster_whisper_transcriber,
     test_process_all,
     test_process_each,
-    normalize_text,
 )
 from sj_utils.file.yaml import load_yaml
 from sj_utils.file.json import JsonSaver
@@ -35,7 +34,7 @@ MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
 RANDOM_SEED = 42
 
-MAX_COUNT = 2
+MAX_COUNT = 1
 TEST_ALL = True
 USE_SAVE_LOADER = True
 
@@ -45,8 +44,8 @@ DESCRIPTION = """
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250722/003/trial_617_wer6o5_20250722_170806.yaml"
-OUTPUT_PATH = "/workspaces/dev/output/esic/test.json"
+HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
+OUTPUT_PATH = "/workspaces/dev/output/esic/20250727/test.json"
 
 # result_key = ["rt_whisper"]
 result_key = ["whisper", "rt_whisper", "whisper_streaming"]
@@ -69,9 +68,9 @@ def whisper_streaming():
     transcriber = get_whisper_streaming_transcriber(online, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, normalize_text, MAX_COUNT)
+        test_process_all(src, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, normalize_text, MAX_COUNT)
+        else test_process_each(src, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber
@@ -87,14 +86,12 @@ def rt_whisper():
     hyperparameter = Path(HYPERPARAMETER)
     _, hyperparameter = load_yaml(hyperparameter)
     hyperparameter = SafetyDict(hyperparameter)
+    overlap = hyperparameter["asr"]["max_overlap_duration"]
+    rng = np.random.default_rng(RANDOM_SEED)
 
     if USE_SAVE_LOADER:
-        _transcriber = get_token_saver_loader_transcriber(src, storage, SAMPLE_RATE)
-        transcriber = lambda mp4, transcribe_time: _transcriber(
-            mp4,
-            transcribe_time,
-            hyperparameter,
-            hyperparameter["asr"]["max_overlap_duration"],
+        transcriber = get_token_saver_loader_transcriber(
+            src, storage, SAMPLE_RATE, rng, hyperparameter, overlap
         )
     else:
         from rt_whisper import streamers
@@ -102,13 +99,12 @@ def rt_whisper():
         token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(
             hyperparameter=hyperparameter,
         )
-        rng = np.random.default_rng(RANDOM_SEED)
-        transcriber = get_rt_whisper_transcriber(token_streamer, rng, SAMPLE_RATE)
+        transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, normalize_text, MAX_COUNT)
+        test_process_all(src, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, normalize_text, MAX_COUNT)
+        else test_process_each(src, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber
@@ -122,13 +118,12 @@ def whisper():
     print("Running Whisper...")
 
     model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
-
     transcriber = get_faster_whisper_transcriber(model, SAMPLE_RATE)
 
     result = (
-        test_process_all(src, transcriber, normalize_text, MAX_COUNT)
+        test_process_all(src, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, normalize_text, MAX_COUNT)
+        else test_process_each(src, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber

@@ -7,6 +7,7 @@ paths = [
     "/workspaces/dev/modules/ai-utils",
     "/workspaces/dev",
     "/workspaces/dev/test/modules/whisper_streaming",
+    "/workspaces/dev/test/performance_test",
 ]
 for path in paths:
     sys.path.append(os.path.abspath(path))
@@ -18,227 +19,84 @@ from pathlib import Path
 from typing import Callable
 from functools import lru_cache
 
-from sj_ai_utils.asr.whisper_utils import segments_to_sclite_trn
-from sj_ai_utils.datasets.libri_speech_asr_corpus import (
-    search_all_ref_and_hyp,
-    TRNFormat,
-)
-from sj_ai_utils.evaluator.sclite_utils import sclite_trn, parse_sclite_summary
-from sj_utils.audio import segment_audio
-from sj_utils.string import normalize_text_only_en
+from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_ref_and_hyp
 from sj_utils.collection import SafetyDict
 from sj_utils.evaluator import TimeChecker
 
-
-def test_process_all(
-    src: Path,
-    transcriber: Callable[[Path, TimeChecker], TRNFormat],
-    preprocess: Callable[[Path], Path] = lambda x: x,
-    max_count: int = -1,
-) -> dict:
-    processed_time = TimeChecker()
-    transcribe_time = TimeChecker()
-
-    t = lambda x: transcriber(x, transcribe_time)
-
-    processed_time.start()
-    data = search_all_ref_and_hyp(src, t, preprocess, max_count)
-    processed_time.check()
-
-    concat_result = {}
-    for value in data.values():
-        for k, v in value.items():
-            if k not in concat_result:
-                concat_result[k] = []
-            concat_result[k].extend(v)
-    output = sclite_trn(
-        concat_result["ref"],
-        concat_result["hyp"],
-    )
-    result = parse_sclite_summary(output)
-    result["processed_time"] = processed_time.metric()
-    result["transcribe_time"] = transcribe_time.metric()
-
-    return result
+from common_util import (
+    test_process_all as tpa,
+    test_process_each as tpe,
+    normalize_text,
+    get_whisper_streaming_transcriber as gwst,
+    get_rt_whisper_transcriber as grwt,
+    get_faster_whisper_transcriber as gfwt,
+    get_token_saver_loader_transcriber as gtslt,
+)
 
 
-def test_process_each(
-    src: Path,
-    transcriber: Callable[[Path], TRNFormat],
-    preprocess: Callable[[Path], Path] = lambda x: x,
-    max_count: int = -1,
-) -> dict:
-    processed_time = TimeChecker()
-    transcribe_time = TimeChecker()
-
-    t = lambda x: transcriber(x, transcribe_time)
-
-    processed_time.start()
-    data = search_all_ref_and_hyp(src, t, preprocess, max_count)
-    processed_time.check()
-
-    result = {}
-    for key, value in data.items():
-        output = sclite_trn(value["ref"], value["hyp"])
-        result[key] = parse_sclite_summary(output)
-    result["processed_time"] = processed_time.metric()
-    result["transcribe_time"] = transcribe_time.metric()
-    return result
-
-
-@lru_cache(maxsize=128)
+@lru_cache(maxsize=4196)
 def load_audio(audio, sr):
     return librosa.load(audio, sr=sr)
 
 
-def normalize_text(text: str):
-    return normalize_text_only_en(text).upper()
+def test_process_all(
+    src: Path,
+    transcriber: Callable[[Path, TimeChecker], str],
+    normalizer: Callable[[Path], Path] = normalize_text,
+    max_count: int = -1,
+) -> dict:
+    return tpa(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
+
+
+def test_process_each(
+    src: Path,
+    transcriber: Callable[[Path, TimeChecker], str],
+    normalizer: Callable[[Path], Path] = normalize_text,
+    max_count: int = -1,
+) -> dict:
+    return tpe(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
 
 
 def get_whisper_streaming_transcriber(
     online,
     sr: int,
-    rng: np.random.Generator,
-):
-    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
-
-        audio, _ = load_audio(flac, sr=sr)
-        online.init()
-
-        full_text = ""
-        for segment in segment_audio(audio, rng=rng):
-            transcribe_time.start()
-            online.insert_audio_chunk(segment)
-            _, _, text = online.process_iter()
-            transcribe_time.check()
-            full_text += text
-        _, _, text = online.finish()
-        full_text += text
-        text = normalize_text(full_text)
-        return TRNFormat(id=flac.stem, text=text)
-
-    return transcriber
+    rng: np.random.Generator | np.random.RandomState = np.random,
+) -> Callable[[Path, TimeChecker], str]:
+    return gwst(online, sr, load_audio, rng)
 
 
-def get_rt_whisper_transcriber(token_streamer, rng: np.random.Generator, sr: int):
-    from rt_whisper.data import Param, Result
-
-    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
-        audio, _ = load_audio(flac, sr=sr)
-
-        completed = []
-        param = Param()
-        for segment in segment_audio(audio, rng=rng):
-            param.chunk = segment
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-        text = " ".join([s.text for s in completed])
-        text = normalize_text(text)
-        return TRNFormat(id=flac.stem, text=text)
-
-    return transcriber
+def get_rt_whisper_transcriber(
+    token_streamer,
+    sr: int,
+    rng: np.random.Generator | np.random.RandomState = np.random,
+) -> Callable[[Path, TimeChecker], str]:
+    return grwt(token_streamer, sr, load_audio, rng)
 
 
-def get_faster_whisper_transcriber(model, sr: int):
-    def transcriber(flac: Path, transcribe_time: TimeChecker) -> TRNFormat:
-
-        audio, _ = load_audio(flac, sr=sr)
-
-        transcribe_time.start()
-        segments, _ = model.transcribe(
-            audio,
-            beam_size=5,
-            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-            language="en",
-            word_timestamps=True,
-        )
-        transcribe_time.check()
-
-        trn = segments_to_sclite_trn(flac.stem, segments)
-        trn.text = normalize_text(trn.text)
-        return trn
-
-    return transcriber
+def get_faster_whisper_transcriber(
+    model,
+    sr: int,
+) -> Callable[[Path, TimeChecker], str]:
+    return gfwt(model, sr, load_audio)
 
 
-def get_token_saver_loader_transcriber(source: Path, storage: Path, sr: int):
-    from rt_whisper import saveloaders
-    from rt_whisper.data import Param, Result
-
-    def token_saver(
-        flac: Path,
-        save_path: Path,
-        hyperparameter: SafetyDict,
-        transcribe_time: TimeChecker,
-    ) -> str:
-        token_streamer = saveloaders.get_token_streamer_saver(
-            save_path=save_path, hyperparameter=hyperparameter
-        )
-        audio, _ = load_audio(flac, sr=sr)
-
-        completed = []
-        param = Param()
-        for segment in segment_audio(audio):
-            param.chunk = segment
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-
-        text = " ".join([s.text for s in completed])
-        text = normalize_text(text)
-        return TRNFormat(id=flac.stem, text=text)
-
-    def token_loader(
-        flac: Path,
-        saved_path: Path,
-        hyperparameter: SafetyDict,
-        transcribe_time: TimeChecker,
-    ) -> str:
-        token_streamer = saveloaders.get_token_streamer_loader(
-            saved_path=saved_path, hyperparameter=hyperparameter
-        )
-
-        segment_length = len(list(saved_path.iterdir()))
-
-        completed = []
-        param = Param()
-        for _ in range(segment_length):
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-
-        text = " ".join([s.text for s in completed])
-        text = normalize_text(text)
-
-        return TRNFormat(id=flac.stem, text=text)
-
-    def transcriber(
-        flac: Path,
-        transcribe_time: TimeChecker,
-        hyperparameter: SafetyDict,
-        overlap: int,
-    ) -> TRNFormat:
-        relative_path = flac.parent.relative_to(source.parent)
-        saved_path = storage / f"{overlap}" / relative_path
-
-        if saved_path.exists():
-            return token_loader(flac, saved_path, hyperparameter, transcribe_time)
-        return token_saver(flac, saved_path, hyperparameter, transcribe_time)
-
-    return transcriber
+def get_token_saver_loader_transcriber(
+    source: Path,
+    storage: Path,
+    sr: int,
+    rng: np.random.Generator | np.random.RandomState = np.random,
+    hyperparameter: SafetyDict = None,
+    overlap: int = None,
+) -> Callable[[Path, TimeChecker], str]:
+    return gtslt(
+        source,
+        storage,
+        sr,
+        load_audio,
+        rng,
+        hyperparameter=hyperparameter,
+        overlap=overlap,
+    )
 
 
 __all__ = [
