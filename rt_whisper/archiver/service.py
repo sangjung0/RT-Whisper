@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from rt_whisper.data import TokenState, Token, Sentence
+from rt_whisper.data import TokenState, Token
 
 if TYPE_CHECKING:
     pass

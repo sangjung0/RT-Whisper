@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 from rt_whisper.abstracts import Worker
-from rt_whisper.optimizer.data import DataLoaderParam, DataLoaderState, DataLoaderResult
-from rt_whisper.optimizer.service import dict_to_state
+from rt_whisper.archiver.data import DataLoaderParam, DataLoaderState, DataLoaderResult
+from rt_whisper.archiver.service import dict_to_state
 
 if TYPE_CHECKING:
     from rt_whisper import RTWhisperLogger

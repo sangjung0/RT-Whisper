@@ -19,7 +19,7 @@ from rt_whisper.processors import ASR
 from rt_whisper.processors.vad.v2 import VAD
 from rt_whisper.selector import Selector
 from rt_whisper.pipeline import Pipeline
-from rt_whisper.optimizer import DataSaver, DataLoader
+from rt_whisper.archiver import DataSaver, DataLoader
 from rt_whisper.utils import (
     init_hyperparameter,
     whisper_embed,
