@@ -31,7 +31,9 @@ def __get_weighted_probability(
     boundary: float,
 ):
     center = (start + end) / 2
-    if center < duration - boundary:
+    if center < boundary:
+        return probability * (center / boundary)
+    elif center < duration - boundary:
         return probability
     else:
         return probability * ((duration - center) / boundary)
