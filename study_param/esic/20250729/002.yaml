@@ -1,32 +1,37 @@
 description: "
     20250728 기점으로 수정된 RT Whisper 알고리즘을 사용함
-    saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
-    배치 16
-    학습 횟수 3000으로 제한
 
-    study: 20250728_study_16_batch.pkl
+    saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
+
+    배치 8
+
+    학습 횟수 6000으로 제한
+
+    20250728/001.yaml 결과를 기반으로 조정
+
+    study: 20250729_study_8_batch_96k.pkl
 
     (시작, 끝, 스탭)
 
-    - max_overlap_duration: 16000, 112000, 16000
+    - max_overlap_duration: 96000
 
-    - boundary: 0, 16000, 160
+    - boundary: 0, 4800, 160
 
-    - df_min_dur: 0, 8000, 160
+    - df_min_dur: 0, 960, 160
 
-    - min_prob: 0, 1, 0.01
+    - min_prob: 0.1, 0.7, 0.01
 
-    - iou_threshold: 0, 1, 0.01
+    - iou_threshold: 0, 0.35, 0.01
 
-    - cos_threshold: 0, 1, 0.01
+    - cos_threshold: 0, 0.9, 0.01
 
-    - padding: 0, 16000, 160
+    - padding: 0, 1440, 160
     "
 optimizer:
     model_sample_rate: 16000
-    batch_size: 16
-    max_study_steps: 3000
-    study_file_name: "20250728_study_16_batch"
+    batch_size: 8
+    max_study_steps: 6000
+    study_file_name: "20250729_study_8_batch_96k"
     backup: True
     use_cache: True
     use_prompt: False
@@ -46,7 +51,7 @@ study:
         run_options: {}
     asr:
         max_overlap_duration:
-            is_train: True
+            is_train: False
             key: "overlap_duration"
             value: 96000
             minimum: 0
@@ -58,7 +63,7 @@ study:
             key: "boundary"
             value: 2400
             minimum: 0
-            maximum: 16000
+            maximum: 4800
             step: 160
     duration_filter:
         z_thresh:
@@ -77,7 +82,7 @@ study:
                 key: "df_min_dur"
                 value: 0
                 minimum: 0
-                maximum: 8000
+                maximum: 960
                 step: 160
     probability_filter:
         z_thresh:
@@ -95,8 +100,8 @@ study:
                 is_train: True
                 key: "pf_min_prob"
                 value: 0
-                minimum: 0
-                maximum: 1
+                minimum: 0.1
+                maximum: 0.7
                 step: 0.01
     selector:
         iou_threshold:
@@ -106,7 +111,7 @@ study:
                 key: "iou_threshold"
                 value: 0
                 minimum: 0
-                maximum: 1
+                maximum: 0.35
                 step: 0.01
         cos_threshold:
             default: 0.5
@@ -115,7 +120,7 @@ study:
                 key: "cos_threshold"
                 value: 0
                 minimum: 0
-                maximum: 1
+                maximum: 0.9
                 step: 0.01
         padding:
             default: 3200
@@ -124,5 +129,5 @@ study:
                 key: "padding"
                 value: 0
                 minimum: 0
-                maximum: 16000
+                maximum: 1440
                 step: 160

@@ -7,12 +7,19 @@ description: "
     study: 20250728_study_8_batch.pkl
 
     (시작, 끝, 스탭)
+
     - max_overlap_duration: 16000, 112000, 16000
+
     - boundary: 0, 16000, 160
+
     - df_min_dur: 0, 8000, 160
+
     - min_prob: 0, 1, 0.01
+
     - iou_threshold: 0, 1, 0.01
+
     - cos_threshold: 0, 1, 0.01
+
     - padding: 0, 16000, 160
     "
 optimizer:

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import yaml
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 
@@ -179,6 +181,11 @@ class FloatParam(Param):
         return self.value
 
 
+yaml.add_representer(
+    FloatParam, lambda dumper, data: dumper.represent_data(float(data.value))
+)
+
+
 @make_int_like
 @dataclass(slots=True)
 class IntParam(Param):
@@ -189,6 +196,9 @@ class IntParam(Param):
                 self.key, self.minimum, self.maximum, step=self.step
             )
         return self.value
+
+
+yaml.add_representer(IntParam, lambda dumper, data: dumper.represent_int(data.value))
 
 
 @dataclass(slots=True)
