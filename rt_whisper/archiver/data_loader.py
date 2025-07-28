@@ -8,6 +8,7 @@ from pathlib import Path
 from rt_whisper.abstracts import Worker
 from rt_whisper.archiver.data import DataLoaderParam, DataLoaderState, DataLoaderResult
 from rt_whisper.archiver.service import dict_to_state
+from rt_whisper.processors.asr.data import ASRState
 
 if TYPE_CHECKING:
     from rt_whisper import RTWhisperLogger
@@ -32,6 +33,7 @@ class DataLoader(Worker):
     # override
     def _register_state(self, state: TokenState) -> None:
         state.set_state(DataLoaderState, DataLoaderState())
+        state.set_state(ASRState, ASRState())
 
     # override
     def _can_process(self, state: TokenState) -> DataLoaderParam:
