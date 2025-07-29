@@ -29,21 +29,20 @@ from util import (
 )
 
 
-MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
 SEED = 42
 
-MAX_COUNT = 1
+MAX_COUNT = -1
 TEST_ALL = True
 USE_TOKEN_SAVER_LOADER = False
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "./hyperparameters/esic/20250727/96000"
-OUTPUT_PATH = "/workspaces/dev/output/esic/20250727/test"
+HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250728/001"
+OUTPUT_PATH = "/workspaces/dev/output/esic/20250728/001"
 
 DESCRIPTION = """
-테스트
+20250728/001 테스트
 """
 
 src = Path(SOURCE)

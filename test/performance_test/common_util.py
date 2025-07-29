@@ -199,7 +199,7 @@ def get_token_saver_loader_transcriber(
         token_streamer = saveloaders.get_token_streamer_saver(
             save_path=save_path, hyperparameter=hyperparameter
         )
-        return get_rt_whisper_transcriber(token_streamer, rng, sr, load_audio)(
+        return get_rt_whisper_transcriber(token_streamer, sr, load_audio, rng)(
             audio_src, transcribe_time
         )
 
