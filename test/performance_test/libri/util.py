@@ -22,11 +22,12 @@ from functools import lru_cache
 from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_ref_and_hyp
 from sj_utils.collection import SafetyDict
 from sj_utils.evaluator import TimeChecker
+from sj_utils.string import normalize_text_only_en
 
 from common_util import (
     test_process_all as tpa,
     test_process_each as tpe,
-    normalize_text,
+    normalize_text as nt,
     get_whisper_streaming_transcriber as gwst,
     get_rt_whisper_transcriber as grwt,
     get_faster_whisper_transcriber as gfwt,
@@ -37,6 +38,10 @@ from common_util import (
 @lru_cache(maxsize=4196)
 def load_audio(audio, sr):
     return librosa.load(audio, sr=sr)
+
+
+def normalize_text(text: str) -> Path:
+    return normalize_text_only_en(nt(text)).upper()
 
 
 def test_process_all(
