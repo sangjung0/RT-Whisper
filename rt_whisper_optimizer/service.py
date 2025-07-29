@@ -126,7 +126,7 @@ def get_token_saver_loader_transcriber(
         if overlap is None:
             raise ValueError("overlap must be provided")
 
-        relative_path = audio_src.parent.relative_to(source.parent)
+        relative_path = audio_src.parent.relative_to(source.parent) / audio_src.stem
         saved_path = storage / f"{overlap}" / relative_path
 
         if saved_path.exists():
