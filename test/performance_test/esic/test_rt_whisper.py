@@ -34,7 +34,7 @@ SEED = 42
 
 MAX_COUNT = -1
 TEST_ALL = True
-USE_TOKEN_SAVER_LOADER = False
+USE_TOKEN_SAVER_LOADER = True
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 STORAGE = "/workspaces/dev/storage/esic/"

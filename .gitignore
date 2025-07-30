@@ -176,8 +176,11 @@ cython_debug/
 .data/**
 .model/**
 datasets/**
-output/**
+storage/**
 
 test/modules
-study
-storage
+test/performance_test/esic/output/**
+test/performance_test/esic/study/**
+test/performance_test/libri/output/**
+test/performance_test/libri/study/**
+
