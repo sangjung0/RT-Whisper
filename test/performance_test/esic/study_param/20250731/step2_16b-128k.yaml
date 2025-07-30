@@ -61,7 +61,7 @@ study:
             key: "boundary"
             value: 2400
             minimum: 0
-            maximum: 16000
+            maximum: 4800
             step: 160
     duration_filter:
         z_thresh:
