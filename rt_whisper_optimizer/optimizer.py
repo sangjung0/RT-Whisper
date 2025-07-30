@@ -96,6 +96,8 @@ class Optimizer(ABC):
         use_cache = optimizer["use_cache"]
         use_prompt = optimizer["use_prompt"]
         random_seed = optimizer["random_seed"]
+        top_k = optimizer.get("top_k", 30)
+        percentiles = optimizer.get("percentiles", [1, 5, 10, 20, 50])
         study_param = instructions["study"]
 
         study_param = StudyParam(study_param)
@@ -123,31 +125,24 @@ class Optimizer(ABC):
             study.optimize(objective, n_trials=5)
             joblib.dump(study, save_study_path)
 
-        sorted_trials = sorted(study.trials, key=lambda t: t.values[0])
-        top1p_trials = sorted_trials[: int(len(sorted_trials) * 0.01)]
-        top5p_trials = sorted_trials[: int(len(sorted_trials) * 0.05)]
-        top10p_trials = sorted_trials[: int(len(sorted_trials) * 0.10)]
-        top15p_trials = sorted_trials[: int(len(sorted_trials) * 0.15)]
-
-        top1p_study = optuna.create_study(direction=study.direction)
-        top1p_study.add_trials(top1p_trials)
-        top5p_study = optuna.create_study(direction=study.direction)
-        top5p_study.add_trials(top5p_trials)
-        top10p_study = optuna.create_study(direction=study.direction)
-        top10p_study.add_trials(top10p_trials)
-        top15p_study = optuna.create_study(direction=study.direction)
-        top15p_study.add_trials(top15p_trials)
+        values = np.array([t.values[0] for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+        thresholds = [np.percentile(values, p) for p in percentiles]
+        percentile_trials = [
+            [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE and t.values[0] <= threshold]
+            for threshold in thresholds
+        ]
+        studies = [optuna.create_study(direction=study.direction) for _ in range(len(percentiles))]
+        for s, t in zip(studies, percentile_trials):
+            s.add_trials(t)
 
         self.__save_plot(study)
-        self.__save_plot(top1p_study, "top1p")
-        self.__save_plot(top5p_study, "top5p")
-        self.__save_plot(top10p_study, "top10p")
-        self.__save_plot(top15p_study, "top15p")
+        for s, p in zip(studies, percentiles):
+            self.__save_plot(s, f"p{p}")
 
         completed_trials = [
             t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
         ]
-        top_trials = sorted(completed_trials, key=lambda t: t.values[0])[:30]
+        top_trials = sorted(completed_trials, key=lambda t: t.values[0])[:top_k]
         cnt_time = time.strftime("%Y%m%d_%H%M%S")
         for trial in top_trials:
             suggested_params = study_param.set_suggest(trial.params)
