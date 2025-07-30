@@ -6,7 +6,7 @@ description: "
 
     20250730/step1_16b 에서 이어지는 실험
 
-    study: 20250731_step2_16b.pkl
+    study: 20250731_step2_16b-96k.pkl
 
     (시작, 끝, 스탭)
 
@@ -28,7 +28,7 @@ optimizer:
     model_sample_rate: 16000
     batch_size: 16
     max_study_steps: 3000
-    study_file_name: "20250731_step2_16b"
+    study_file_name: "20250731_step2_16b-96k"
     backup: True
     use_cache: True
     use_prompt: False
