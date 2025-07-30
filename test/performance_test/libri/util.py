@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Callable
 from functools import lru_cache
 
-from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_ref_and_hyp
+from sj_ai_utils.datasets.libri_speech_asr_corpus import make_ref_and_hyp
 from sj_utils.collection import SafetyDict
 from sj_utils.evaluator import TimeChecker
 from sj_utils.string import normalize_text_only_en
@@ -45,21 +45,21 @@ def normalize_text(text: str) -> Path:
 
 
 def test_process_all(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path, TimeChecker], str],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpa(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
+    return tpa(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
 
 
 def test_process_each(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path, TimeChecker], str],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpe(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
+    return tpe(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
 
 
 def get_whisper_streaming_transcriber(

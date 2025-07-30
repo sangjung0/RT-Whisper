@@ -43,20 +43,21 @@ if TYPE_CHECKING:
 class Optimizer(ABC):
     def __init__(
         self,
-        data_path: Path,
+        train_data_paths: list[Path],
         study_path: Path,
         output_path: Path,
+        data_path: Path | None = None,
         cache_storage: Path | None = None,
     ):
-        if not data_path.exists():
-            raise FileNotFoundError(f"Data path {data_path} does not exist.")
-        if data_path.is_file():
-            raise ValueError(
-                f"Data path {data_path} should be a directory, not a file."
-            )
         if study_path.exists() and study_path.is_file():
             raise ValueError(
                 f"Study path {study_path} should be a directory, not a file."
+            )
+        if not train_data_paths:
+            raise ValueError("At least one train data path must be provided.")
+        if any(not p.exists() for p in train_data_paths):
+            raise FileNotFoundError(
+                f"One or more train data paths do not exist: {train_data_paths}"
             )
 
         config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
@@ -70,9 +71,10 @@ class Optimizer(ABC):
         cache_storage.mkdir(parents=True, exist_ok=True)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        self.data_path = data_path
+        self.train_data_paths = train_data_paths
         self.study_path = study_path
         self.output_path = output_path
+        self.data_path = data_path
         self.cache_storage = cache_storage
         self.logger = logger
 
@@ -121,17 +123,26 @@ class Optimizer(ABC):
             study.optimize(objective, n_trials=5)
             joblib.dump(study, save_study_path)
 
-        max10study = optuna.create_study(direction=study.direction)
-        max10study.add_trials([t for t in study.trials if t.values[0] <= 10])
-        max15study = optuna.create_study(direction=study.direction)
-        max15study.add_trials([t for t in study.trials if t.values[0] <= 15])
-        max20study = optuna.create_study(direction=study.direction)
-        max20study.add_trials([t for t in study.trials if t.values[0] <= 20])
+        sorted_trials = sorted(study.trials, key=lambda t: t.values[0])
+        top1p_trials = sorted_trials[: int(len(sorted_trials) * 0.01)]
+        top5p_trials = sorted_trials[: int(len(sorted_trials) * 0.05)]
+        top10p_trials = sorted_trials[: int(len(sorted_trials) * 0.10)]
+        top15p_trials = sorted_trials[: int(len(sorted_trials) * 0.15)]
+
+        top1p_study = optuna.create_study(direction=study.direction)
+        top1p_study.add_trials(top1p_trials)
+        top5p_study = optuna.create_study(direction=study.direction)
+        top5p_study.add_trials(top5p_trials)
+        top10p_study = optuna.create_study(direction=study.direction)
+        top10p_study.add_trials(top10p_trials)
+        top15p_study = optuna.create_study(direction=study.direction)
+        top15p_study.add_trials(top15p_trials)
 
         self.__save_plot(study)
-        self.__save_plot(max10study, "max10")
-        self.__save_plot(max15study, "max15")
-        self.__save_plot(max20study, "max20")
+        self.__save_plot(top1p_study, "top1p")
+        self.__save_plot(top5p_study, "top5p")
+        self.__save_plot(top10p_study, "top10p")
+        self.__save_plot(top15p_study, "top15p")
 
         completed_trials = [
             t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
@@ -171,6 +182,10 @@ class Optimizer(ABC):
         use_cache: bool,
     ):
         if use_cache:
+            if self.cache_storage is None:
+                raise ValueError("Cache storage is not set. Cannot use cache.")
+            if self.data_path is None:
+                raise ValueError("Data path is not set. Cannot use cache.")
             if use_prompt:
                 self.logger.warning(
                     "Using cache with prompt is not supported. Using default transcriber."
@@ -239,9 +254,9 @@ class ESICOptimizer(Optimizer):
         transcriber: Callable[[Path, TimeChecker], str],
         batch_size: int,
     ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.esic_v1 import search_all_data, search_file_from_dir
+        from sj_ai_utils.datasets.esic_v1 import search_file_from_dir
 
-        data_folders = search_all_data(self.data_path)
+        data_folders = self.train_data_paths
 
         def objective(trial: optuna.Trial) -> float:
             hyperparameter = SafetyDict(study.suggest_all(trial))
@@ -321,12 +336,9 @@ class LibriOptimizer(Optimizer):
         transcriber: Callable[[Path, TimeChecker], str],
         batch_size: int,
     ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.libri_speech_asr_corpus import (
-            search_all_data,
-            trans_txt_to_sclite_trn,
-        )
+        from sj_ai_utils.datasets.libri_speech_asr_corpus import trans_txt_to_sclite_trn
 
-        data_folders = search_all_data(self.data_path)
+        data_folders = self.train_data_paths
 
         def objective(trial: optuna.Trial) -> float:
             hyperparameter = SafetyDict(study.suggest_all(trial))

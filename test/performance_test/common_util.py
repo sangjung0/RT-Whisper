@@ -35,10 +35,10 @@ def normalize_text(text: str):
 
 
 def test_process_all(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path, TimeChecker], str],
-    search_all_ref_and_hyp: Callable[
-        [Path, Callable[[Path], str], Callable[[str], str], int, bool],
+    make_ref_and_hyp: Callable[
+        [list[Path], Callable[[Path], str], Callable[[str], str], int, bool],
         dict[str, dict[str, list[TRNFormat]]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
@@ -50,7 +50,7 @@ def test_process_all(
     t = lambda x: transcriber(x, transcribe_time)
 
     processed_time.start()
-    data = search_all_ref_and_hyp(src, t, normalizer, max_count)
+    data = make_ref_and_hyp(data_paths, t, normalizer, max_count)
     processed_time.check()
 
     concat_result = {}
@@ -71,10 +71,10 @@ def test_process_all(
 
 
 def test_process_each(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path], str],
-    search_all_ref_and_hyp: Callable[
-        [Path, Callable[[Path], str], Callable[[str], str], int, bool],
+    make_ref_and_hyp: Callable[
+        [list[Path], Callable[[Path], str], Callable[[str], str], int, bool],
         dict[str, dict[str, list[TRNFormat]]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
@@ -86,7 +86,7 @@ def test_process_each(
     t = lambda x: transcriber(x, transcribe_time)
 
     processed_time.start()
-    data = search_all_ref_and_hyp(src, t, normalizer, max_count)
+    data = make_ref_and_hyp(data_paths, t, normalizer, max_count)
     processed_time.check()
 
     result = {}

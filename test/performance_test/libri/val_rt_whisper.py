@@ -20,6 +20,7 @@ from pathlib import Path
 from sj_utils.file.json import JsonSaver
 from sj_utils.file.yaml import load_yaml
 from sj_utils.collection import SafetyDict
+from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_data
 
 from util import (
     get_token_saver_loader_transcriber,
@@ -36,14 +37,12 @@ MAX_COUNT = -1
 TEST_ALL = True
 USE_TOKEN_SAVER_LOADER = True
 
-SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean"
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev"
 STORAGE = "/workspaces/dev/storage/libri/"
-HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250728/001"
-OUTPUT_PATH = "/workspaces/dev/output/libri/clean/20250728/001"
+HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250728/001"
+OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/dev/20250728/001"
 
 DESCRIPTION = """
-esic 20250728/001  테스트
-세이브로더 사용
 """
 
 src = Path(SOURCE)
@@ -52,6 +51,7 @@ hyperparameter_path = Path(HYPERPARAMETER)
 output_path = Path(OUTPUT_PATH)
 
 json_saver = JsonSaver(DESCRIPTION)
+data_paths = search_all_data(src)
 
 
 def transcribe(hyperparameter_path: Path):
@@ -75,9 +75,9 @@ def transcribe(hyperparameter_path: Path):
         transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, max_count=MAX_COUNT)
+        test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, max_count=MAX_COUNT)
+        else test_process_each(data_paths, transcriber, max_count=MAX_COUNT)
     )
 
     return result

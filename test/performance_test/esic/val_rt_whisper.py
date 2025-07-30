@@ -17,7 +17,7 @@ import numpy as np
 
 from pathlib import Path
 
-from sj_utils.file.json import JsonSaver
+from sj_utils.file.json import JsonSaver, load_json
 from sj_utils.file.yaml import load_yaml
 from sj_utils.collection import SafetyDict
 
@@ -38,8 +38,9 @@ USE_TOKEN_SAVER_LOADER = True
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250728/001"
-OUTPUT_PATH = "/workspaces/dev/output/esic/20250728/001"
+HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250728/001"
+OUTPUT_PATH = "/workspaces/dev/test/performance_test/esic/output/20250728/001"
+ESIC_VAL = "/workspaces/dev/test/performance_test/esic/val.json"
 
 DESCRIPTION = """
 20250728/001 테스트
@@ -50,6 +51,7 @@ storage = Path(STORAGE)
 hyperparameter_path = Path(HYPERPARAMETER)
 output_path = Path(OUTPUT_PATH)
 
+data_paths = [Path(p) for p in load_json(Path(ESIC_VAL))[1]]
 json_saver = JsonSaver(DESCRIPTION)
 
 
@@ -74,9 +76,9 @@ def transcribe(hyperparameter_path: Path):
         transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, max_count=MAX_COUNT)
+        test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, max_count=MAX_COUNT)
+        else test_process_each(data_paths, transcriber, max_count=MAX_COUNT)
     )
 
     return result

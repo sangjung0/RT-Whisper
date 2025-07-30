@@ -28,6 +28,7 @@ from util import (
 from sj_utils.file.yaml import load_yaml
 from sj_utils.file.json import JsonSaver
 from sj_utils.collection import SafetyDict
+from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_data
 
 MODEL_SIZE = "large-v3"
 SAMPLE_RATE = 16000
@@ -43,8 +44,8 @@ DESCRIPTION = """
 
 SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
 STORAGE = "/workspaces/dev/storage/libri/"
-HYPERPARAMETER = "/workspaces/dev/hyperparameters/esic/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
-OUTPUT_PATH = "/workspaces/dev/output/libri/clean/20250727/test.json"
+HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
+OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/clean/20250727/test.json"
 
 # result_key = ["rt_whisper"]
 result_key = ["whisper", "rt_whisper", "whisper_streaming"]
@@ -52,6 +53,7 @@ result_key = ["whisper", "rt_whisper", "whisper_streaming"]
 src = Path(SOURCE)
 storage = Path(STORAGE)
 json_saver = JsonSaver(DESCRIPTION)
+data_paths = search_all_data(src)
 
 
 def whisper_streaming():
@@ -67,9 +69,9 @@ def whisper_streaming():
     transcriber = get_whisper_streaming_transcriber(online, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, max_count=MAX_COUNT)
+        test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, max_count=MAX_COUNT)
+        else test_process_each(data_paths, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber
@@ -101,9 +103,9 @@ def rt_whisper():
         transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
 
     result = (
-        test_process_all(src, transcriber, max_count=MAX_COUNT)
+        test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, max_count=MAX_COUNT)
+        else test_process_each(data_paths, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber
@@ -120,9 +122,9 @@ def whisper():
     transcriber = get_faster_whisper_transcriber(model, SAMPLE_RATE)
 
     result = (
-        test_process_all(src, transcriber, max_count=MAX_COUNT)
+        test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
         if TEST_ALL
-        else test_process_each(src, transcriber, max_count=MAX_COUNT)
+        else test_process_each(data_paths, transcriber, max_count=MAX_COUNT)
     )
 
     del transcriber

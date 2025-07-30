@@ -20,7 +20,7 @@ from typing import Callable
 
 from sj_utils.audio import load_audio_from_mp4
 from sj_utils.evaluator import TimeChecker
-from sj_ai_utils.datasets.esic_v1 import search_all_ref_and_hyp
+from sj_ai_utils.datasets.esic_v1 import make_ref_and_hyp
 from sj_utils.collection import SafetyDict
 
 from common_util import (
@@ -40,21 +40,21 @@ def load_mp4(mp4, sr):
 
 
 def test_process_all(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path, TimeChecker], str],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpa(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
+    return tpa(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
 
 
 def test_process_each(
-    src: Path,
+    data_paths: list[Path],
     transcriber: Callable[[Path, TimeChecker], str],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpe(src, transcriber, search_all_ref_and_hyp, normalizer, max_count)
+    return tpe(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
 
 
 def get_whisper_streaming_transcriber(
