@@ -5,6 +5,7 @@ description: "
     학습 횟수 3000으로 제한
 
     20250730/step1_16b 에서 이어지는 실험
+    RTX3090 GPU에서 최적화
 
     study: 20250731_step2_16b-96k.pkl
 
