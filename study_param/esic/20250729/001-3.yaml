@@ -6,29 +6,29 @@ description: "
 
     20250729/001-2.yaml 결과를 기반으로 조정
 
-    study: 20250729_study_16_batch-3.pkl
+    study: 20250730_study_16_batch.pkl
 
     (시작, 끝, 스탭)
 
     - max_overlap_duration: 112000
 
-    - boundary: 0, 5120, 160
+    - boundary: 0, 16000, 160
 
     - df_min_dur: 160
 
-    - min_prob: 0, 0.5, 0.01
+    - min_prob: 0, 0.8, 0.01
 
     - iou_threshold: 0, 0.8, 0.01
 
-    - cos_threshold: 0.2, 0.9, 0.01
+    - cos_threshold: 0.1, 0.8, 0.01
 
-    - padding: 480
+    - padding: 160
     "
 optimizer:
     model_sample_rate: 16000
     batch_size: 16
     max_study_steps: 3000
-    study_file_name: "20250729_study_16_batch-3"
+    study_file_name: "20250730_study_16_batch"
     backup: True
     use_cache: True
     use_prompt: False
@@ -60,7 +60,7 @@ study:
             key: "boundary"
             value: 2400
             minimum: 0
-            maximum: 5120
+            maximum: 16000
             step: 160
     duration_filter:
         z_thresh:
@@ -98,7 +98,7 @@ study:
                 key: "pf_min_prob"
                 value: 0
                 minimum: 0
-                maximum: 0.5
+                maximum: 0.8
                 step: 0.01
     selector:
         iou_threshold:
@@ -116,15 +116,15 @@ study:
                 is_train: True
                 key: "cos_threshold"
                 value: 0
-                minimum: 0.2
-                maximum: 0.9
+                minimum: 0.1
+                maximum: 0.8
                 step: 0.01
         padding:
             default: 3200
             en:
                 is_train: False
                 key: "padding"
-                value: 480
+                value: 160
                 minimum: 0
                 maximum: 960
                 step: 160
