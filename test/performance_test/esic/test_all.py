@@ -26,7 +26,7 @@ from util import (
     test_process_each,
 )
 from sj_utils.file.yaml import load_yaml
-from sj_utils.file.json import JsonSaver
+from sj_utils.file.json import JsonSaver, load_json
 from sj_utils.collection import SafetyDict
 from sj_ai_utils.datasets.esic_v1 import search_all_data
 
@@ -43,19 +43,24 @@ DESCRIPTION = """
 테스트
 """
 
-SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
+# SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test" # use in test
+SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/dev"  # use in val
 STORAGE = "/workspaces/dev/storage/esic/"
 HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
 OUTPUT_PATH = "/workspaces/dev/test/performance_test/esic/output/20250727/test.json"
+ESIC_VAL = "/workspaces/dev/test/performance_test/esic/val.json"  # use in val
 
 # result_key = ["rt_whisper"]
 result_key = ["whisper", "rt_whisper", "whisper_streaming"]
 
 src = Path(SOURCE)
 storage = Path(STORAGE)
+output_path = Path(OUTPUT_PATH)
+
+# data_paths = search_all_data(src) # use in test
+data_paths = [Path(p) for p in load_json(Path(ESIC_VAL))[1]]  # use in val
 json_saver = JsonSaver(DESCRIPTION)
 
-data_paths = search_all_data(src)
 
 def whisper_streaming():
     from whisper_online import FasterWhisperASR, OnlineASRProcessor
@@ -146,7 +151,6 @@ if __name__ == "__main__":
         elif key == "whisper_streaming":
             results[key] = whisper_streaming()
 
-    output_path = Path(OUTPUT_PATH)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     json_saver.save(results, output_path)

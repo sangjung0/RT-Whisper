@@ -42,10 +42,11 @@ DESCRIPTION = """
 테스트
 """
 
-SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/"
+# SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/" # use in test
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev/dev-clean" # use in val
 STORAGE = "/workspaces/dev/storage/libri/"
 HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
-OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/clean/20250727/test.json"
+OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/dev/clean/20250727/test.json"
 
 # result_key = ["rt_whisper"]
 result_key = ["whisper", "rt_whisper", "whisper_streaming"]

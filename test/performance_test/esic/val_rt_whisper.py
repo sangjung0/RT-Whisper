@@ -36,14 +36,16 @@ MAX_COUNT = -1
 TEST_ALL = True
 USE_TOKEN_SAVER_LOADER = True
 
-SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/test"
+SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/dev"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250728/001"
-OUTPUT_PATH = "/workspaces/dev/test/performance_test/esic/output/20250728/001"
+HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250730/step1_16b"
+OUTPUT_PATH = "/workspaces/dev/test/performance_test/esic/output/20250730/step1_16b"
 ESIC_VAL = "/workspaces/dev/test/performance_test/esic/val.json"
 
 DESCRIPTION = """
-20250728/001 테스트
+20250730/step1_16b 테스트
+RTX4070 테스트
+세이브로더 사용
 """
 
 src = Path(SOURCE)
