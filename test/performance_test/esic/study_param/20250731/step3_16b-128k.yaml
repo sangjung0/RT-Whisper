@@ -4,16 +4,16 @@ description: "
     배치 16
     학습 횟수 3000으로 제한
 
-    20250731/step2_16b-96k 에서 이어지는 실험
+    20250731/step2_16b-128k 에서 이어지는 실험
     RTX3090 GPU에서 최적화
 
-    study: 20250731_step3_16b-96k.pkl
+    study: 20250731_step3_16b-128k.pkl
 
     (시작, 끝, 스탭)
 
-    - max_overlap_duration: 96000
+    - max_overlap_duration: 128000
 
-    - boundary: 1600
+    - boundary: 480
 
     - df_min_dur: 160
 
@@ -23,13 +23,13 @@ description: "
 
     - cos_threshold: 0, 1, 0.01
 
-    - padding: 480
+    - padding: 160
     "
 optimizer:
     model_sample_rate: 16000
     batch_size: 16
     max_study_steps: 3000
-    study_file_name: "20250731_step3_16b-96k"
+    study_file_name: "20250731_step3_16b-128k"
     backup: True
     use_cache: True
     use_prompt: False
@@ -51,7 +51,7 @@ study:
         max_overlap_duration:
             is_train: False
             key: "overlap_duration"
-            value: 96000
+            value: 128000
             minimum: 0
             maximum: 112000
             step: 16000
@@ -59,9 +59,9 @@ study:
         boundary:
             is_train: False
             key: "boundary"
-            value: 1600
+            value: 480
             minimum: 0
-            maximum: 16000
+            maximum: 4800
             step: 160
     duration_filter:
         z_thresh:
@@ -125,7 +125,7 @@ study:
             en:
                 is_train: False
                 key: "padding"
-                value: 480
+                value: 160
                 minimum: 0
                 maximum: 960
                 step: 160

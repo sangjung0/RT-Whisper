@@ -12,6 +12,7 @@ for path in paths:
     sys.path.append(os.path.abspath(path))
 
 import numpy as np
+import string
 
 from pathlib import Path
 from typing import Callable
@@ -31,8 +32,9 @@ normalizer = EnglishTextNormalizer()
 
 
 def normalize_text(text: str):
-    return normalizer(text)
-
+    text = normalizer(text)
+    text = text.translate(str.maketrans("", "", string.punctuation))
+    return text
 
 def test_process_all(
     data_paths: list[Path],
