@@ -132,3 +132,27 @@ def transcribe(
     segments, info = transcriber(chunk, language, prompt)
     language = info.language or language
     return segments, language
+
+def clip_prompt(prompt: str, max_words: int) -> str:
+    """Clip the prompt to a maximum number of words.
+
+    Args:
+        prompt (str): The original prompt.
+        max_words (int): The maximum number of words allowed in the prompt.
+
+    Returns:
+        str: The clipped prompt.
+    """
+    words = prompt.split()
+    if len(words) > max_words:
+        return " ".join(words[:max_words])
+    return prompt
+
+
+__all__ = [
+    "generate_overlap_context",
+    "adjust_anchor_timestamp",
+    "segment_to_token_list",
+    "transcribe",
+    "clip_prompt",
+]

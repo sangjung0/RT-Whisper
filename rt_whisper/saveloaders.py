@@ -60,6 +60,7 @@ def get_token_streamer_saver(
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
+                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
                 logger=c_logger,
             ),

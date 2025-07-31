@@ -19,6 +19,7 @@ from rt_whisper.processors.asr.service import (
     segment_to_token_list,
     generate_overlap_context,
     adjust_anchor_timestamp,
+    clip_prompt,
 )
 
 
@@ -35,6 +36,7 @@ class ASRProcessor(Worker):
         logger: RTWhisperLogger,
         sample_rate: int,
         within_eos: bool,
+        max_prompt_words: int,
     ):
         super().__init__()
         self.logger = logger
@@ -43,6 +45,7 @@ class ASRProcessor(Worker):
         self.__embed = embed
         self.__SAMPLE_RATE = sample_rate
         self.__WITHIN_EOS = within_eos
+        self.__MAX_PROMPT_WORDS = max_prompt_words
 
     # override
     def _can_process(self, state: TokenState) -> ASRParam:
@@ -60,11 +63,17 @@ class ASRProcessor(Worker):
             group_level=2,
         )
 
+        # 프롬프트 클리핑
+        if param.prompt:
+            prompt = clip_prompt(param.prompt, self.__MAX_PROMPT_WORDS)
+        else:
+            prompt = None
+
         # 추론
         segments, language = transcribe(
-            merged_chunk, param.language, param.prompt, self.__transcriber
+            merged_chunk, param.language, prompt, self.__transcriber
         )
-        self.logger.debug(f"Prompt: {param.prompt}", group_level=2)
+        self.logger.debug(f"Prompt: {prompt}", group_level=2)
 
         segment_tokens = segment_to_token_list(
             segments,
@@ -150,6 +159,7 @@ class ASR(ASRContextBuilder):
         embed: Callable[[str], torch.Tensor],
         sample_rate: int,
         within_eos: bool,
+        max_prompt_words: int,
         max_overlap_duration: int,
         logger: RTWhisperLogger,
         **kwargs,
@@ -160,6 +170,7 @@ class ASR(ASRContextBuilder):
             embed=embed,
             sample_rate=sample_rate,
             within_eos=within_eos,
+            max_prompt_words=max_prompt_words,
             max_overlap_duration=max_overlap_duration,
             logger=logger,
             **kwargs,

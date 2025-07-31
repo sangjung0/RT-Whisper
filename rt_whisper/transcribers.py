@@ -43,6 +43,7 @@ def get_transcriber(
                 embed=whisper_embed(),
                 sample_rate=Whisper.sample_rate,
                 within_eos=True,
+                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
                 max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
                 logger=c_logger,
             ),
