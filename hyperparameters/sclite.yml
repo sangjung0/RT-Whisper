@@ -14,6 +14,7 @@ silero_vad:
 
 asr:
     max_overlap_duration: 96000
+    max_prompt_words: 10
 
 position_weighted_filter:
     boundary: 8000
@@ -55,4 +56,3 @@ selector:
         default: 8000
         ko: 8000
         en: 8000
-
