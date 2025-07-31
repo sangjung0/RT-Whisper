@@ -68,8 +68,7 @@ def merge_tokens(
     prev = None
     for tg in token_groups:
         best = __select_best(tg, prev)
-        # prev = best
-        prev = best.embedding
+        prev = best.embedding if prev is None else torch.mean(torch.stack([prev, best.embedding]), dim=0)
         best_tokens.append(best)
     tokens = best_tokens + orphan_tokens
     tokens.sort(key=lambda t: t.start if t.is_word else t.end)
@@ -77,7 +76,6 @@ def merge_tokens(
     return tokens
 
 
-# def __select_best(group: list[Token], prev: Token | None) -> Token:
 def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
@@ -85,27 +83,35 @@ def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
     elif len(set(t.text for t in tokens)) == 1:
         return max(tokens, key=lambda t: t.probability)
 
-    tensors = [t.embedding for t in tokens]
-    mean = torch.mean(torch.stack(tensors), dim=0)
+    # NOTE 만약 이전 그룹만을 고려하지 않고, 중첩되는 모든 상황을 고려한다면 이 대표성이 중요할 수 있다. 따라서 주석만 함.
+    # tensors = [t.embedding for t in tokens]
+    # mean = torch.mean(torch.stack(tensors), dim=0)
 
     similarities = []
     # print(f"Selecting best token from group of {len(tokens)} tokens")
     for t in tokens:
         # print(f"\tToken: {t.text}")
-        mean_sim = torch.nn.functional.cosine_similarity(
-            mean, t.embedding, dim=0
-        ).item()
+
+        # mean_sim = torch.nn.functional.cosine_similarity(
+        #     mean, t.embedding, dim=0
+        # ).item()
+
         prev_sim = (
             1
             if prev is None
             else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
         )
-        mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
+
+        # mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
+
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
 
-        sim = mean_sim * t.probability * prev_sim
+        # sim = mean_sim * t.probability * prev_sim
+
+        sim = t.probability * prev_sim
+
         # print(
-            # f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim}, Probability: {t.probability}, Combined: {sim}"
+        # f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim}, Probability: {t.probability}, Combined: {sim}"
         # )
         similarities.append(sim)
 
