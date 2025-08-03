@@ -8,17 +8,25 @@
     "jupyter.notebookFileRoot": "/workspaces/dev",
     "python.envFile": "${workspaceFolder}/.env",
     "python.analysis.exclude": [
-        "**/__pycache__",
         "**/.git",
+        "**/.data",
+        "**/.vscode",
+        "**/__pycache__",
+        "**/hyperparameters",
+        "**/output",
+        "**/logs",
         "datasets",
-        "output"
+        "storage",
     ],
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,
         "**/.hg/store/**": true,
+        "**/__pycache__/**": true,
+        "**/.data/**": true,
+        "**/output/**": true,
         "datasets/**": true,
-        "output/**": true
+        "storage/**": true,
     },
     // Editor
     "editor.fontFamily": "JetBrains Mono, D2Coding",
@@ -47,6 +55,7 @@
         "archiver",
         "cuda",
         "ESIC",
+        "figsize",
         "flac",
         "fout",
         "huggingface",
@@ -56,10 +65,12 @@
         "ndarray",
         "nhead",
         "orto",
+        "PUNCT",
         "pysbd",
         "saveloaders",
         "sclite",
         "silero",
+        "trns",
         "wavfile"
     ]
 }
