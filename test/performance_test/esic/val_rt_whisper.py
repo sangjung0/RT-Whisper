@@ -29,7 +29,6 @@ from util import (
 )
 
 
-SAMPLE_RATE = 16000
 SEED = 42
 
 MAX_COUNT = -1
@@ -38,13 +37,16 @@ USE_TOKEN_SAVER_LOADER = True
 
 SOURCE = "/workspaces/dev/datasets/ESIC-v1.1/v1.1/dev"
 STORAGE = "/workspaces/dev/storage/esic/"
-HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250730/step1_16b"
-OUTPUT_PATH = "/workspaces/dev/test/performance_test/esic/output/20250730/step1_16b"
+HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250731/step1_16b-96k-3090"
+OUTPUT_PATH = (
+    "/workspaces/dev/test/performance_test/esic/output/20250731/step1_16b-96k-3090"
+)
 ESIC_VAL = "/workspaces/dev/test/performance_test/esic/val.json"
 
 DESCRIPTION = """
-20250730/step1_16b 테스트
+20250731/step1_16b-96k-3090 테스트
 RTX4070 테스트
+새로운 노멀라이저 추가
 세이브로더 사용
 """
 
@@ -67,15 +69,10 @@ def transcribe(hyperparameter_path: Path):
 
     if USE_TOKEN_SAVER_LOADER:
         transcriber = get_token_saver_loader_transcriber(
-            src, storage, SAMPLE_RATE, rng, hyperparameter, overlap
+            src, storage, rng, hyperparameter, overlap
         )
     else:
-        from rt_whisper import streamers
-
-        token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(
-            hyperparameter
-        )
-        transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
+        transcriber = get_rt_whisper_transcriber(hyperparameter, rng)
 
     result = (
         test_process_all(data_paths, transcriber, max_count=MAX_COUNT)

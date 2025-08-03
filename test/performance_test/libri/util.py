@@ -19,10 +19,9 @@ from pathlib import Path
 from typing import Callable
 from functools import lru_cache
 
-from sj_ai_utils.datasets.libri_speech_asr_corpus import make_ref_and_hyp
+from sj_ai_utils.datasets.libri_speech_asr_corpus.sclite import generate_trn
 from sj_utils.collection import SafetyDict
 from sj_utils.evaluator import TimeChecker
-from sj_utils.string import normalize_text_only_en
 
 from common_util import (
     test_process_all as tpa,
@@ -46,7 +45,7 @@ def test_process_all(
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpa(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
+    return tpa(data_paths, transcriber, generate_trn, normalizer, max_count)
 
 
 def test_process_each(
@@ -55,36 +54,48 @@ def test_process_each(
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
 ) -> dict:
-    return tpe(data_paths, transcriber, make_ref_and_hyp, normalizer, max_count)
+    return tpe(data_paths, transcriber, generate_trn, normalizer, max_count)
 
 
 def get_whisper_streaming_transcriber(
-    online,
-    sr: int,
     rng: np.random.Generator | np.random.RandomState = np.random,
+    audio_chunk_mean: int = 48000,
+    audio_chunk_std: int = 400,
+    audio_chunk_min_max: float = 0.1,
 ) -> Callable[[Path, TimeChecker], str]:
-    return gwst(online, sr, load_audio, rng)
+    return gwst(
+        load_audio,
+        rng,
+        audio_chunk_mean=audio_chunk_mean,
+        audio_chunk_std=audio_chunk_std,
+        audio_chunk_min_max=audio_chunk_min_max,
+    )
 
 
 def get_rt_whisper_transcriber(
-    token_streamer,
-    sr: int,
+    hyperparameter: SafetyDict,
     rng: np.random.Generator | np.random.RandomState = np.random,
+    audio_chunk_mean: int = 48000,
+    audio_chunk_std: int = 400,
+    audio_chunk_min_max: float = 0.1,
 ) -> Callable[[Path, TimeChecker], str]:
-    return grwt(token_streamer, sr, load_audio, rng)
+    return grwt(
+        hyperparameter,
+        load_audio,
+        rng,
+        audio_chunk_mean=audio_chunk_mean,
+        audio_chunk_std=audio_chunk_std,
+        audio_chunk_min_max=audio_chunk_min_max,
+    )
 
 
-def get_faster_whisper_transcriber(
-    model,
-    sr: int,
-) -> Callable[[Path, TimeChecker], str]:
-    return gfwt(model, sr, load_audio)
+def get_faster_whisper_transcriber() -> Callable[[Path, TimeChecker], str]:
+    return gfwt(load_audio)
 
 
 def get_token_saver_loader_transcriber(
     source: Path,
     storage: Path,
-    sr: int,
     rng: np.random.Generator | np.random.RandomState = np.random,
     hyperparameter: SafetyDict = None,
     overlap: int = None,
@@ -92,7 +103,6 @@ def get_token_saver_loader_transcriber(
     return gtslt(
         source,
         storage,
-        sr,
         load_audio,
         rng,
         hyperparameter=hyperparameter,

@@ -28,6 +28,10 @@ from sj_ai_utils.evaluator.sclite_utils import (
 from sj_utils.audio import segment_audio
 from sj_utils.collection import SafetyDict
 
+SAMPLE_RATE = 16_000
+MODEL_SIZE = "large-v3"
+
+
 normalizer = EnglishTextNormalizer()
 
 
@@ -35,6 +39,7 @@ def normalize_text(text: str):
     text = normalizer(text)
     text = text.translate(str.maketrans("", "", string.punctuation))
     return text
+
 
 def test_process_all(
     data_paths: list[Path],
@@ -101,18 +106,32 @@ def test_process_each(
 
 
 def get_whisper_streaming_transcriber(
-    online,
-    sr: int,
     load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
     rng: np.random.Generator | np.random.RandomState = np.random,
+    sr: int = SAMPLE_RATE,
+    audio_chunk_mean: int = 48000,
+    audio_chunk_std: int = 400,
+    audio_chunk_min_max: float = 0.1,
 ):
+    from whisper_online import FasterWhisperASR, OnlineASRProcessor
+
+    asr = FasterWhisperASR("en", MODEL_SIZE)
+    asr.use_vad()
+    online = OnlineASRProcessor(asr)
+
     def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
 
         audio, _ = load_audio(src, sr=sr)
         online.init()
 
         full_text = ""
-        for segment in segment_audio(audio, rng=rng):
+        for segment in segment_audio(
+            audio,
+            mean=audio_chunk_mean,
+            std=audio_chunk_std,
+            ratio=audio_chunk_min_max,
+            rng=rng,
+        ):
             transcribe_time.start()
             online.insert_audio_chunk(segment)
             _, _, text = online.process_iter()
@@ -126,19 +145,31 @@ def get_whisper_streaming_transcriber(
 
 
 def get_rt_whisper_transcriber(
-    token_streamer,
-    sr: int,
+    hyperparameter: SafetyDict,
     load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
     rng: np.random.Generator | np.random.RandomState = np.random,
+    sr: int = SAMPLE_RATE,
+    audio_chunk_mean: int = 48000,
+    audio_chunk_std: int = 400,
+    audio_chunk_min_max: float = 0.1,
 ):
     from rt_whisper.data import Param, Result
+    from rt_whisper import streamers
+
+    token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(hyperparameter)
 
     def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
         audio, _ = load_audio(src, sr=sr)
 
         completed = []
         param = Param()
-        for segment in segment_audio(audio, rng=rng):
+        for segment in segment_audio(
+            audio,
+            mean=audio_chunk_mean,
+            std=audio_chunk_std,
+            ratio=audio_chunk_min_max,
+            rng=rng,
+        ):
             param.chunk = segment
             param.language = "en"
             transcribe_time.start()
@@ -154,10 +185,13 @@ def get_rt_whisper_transcriber(
 
 
 def get_faster_whisper_transcriber(
-    model,
-    sr: int,
     load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
+    sr: int = SAMPLE_RATE,
 ):
+    from faster_whisper import WhisperModel
+
+    model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
+
     def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
 
         audio, _ = load_audio(src, sr=sr)
@@ -180,11 +214,11 @@ def get_faster_whisper_transcriber(
 def get_token_saver_loader_transcriber(
     source: Path,
     storage: Path,
-    sr: int,
     load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
     rng: np.random.Generator | np.random.RandomState = np.random,
     hyperparameter: SafetyDict = None,
     overlap: int = None,
+    sr: int = SAMPLE_RATE,
 ):
     from rt_whisper import saveloaders
     from rt_whisper.data import Param, Result

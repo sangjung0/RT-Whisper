@@ -20,7 +20,7 @@ from pathlib import Path
 from sj_utils.file.json import JsonSaver
 from sj_utils.file.yaml import load_yaml
 from sj_utils.collection import SafetyDict
-from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_data
+from sj_ai_utils.datasets.libri_speech_asr_corpus.service import search_dirs
 
 from util import (
     get_token_saver_loader_transcriber,
@@ -30,19 +30,25 @@ from util import (
 )
 
 
-SAMPLE_RATE = 16000
 SEED = 42
 
 MAX_COUNT = -1
 TEST_ALL = True
 USE_TOKEN_SAVER_LOADER = True
 
-SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev"
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev/dev-clean"
 STORAGE = "/workspaces/dev/storage/libri/"
-HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250728/001"
-OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/dev/20250728/001"
+HYPERPARAMETER = (
+    "/workspaces/dev/test/performance_test/esic/hyperparameters/20250731/step1_16b-96k"
+)
+OUTPUT_PATH = (
+    "/workspaces/dev/test/performance_test/libri/output/dev/20250731/step1_16b-96k"
+)
 
 DESCRIPTION = """
+20250731/step1_16b-96k 검증
+RTX4070 테스트
+세이브로더사용
 """
 
 src = Path(SOURCE)
@@ -51,7 +57,7 @@ hyperparameter_path = Path(HYPERPARAMETER)
 output_path = Path(OUTPUT_PATH)
 
 json_saver = JsonSaver(DESCRIPTION)
-data_paths = search_all_data(src)
+data_paths = search_dirs(src)
 
 
 def transcribe(hyperparameter_path: Path):
@@ -64,15 +70,10 @@ def transcribe(hyperparameter_path: Path):
 
     if USE_TOKEN_SAVER_LOADER:
         transcriber = get_token_saver_loader_transcriber(
-            src, storage, SAMPLE_RATE, rng, hyperparameter, overlap
+            src, storage, rng, hyperparameter, overlap
         )
     else:
-        from rt_whisper import streamers
-
-        token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(
-            hyperparameter
-        )
-        transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
+        transcriber = get_rt_whisper_transcriber(hyperparameter, rng)
 
     result = (
         test_process_all(data_paths, transcriber, max_count=MAX_COUNT)

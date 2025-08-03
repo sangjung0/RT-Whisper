@@ -28,10 +28,8 @@ from util import (
 from sj_utils.file.yaml import load_yaml
 from sj_utils.file.json import JsonSaver
 from sj_utils.collection import SafetyDict
-from sj_ai_utils.datasets.libri_speech_asr_corpus import search_all_data
+from sj_ai_utils.datasets.libri_speech_asr_corpus.service import search_dirs
 
-MODEL_SIZE = "large-v3"
-SAMPLE_RATE = 16000
 RANDOM_SEED = 42
 
 MAX_COUNT = 1
@@ -43,31 +41,29 @@ DESCRIPTION = """
 """
 
 # SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/test/test-clean/" # use in test
-SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev/dev-clean" # use in val
+SOURCE = "/workspaces/dev/datasets/LibriSpeechASRcorpus/dev/dev-clean"  # use in val
 STORAGE = "/workspaces/dev/storage/libri/"
 HYPERPARAMETER = "/workspaces/dev/test/performance_test/esic/hyperparameters/20250727/96000/trial_wer4o6_2010_20250727_024423.yaml"
-OUTPUT_PATH = "/workspaces/dev/test/performance_test/libri/output/dev/clean/20250727/test.json"
+OUTPUT_PATH = (
+    "/workspaces/dev/test/performance_test/libri/output/dev/clean/20250727/test.json"
+)
 
 # result_key = ["rt_whisper"]
 result_key = ["whisper", "rt_whisper", "whisper_streaming"]
 
 src = Path(SOURCE)
 storage = Path(STORAGE)
+output_path = Path(OUTPUT_PATH)
+
 json_saver = JsonSaver(DESCRIPTION)
-data_paths = search_all_data(src)
+data_paths = search_dirs(src)
 
 
 def whisper_streaming():
-    from whisper_online import FasterWhisperASR, OnlineASRProcessor
-
     print("Running Whisper Streaming...")
 
-    asr = FasterWhisperASR("en", MODEL_SIZE)
-    asr.use_vad()
-    online = OnlineASRProcessor(asr)
     rng = np.random.default_rng(RANDOM_SEED)
-
-    transcriber = get_whisper_streaming_transcriber(online, SAMPLE_RATE, rng)
+    transcriber = get_whisper_streaming_transcriber(rng)
 
     result = (
         test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
@@ -93,15 +89,10 @@ def rt_whisper():
 
     if USE_SAVE_LOADER:
         transcriber = get_token_saver_loader_transcriber(
-            src, storage, SAMPLE_RATE, rng, hyperparameter, overlap
+            src, storage, rng, hyperparameter, overlap
         )
     else:
-        from rt_whisper import streamers
-
-        token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(
-            hyperparameter=hyperparameter,
-        )
-        transcriber = get_rt_whisper_transcriber(token_streamer, SAMPLE_RATE, rng)
+        transcriber = get_rt_whisper_transcriber(hyperparameter, rng)
 
     result = (
         test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
@@ -115,12 +106,9 @@ def rt_whisper():
 
 
 def whisper():
-    from faster_whisper import WhisperModel
-
     print("Running Whisper...")
 
-    model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
-    transcriber = get_faster_whisper_transcriber(model, SAMPLE_RATE)
+    transcriber = get_faster_whisper_transcriber()
 
     result = (
         test_process_all(data_paths, transcriber, max_count=MAX_COUNT)
@@ -146,7 +134,6 @@ if __name__ == "__main__":
         elif key == "whisper_streaming":
             results[key] = whisper_streaming()
 
-    output_path = Path(OUTPUT_PATH)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     json_saver.save(results, output_path)
