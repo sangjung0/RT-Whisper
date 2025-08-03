@@ -125,13 +125,27 @@ class Optimizer(ABC):
             study.optimize(objective, n_trials=5)
             joblib.dump(study, save_study_path)
 
-        values = np.array([t.values[0] for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE])
+        values = np.array(
+            [
+                t.values[0]
+                for t in study.trials
+                if t.state == optuna.trial.TrialState.COMPLETE
+            ]
+        )
         thresholds = [np.percentile(values, p) for p in percentiles]
         percentile_trials = [
-            [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE and t.values[0] <= threshold]
+            [
+                t
+                for t in study.trials
+                if t.state == optuna.trial.TrialState.COMPLETE
+                and t.values[0] <= threshold
+            ]
             for threshold in thresholds
         ]
-        studies = [optuna.create_study(direction=study.direction) for _ in range(len(percentiles))]
+        studies = [
+            optuna.create_study(direction=study.direction)
+            for _ in range(len(percentiles))
+        ]
         for s, t in zip(studies, percentile_trials):
             s.add_trials(t)
 
@@ -249,7 +263,8 @@ class ESICOptimizer(Optimizer):
         transcriber: Callable[[Path, TimeChecker], str],
         batch_size: int,
     ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.esic_v1 import search_file_from_dir
+        from sj_ai_utils.datasets.esic_v1.service import select_file_from_dir
+        from sj_ai_utils.datasets.esic_v1.file_type import ORTO, MP4
 
         data_folders = self.train_data_paths
 
@@ -260,14 +275,15 @@ class ESICOptimizer(Optimizer):
 
             data = {}
             for sample in samples:
-                key = sample.parent.stem + "_" + sample.stem
-                trans_txt = search_file_from_dir(sample, "o")
+                key = sample.absolute()
+
+                trans_txt = select_file_from_dir(sample, ORTO)
                 txt = trans_txt.read_text(encoding="utf-8")
                 txt = normalize_text(txt)
                 ref = TRNFormat(id=key, text=txt)
 
                 pred_txt = transcriber(
-                    search_file_from_dir(sample, "mp4"),
+                    select_file_from_dir(sample, MP4),
                     TimeChecker(),
                     hyperparameter,
                     int(hyperparameter["asr"]["max_overlap_duration"]),
@@ -331,7 +347,10 @@ class LibriOptimizer(Optimizer):
         transcriber: Callable[[Path, TimeChecker], str],
         batch_size: int,
     ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.libri_speech_asr_corpus import trans_txt_to_sclite_trn
+        from sj_ai_utils.datasets.libri_speech_asr_corpus.sclite import (
+            trans_txt_to_sclite_trn,
+        )
+        from sj_ai_utils.datasets.libri_speech_asr_corpus.file_type import X, Y
 
         data_folders = self.train_data_paths
 
@@ -342,7 +361,7 @@ class LibriOptimizer(Optimizer):
 
             data = {}
             for sample in samples:
-                trans_txt = next(sample.glob("*.trans.txt"))
+                trans_txt = next(sample.glob(Y))
                 ref = trans_txt_to_sclite_trn(trans_txt, normalize_text)
                 hyp = [
                     TRNFormat(
@@ -356,7 +375,7 @@ class LibriOptimizer(Optimizer):
                             )
                         ),
                     )
-                    for flac in sorted(sample.glob("*.flac"))
+                    for flac in sorted(sample.glob(X))
                 ]
                 data[sample.stem] = {"ref": ref, "hyp": hyp}
 
