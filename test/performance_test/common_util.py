@@ -235,9 +235,22 @@ def get_token_saver_loader_transcriber(
         token_streamer = saveloaders.get_token_streamer_saver(
             save_path=save_path, hyperparameter=hyperparameter
         )
-        return get_rt_whisper_transcriber(token_streamer, sr, load_audio, rng)(
-            audio_src, transcribe_time
-        )
+
+        audio, _ = load_audio(audio_src, sr=sr)
+
+        completed = []
+        param = Param()
+        for segment in segment_audio(audio, rng=rng):
+            param.chunk = segment
+            param.language = "en"
+            transcribe_time.start()
+            result: Result = token_streamer.process(param)
+            transcribe_time.check()
+            completed.extend(result.completed)
+            param.update(result, update_prompt=True)
+        completed.extend(result.candidate)
+        text = " ".join([s.text for s in completed])
+        return text
 
     def token_loader(
         saved_path: Path,
