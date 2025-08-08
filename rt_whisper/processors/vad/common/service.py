@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import numpy as np
+
+from typing import Callable
 
 from sj_utils.audio import generate_empty_chunk
 
 if TYPE_CHECKING:
-    from typing import Callable
-
     from rt_whisper.data import Token
 
 
@@ -100,6 +101,7 @@ def __find_condition(
     raise ValueError(
         f"Condition not found: \n\tc_index: {c_index} \n\tconditions: {conditions} \n\ttimestamp: {timestamp}"
     )
+
 
 __all__ = [
     "vad",

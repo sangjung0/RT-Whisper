@@ -1,8 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from logging import Logger
 
 from rt_whisper.abstracts import Worker
-from rt_whisper.data import TokenState, Param, Result
+from rt_whisper.data import TokenState
 from sj_utils.decorator import singleton
+
+if TYPE_CHECKING:
+    from rt_whisper.data import Param, Result
 
 
 @singleton
@@ -57,3 +63,6 @@ class Pipeline:
         if get_context:
             return context
         return context.extract()
+
+
+__all__ = ["Pipeline"]

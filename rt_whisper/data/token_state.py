@@ -1,17 +1,19 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+
 import numpy as np
+
+from typing import Type
+from dataclasses import dataclass, field
 
 from sj_utils.audio import generate_empty_chunk
 
-from .result import Result
+from rt_whisper.data.result import Result
 
 if TYPE_CHECKING:
-    from typing import Type
-    from .param import Param
-    from .sentence import Sentence
-    from .token import Token
+    from rt_whisper.data.param import Param
+    from rt_whisper.data.sentence import Sentence
+    from rt_whisper.data.token import Token
 
 
 @dataclass(slots=True)
@@ -56,3 +58,6 @@ class TokenState:
             candidate=self.candidate,
             context_dict=context_dict,
         )
+
+
+__all__ = ["TokenState"]

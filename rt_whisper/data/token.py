@@ -1,8 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import torch
 
 from pydantic import BaseModel, Field, ConfigDict
 
 from sj_ai_utils.torch import tensor_to_base64, base64_to_tensor
+
+if TYPE_CHECKING:
+    pass
 
 
 class Token(BaseModel):
@@ -56,3 +62,6 @@ class Token(BaseModel):
             probability=data["probability"],
             is_word=data.get("is_word", True),
         )
+
+
+__all__ = ["Token"]

@@ -151,3 +151,6 @@ class Selector(SelectorContextBuilder):
     # override
     def _register_state(self, state: TokenState):
         state.set_state(SelectorState, SelectorState())
+
+
+__all__ = ["Selector"]

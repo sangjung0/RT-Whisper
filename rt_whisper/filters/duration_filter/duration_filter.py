@@ -80,3 +80,6 @@ class DurationFilter(Worker):
     def _update(self, state: TokenState, result: DurationFilterResult) -> None:
         dfs_state = state.get_state(DurationFilterState)
         result.update_state(state, dfs_state)
+
+
+__all__ = ["DurationFilter"]

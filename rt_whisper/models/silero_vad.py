@@ -1,4 +1,5 @@
 import numpy as np
+
 from silero_vad import load_silero_vad, get_speech_timestamps
 
 from sj_utils.decorator import singleton
@@ -15,3 +16,6 @@ class SileroVad:
         return get_speech_timestamps(
             audio, self.__model, sampling_rate=self.__SAMPLE_RATE, **options
         )
+
+
+__all__ = ["SileroVad"]

@@ -45,3 +45,6 @@ class RTWhisperLogger:
         if indent_size <= 0:
             return message
         return f"{self.__INDENT * indent_size}{message}"
+
+
+__all__ = ["RTWhisperLogger"]

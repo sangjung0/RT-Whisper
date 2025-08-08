@@ -104,3 +104,12 @@ class VADPostResult:
     def update_state(self, state: VADState) -> None:
         ...
         # state.original_merged_chunk = self.merged_chunk
+
+
+__all__ = [
+    "VADState",
+    "VADProcessParam",
+    "VADProcessResult",
+    "VADPostParam",
+    "VADPostResult",
+]

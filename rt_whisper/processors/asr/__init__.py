@@ -1,7 +1,7 @@
 # models/whisper/__init__.py
 
-from .asr import ASR
-from .data import ASRState
+from rt_whisper.processors.asr.asr import ASR
+from rt_whisper.processors.asr.data import ASRState
 
 __all__ = [
     "ASR",

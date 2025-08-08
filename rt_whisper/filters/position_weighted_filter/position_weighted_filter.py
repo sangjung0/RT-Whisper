@@ -62,3 +62,6 @@ class PositionWeightedFilter(Worker):
         self, context: TokenState, result: PositionWeightedFilterResult
     ) -> None:
         result.update_context(context)
+
+
+__all__ = ["PositionWeightedFilter"]

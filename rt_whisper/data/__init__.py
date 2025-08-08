@@ -1,15 +1,9 @@
 # RTWhisper/data/__init__.py
 
-from .token_state import TokenState
-from .param import Param
-from .result import Result
-from .sentence import Sentence
-from .token import Token
+from rt_whisper.data.token_state import TokenState
+from rt_whisper.data.param import Param
+from rt_whisper.data.result import Result
+from rt_whisper.data.sentence import Sentence
+from rt_whisper.data.token import Token
 
-__all__ = [
-    "TokenState",
-    "Param",
-    "Result",
-    "Sentence",
-    "Token",
-]
+__all__ = ["TokenState", "Param", "Result", "Sentence", "Token"]

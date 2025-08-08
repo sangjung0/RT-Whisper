@@ -1,5 +1,6 @@
-from faster_whisper import WhisperModel
 import numpy as np
+
+from faster_whisper import WhisperModel
 
 from sj_utils.decorator import singleton
 
@@ -22,3 +23,6 @@ class Whisper:
             initial_prompt=prompt,
             word_timestamps=True,
         )
+
+
+__all__ = ["Whisper"]

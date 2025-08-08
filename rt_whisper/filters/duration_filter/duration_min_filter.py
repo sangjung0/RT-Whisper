@@ -50,3 +50,6 @@ class DurationMinFilter(Worker):
     # override
     def _update(self, state: TokenState, result: DurationMinFilterResult) -> None:
         result.update_state(state)
+
+
+__all__ = ["DurationMinFilter"]

@@ -133,6 +133,7 @@ def transcribe(
     language = info.language or language
     return segments, language
 
+
 def clip_prompt(prompt: str, max_words: int) -> str:
     """Clip the prompt to a maximum number of words.
 

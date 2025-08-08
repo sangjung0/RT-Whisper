@@ -111,3 +111,6 @@ class VAD(Worker):
         asr_state: ASRState = state.get_state(ASRState)
         result.update_state(vad_state)
         vad_state.post_replace(state, asr_state)
+
+
+__all__ = ["VAD"]

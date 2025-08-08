@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 import numpy as np
 
 from rt_whisper.abstracts import Worker
@@ -167,3 +168,6 @@ class VAD(VADContextBuilder):
     # override
     def _register_state(self, state: TokenState):
         state.set_state(VADState, VADState())
+
+
+__all__ = ["VAD"]

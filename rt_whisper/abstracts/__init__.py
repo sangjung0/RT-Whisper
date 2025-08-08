@@ -1,9 +1,6 @@
 # abstracts/__init__.py
 
-from .async_worker import AsyncWorker
-from .worker import Worker
+from rt_whisper.abstracts.async_worker import AsyncWorker
+from rt_whisper.abstracts.worker import Worker
 
-__all__ = [
-    "AsyncWorker",
-    "Worker",
-]
+__all__ = ["AsyncWorker", "Worker"]

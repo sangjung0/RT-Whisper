@@ -62,3 +62,6 @@ class DataSaver(Worker):
     def _update(self, state: TokenState, result: DataSaverResult):
         ds_state: DataSaverState = state.get_state(DataSaverState)
         result.update_state(ds_state)
+
+
+__all__ = ["DataSaver"]

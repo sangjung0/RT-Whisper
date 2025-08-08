@@ -17,7 +17,9 @@ class PositionWeightedFilterParam:
     segment_tokens: list[Token]
 
     @staticmethod
-    def from_context(state: TokenState, asr_state: ASRState) -> "PositionWeightedFilterParam":
+    def from_context(
+        state: TokenState, asr_state: ASRState
+    ) -> "PositionWeightedFilterParam":
         return PositionWeightedFilterParam(
             offset=state.offset,
             merged_chunk=asr_state.merged_chunk,
@@ -31,3 +33,6 @@ class PositionWeightedFilterResult:
 
     def update_context(self, state: TokenState) -> None:
         state.segment_tokens = self.segment_tokens
+
+
+__all__ = ["PositionWeightedFilterParam", "PositionWeightedFilterResult"]

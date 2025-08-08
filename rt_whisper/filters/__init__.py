@@ -1,8 +1,11 @@
 # RTWhisper/filter/__init__.py
 
-from .position_weighted_filter import PositionWeightedFilter
-from .duration_filter import DurationFilter, DurationMinFilter
-from .probability_filter import ProbabilityFilter, ProbabilityMinFilter
+from rt_whisper.filters.position_weighted_filter import PositionWeightedFilter
+from rt_whisper.filters.duration_filter import DurationFilter, DurationMinFilter
+from rt_whisper.filters.probability_filter import (
+    ProbabilityFilter,
+    ProbabilityMinFilter,
+)
 
 __all__ = [
     "PositionWeightedFilter",

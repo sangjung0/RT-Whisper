@@ -58,3 +58,6 @@ class DataLoader(Worker):
     def _update(self, state: TokenState, result: DataLoaderResult):
         dl_state: DataLoaderState = state.get_state(DataLoaderState)
         result.update_state(dl_state)
+
+
+__all__ = ["DataLoader"]

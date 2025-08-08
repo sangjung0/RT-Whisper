@@ -31,3 +31,9 @@ def add_offset(segment_tokens: list[Token], offset: int) -> None:
     for token in segment_tokens:
         token.start += offset
         token.end += offset
+
+
+__all__ = [
+    "slice_vad_chunk",
+    "add_offset",
+]

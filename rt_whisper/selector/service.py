@@ -68,7 +68,11 @@ def merge_tokens(
     prev = None
     for tg in token_groups:
         best = __select_best(tg, prev)
-        prev = best.embedding if prev is None else torch.mean(torch.stack([prev, best.embedding]), dim=0)
+        prev = (
+            best.embedding
+            if prev is None
+            else torch.mean(torch.stack([prev, best.embedding]), dim=0)
+        )
         best_tokens.append(best)
     tokens = best_tokens + orphan_tokens
     tokens.sort(key=lambda t: t.start if t.is_word else t.end)
@@ -140,3 +144,6 @@ def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float
     outer = max(max(b1, b2) - min(a1, a2), smooth)
 
     return inner / outer
+
+
+__all__ = ["group_similar_tokens", "merge_tokens"]

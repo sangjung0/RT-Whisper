@@ -38,3 +38,6 @@ def __get_weighted_probability(
         return probability
     else:
         return probability * ((duration - center) / boundary) ** 3
+
+
+__all__ = ["filter_by_position_weighted"]

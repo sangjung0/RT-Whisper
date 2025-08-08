@@ -6,3 +6,6 @@ class KSSTokenizer:
     def segment(self, text) -> list[str] | list[list[str]]:
         # Use kss to segment the text
         return kss.split_sentences(text)
+
+
+__all__ = ["KSSTokenizer"]

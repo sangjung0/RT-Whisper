@@ -80,6 +80,7 @@ class ProbabilityMinFilterResult:
     def update_context(self, state: TokenState) -> None:
         state.segment_tokens = self.segment_tokens
 
+
 __all__ = [
     "ProbabilityFilterState",
     "ProbabilityFilterParam",

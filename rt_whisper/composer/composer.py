@@ -106,3 +106,6 @@ class Composer(Worker):
     def _context_update(self, state: TokenState, result: ComposerContextBuilderResult):
         cps_state: ComposerState = state.get_state(ComposerState)
         result.update_context(cps_state)
+
+
+__all__ = ["Composer"]

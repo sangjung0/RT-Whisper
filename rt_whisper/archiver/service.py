@@ -40,3 +40,6 @@ def dict_to_state(data: dict, state: TokenState) -> TokenState:
     state.segment_tokens = [Token.from_dict(token) for token in data["segment_tokens"]]
 
     return state
+
+
+__all__ = ["state_to_dict", "dict_to_state"]

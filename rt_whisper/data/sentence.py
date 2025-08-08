@@ -1,6 +1,12 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel
 
-from .token import Token
+from rt_whisper.data.token import Token
+
+if TYPE_CHECKING:
+    pass
 
 
 class Sentence(BaseModel):
@@ -28,3 +34,6 @@ class Sentence(BaseModel):
             text=data["text"],
             tokens=[Token.from_dict(token) for token in data["tokens"]],
         )
+
+
+__all__ = ["Sentence"]

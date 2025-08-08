@@ -1,6 +1,7 @@
 import pysbd
 
-from .kss_tokenizer import KSSTokenizer
+from tokenizers.kss_tokenizer import KSSTokenizer
+
 
 class Tokenizer:
     tokenizers: dict[pysbd.Segmenter] = {}
@@ -21,3 +22,6 @@ class Tokenizer:
                     )
                     return None
         return Tokenizer.tokenizers[lang]
+
+
+__all__ = ["Tokenizer"]

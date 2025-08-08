@@ -1,13 +1,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from dataclasses import dataclass, field
+
 import numpy as np
+
+from typing import Type
+from dataclasses import dataclass, field
 
 from sj_utils.audio import generate_empty_chunk
 
 if TYPE_CHECKING:
-    from .result import Result
-    from typing import Type
+    from rt_whisper.data.result import Result
 
 
 @dataclass(slots=True)
@@ -45,3 +47,6 @@ class Param:
                     token.text for token in completed_token if token.is_word
                 )
                 self.prompt = prompt
+
+
+__all__ = ["Param"]

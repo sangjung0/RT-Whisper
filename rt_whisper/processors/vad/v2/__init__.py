@@ -1,10 +1,7 @@
 # processors/vad/v2/__init__.py
 
-from . import data, service
-from .vad import VAD
+from rt_whisper.processors.vad.v2.vad import VAD
 
 __all__ = [
-    # "data",
-    # "service",
     "VAD",
 ]
