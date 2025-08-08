@@ -1,6 +1,6 @@
 import pysbd
 
-from tokenizers.kss_tokenizer import KSSTokenizer
+from rt_whisper.tokenizers.kss_tokenizer import KSSTokenizer
 
 
 class Tokenizer:

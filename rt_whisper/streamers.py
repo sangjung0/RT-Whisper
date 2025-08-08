@@ -15,7 +15,7 @@ from rt_whisper.filters import (
     ProbabilityMinFilter,
 )
 from rt_whisper.models import Whisper
-from rt_whisper.processors import ASR
+from rt_whisper.processors.asr import ASR
 from rt_whisper.processors.vad.v1 import VAD as VADv1
 from rt_whisper.processors.vad.v2 import VAD as VAD
 from rt_whisper.selector import Selector

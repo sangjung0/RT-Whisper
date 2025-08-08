@@ -5,7 +5,7 @@ from sj_utils.collection import SafetyDict
 from rt_whisper.core import logger
 from rt_whisper.models import Whisper
 from rt_whisper.pipeline import Pipeline
-from rt_whisper.processors import ASR
+from rt_whisper.processors.asr import ASR
 from rt_whisper.processors.vad.v2 import VAD
 from rt_whisper.composer import SimpleComposer
 from rt_whisper.utils import (
