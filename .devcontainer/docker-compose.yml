@@ -6,10 +6,15 @@ services:
             dockerfile: .devcontainer/Dockerfile
         volumes:
             - ../:/workspaces/dev
+
             #   - ../.model/huggingface:/root/.cache/huggingface
             - F:/Models/huggingface:/root/.cache/huggingface
             #   - ../.model/torch:/root/.cache/torch
             - F:/Models/torch:/root/.cache/torch
+
+            - C:/Env/python/RTWhisper-Dev:/workspaces/dev/.venv
+            # - /workspaces/dev/.venv # no cache
+
             # dataset
             - F:/Datasets:/workspaces/dev/datasets:ro
             - F:/Datasets/asr-rankformer-datasets:/workspaces/dev/datasets/asr-rankformer-datasets:rw

@@ -3,6 +3,8 @@
 	"dockerComposeFile": "./docker-compose.yml",
 	"service": "dev",
 	"workspaceFolder": "/workspaces/dev",
+    "remoteUser": "vscode",
+    "postCreateCommand": "bash /workspaces/dev/.devcontainer/scripts/post_create_command.sh vscode",
 	"features": {
 		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
