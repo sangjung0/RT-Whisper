@@ -65,8 +65,7 @@ class SelectorProcessor(Worker):
             f"Previous: {''.join(str(t) for t in prev if t.is_word)}", group_level=2
         )
 
-        token_groups = [[t] for t in prev[:-1]]
-        current = current[1:]
+        token_groups = [[t] for t in prev]
         token_groups, orphan_tokens = group_similar_tokens(
             source=current,
             token_groups=token_groups,

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pathlib import Path
-from typing import Callable
 from whisper.normalizers import EnglishTextNormalizer
 
 from sj_utils.evaluator import TimeChecker
@@ -16,28 +15,51 @@ if TYPE_CHECKING:
 
 
 def get_rt_whisper_transcriber(
-    sr: int,
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
-    use_prompt: bool,
+    hyperparameter: SafetyDict | Path = None,
+    chunk_size_mean: int = 48_000,
+    chunk_size_std: int = 0,
+    chunk_size_max_div: int = 0,
     rng: np.random.Generator | np.random.RandomState = np.random,
+    language: str = "en",
+    use_prompt: bool = True,
 ):
     from rt_whisper.data import Param, Result
     from rt_whisper.streamers import get_token_streamer_with_vad_v2_min_filter
 
+    _hyperparameter = hyperparameter
+    _chunk_size_mean = chunk_size_mean
+    _chunk_size_std = chunk_size_std
+    _chunk_size_max_div = chunk_size_max_div
+    _rng = rng
+    _language = language
+    _use_prompt = use_prompt
+
     def transcriber(
-        src: Path, transcribe_time: TimeChecker, hyperparameter: SafetyDict | Path
+        audio: np.ndarray,
+        transcribe_time: TimeChecker,
+        hyperparameter: SafetyDict | Path = _hyperparameter,
+        chunk_size_mean: int = _chunk_size_mean,
+        chunk_size_std: int = _chunk_size_std,
+        chunk_size_max_div: int = _chunk_size_max_div,
+        rng: np.random.Generator | np.random.RandomState = _rng,
+        language: str = _language,
+        use_prompt: bool = _use_prompt,
     ) -> str:
         token_streamer = get_token_streamer_with_vad_v2_min_filter(
             hyperparameter=hyperparameter
         )
 
-        audio, _ = load_audio(src, sr=sr)
-
         completed = []
         param = Param()
-        for segment in segment_audio(audio, rng=rng):
+        for segment in segment_audio(
+            audio,
+            mean=chunk_size_mean,
+            std=chunk_size_std,
+            max_div=chunk_size_max_div,
+            rng=rng,
+        ):
             param.chunk = segment
-            param.language = "en"
+            param.language = language
             transcribe_time.start()
             result: Result = token_streamer.process(param)
             transcribe_time.check()
@@ -53,35 +75,53 @@ def get_rt_whisper_transcriber(
 def get_token_saver_loader_transcriber(
     source: Path,
     storage: Path,
-    sr: int,
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    hyperparameter: SafetyDict = None,
     overlap: int = None,
+    hyperparameter: SafetyDict = None,
+    chunk_size_mean: int = 48_000,
+    chunk_size_std: int = 0,
+    chunk_size_max_div: int = 0,
+    rng: np.random.Generator | np.random.RandomState = np.random,
+    language: str = "en",
 ):
     from rt_whisper import saveloaders
     from rt_whisper.data import Param, Result
 
-    saved_hyperparameter = hyperparameter
-    saved_overlap = overlap
+    _source = source
+    _storage = storage
+    _overlap = overlap
+    _hyperparameter = hyperparameter
+    _chunk_size_mean = chunk_size_mean
+    _chunk_size_std = chunk_size_std
+    _chunk_size_max_div = chunk_size_max_div
+    _rng = rng
+    _language = language
 
     def token_saver(
-        audio_src: Path,
+        audio: np.ndarray,
         save_path: Path,
-        hyperparameter: SafetyDict,
         transcribe_time: TimeChecker,
+        hyperparameter: SafetyDict = _hyperparameter,
+        chunk_size_mean: int = _chunk_size_mean,
+        chunk_size_std: int = _chunk_size_std,
+        chunk_size_max_div: int = _chunk_size_max_div,
+        rng: np.random.Generator | np.random.RandomState = _rng,
+        language: str = _language,
     ) -> str:
         token_streamer = saveloaders.get_token_streamer_saver(
             save_path=save_path, hyperparameter=hyperparameter
         )
 
-        audio, _ = load_audio(audio_src, sr=sr)
-
         completed = []
         param = Param()
-        for segment in segment_audio(audio, rng=rng):
+        for segment in segment_audio(
+            audio,
+            mean=chunk_size_mean,
+            std=chunk_size_std,
+            max_div=chunk_size_max_div,
+            rng=rng,
+        ):
             param.chunk = segment
-            param.language = "en"
+            param.language = language
             transcribe_time.start()
             result: Result = token_streamer.process(param)
             transcribe_time.check()
@@ -92,34 +132,43 @@ def get_token_saver_loader_transcriber(
         return text
 
     def token_loader(
-        saved_path: Path,
-        hyperparameter: SafetyDict,
+        save_path: Path,
         transcribe_time: TimeChecker,
+        hyperparameter: SafetyDict = _hyperparameter,
+        language: str = _language,
     ) -> str:
         token_streamer = saveloaders.get_token_streamer_loader(
-            saved_path=saved_path, hyperparameter=hyperparameter
+            saved_path=save_path, hyperparameter=hyperparameter
         )
 
-        segment_length = len(list(saved_path.iterdir()))
+        segment_length = len(list(save_path.iterdir()))
 
         completed = []
         param = Param()
         for _ in range(segment_length):
-            param.language = "en"
+            param.language = language
             transcribe_time.start()
             result: Result = token_streamer.process(param)
             transcribe_time.check()
             completed.extend(result.completed)
-            param.update(result, update_prompt=True)
+            param.update(result, update_prompt=False)
         completed.extend(result.candidate)
         text = " ".join([s.text for s in completed])
         return text
 
     def transcriber(
+        audio: np.ndarray,
         audio_src: Path,
         transcribe_time: TimeChecker,
-        hyperparameter: SafetyDict = saved_hyperparameter,
-        overlap: int = saved_overlap,
+        source: Path = _source,
+        storage: Path = _storage,
+        overlap: int = _overlap,
+        hyperparameter: SafetyDict = _hyperparameter,
+        chunk_size_mean: int = _chunk_size_mean,
+        chunk_size_std: int = _chunk_size_std,
+        chunk_size_max_div: int = _chunk_size_max_div,
+        rng: np.random.Generator | np.random.RandomState = _rng,
+        language: str = _language,
     ) -> str:
         if hyperparameter is None:
             raise ValueError("hyperparameter must be provided")
@@ -130,8 +179,23 @@ def get_token_saver_loader_transcriber(
         saved_path = storage / f"{overlap}" / relative_path
 
         if saved_path.exists():
-            return token_loader(saved_path, hyperparameter, transcribe_time)
-        return token_saver(audio_src, saved_path, hyperparameter, transcribe_time)
+            return token_loader(
+                saved_path,
+                transcribe_time,
+                language=language,
+                hyperparameter=hyperparameter,
+            )
+        return token_saver(
+            audio,
+            saved_path,
+            transcribe_time,
+            hyperparameter=hyperparameter,
+            chunk_size_mean=chunk_size_mean,
+            chunk_size_std=chunk_size_std,
+            chunk_size_max_div=chunk_size_max_div,
+            rng=rng,
+            language=language,
+        )
 
     return transcriber
 

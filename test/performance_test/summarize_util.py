@@ -19,18 +19,18 @@ def chunk_test(
     chunk_start: int,
     chunk_step: int,
     chunk_end: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
-    whisper_streaming_func: Callable[[list[Path], int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
+    whisper_streaming_func: Callable[[list[Path], int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
     for chunk_size in range(chunk_start, chunk_end + 1, chunk_step):
         result[chunk_size] = {
             "rt_whisper": rt_whisper_func(
-                data_dirs, hyperparameter, chunk_size, 0, 0, repeat=1, count=count
+                data_dirs, hyperparameter, chunk_size, repeat=1, count=count
             )[0],
             "whisper_streaming": whisper_streaming_func(
-                data_dirs, chunk_size, 0, 0, repeat=1, count=count
+                data_dirs, chunk_size, repeat=1, count=count
             )[0],
         }
     return result
@@ -41,7 +41,7 @@ def max_overlap_duration_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -53,8 +53,6 @@ def max_overlap_duration_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -67,7 +65,7 @@ def max_prompt_words_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -79,8 +77,6 @@ def max_prompt_words_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -93,7 +89,7 @@ def boundary_test(
     data_dirs: list[Path],
     hyperparameter: SafetyDict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -105,8 +101,6 @@ def boundary_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -119,7 +113,7 @@ def min_duration_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -131,8 +125,6 @@ def min_duration_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -145,7 +137,7 @@ def min_probability_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -157,8 +149,6 @@ def min_probability_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -171,7 +161,7 @@ def iou_threshold_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -183,8 +173,6 @@ def iou_threshold_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -197,7 +185,7 @@ def cos_threshold_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -209,8 +197,6 @@ def cos_threshold_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -223,7 +209,7 @@ def padding_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     result = {}
@@ -235,8 +221,6 @@ def padding_test(
             data_dirs,
             SafetyDict(hyperparameter),
             chunk_size,
-            0,
-            0,
             repeat=1,
             count=count,
         )[0]
@@ -249,7 +233,7 @@ def hyperparameter_test(
     data_dirs: list[Path],
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int, int], dict],
+    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
     count: int = 1,
 ):
     return {

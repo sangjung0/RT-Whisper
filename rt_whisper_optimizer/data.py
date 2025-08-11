@@ -23,6 +23,8 @@ TEMPLATE = {
         "use_cache": True,
         "use_prompt": True,
         "random_seed": 42,
+        "chunk_size": 48000,
+        "language": "en",
     },
     "study": {
         "whisper": {
@@ -39,6 +41,7 @@ TEMPLATE = {
         },
         "silero_vad": {"model_options": {}, "run_options": {}},
         "asr": {
+            "max_prompt_word": 10,
             "max_overlap_duration": {
                 "is_train": True,
                 "key": "overlap_duration",
@@ -46,7 +49,7 @@ TEMPLATE = {
                 "minimum": 0,
                 "maximum": 112000,
                 "step": 16000,
-            }
+            },
         },
         "position_weighted_filter": {
             "boundary": {

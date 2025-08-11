@@ -12,64 +12,50 @@ for path in paths:
     sys.path.append(os.path.abspath(path))
 
 import numpy as np
-import string
 
 from pathlib import Path
 from typing import Callable
-from whisper.normalizers import EnglishTextNormalizer
 
-from sj_ai_utils.asr.whisper_utils import segments_to_text
+from sj_utils.file.yaml import load_yaml
+from sj_utils.file.json import JsonSaver
 from sj_utils.evaluator import TimeChecker
+from sj_utils.audio import segment_audio
+from sj_utils.collection import SafetyDict
+from sj_ai_utils.asr.whisper_utils import segments_to_text
 from sj_ai_utils.evaluator.sclite_utils import (
     TRNFormat,
     sclite_trn,
     parse_sclite_summary,
 )
-from sj_utils.audio import segment_audio
-from sj_utils.collection import SafetyDict
 
-SAMPLE_RATE = 16_000
-MODEL_SIZE = "large-v3"
-
-
-normalizer = EnglishTextNormalizer()
-
-
-def normalize_text(text: str):
-    text = normalizer(text)
-    text = text.translate(str.maketrans("", "", string.punctuation))
-    return text
+from rt_whisper_optimizer.service import (
+    normalize_text,
+    get_rt_whisper_transcriber,
+    get_token_saver_loader_transcriber,
+)
 
 
 def test_process_all(
     data_paths: list[Path],
-    transcriber: Callable[[Path, TimeChecker], str],
-    make_ref_and_hyp: Callable[
-        [list[Path], Callable[[Path], str], Callable[[str], str], int, bool],
-        dict[str, dict[str, list[TRNFormat]]],
+    transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
+    sr: int = 16000,
 ) -> dict:
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    t = lambda x: transcriber(x, transcribe_time)
+    t = lambda audio, path: transcriber(audio, path, transcribe_time)
 
     processed_time.start()
-    data = make_ref_and_hyp(data_paths, t, normalizer, max_count)
+    ref, hyp = generate_ref_and_hyp(data_paths, t, normalizer, max_count, sr)
     processed_time.check()
 
-    concat_result = {}
-    for value in data.values():
-        for k, v in value.items():
-            if k not in concat_result:
-                concat_result[k] = []
-            concat_result[k].extend(v)
-    output = sclite_trn(
-        concat_result["ref"],
-        concat_result["hyp"],
-    )
+    output = sclite_trn(ref, hyp)
     result = parse_sclite_summary(output)
     result["processed_time"] = processed_time.metric()
     result["transcribe_time"] = transcribe_time.metric()
@@ -79,57 +65,66 @@ def test_process_all(
 
 def test_process_each(
     data_paths: list[Path],
-    transcriber: Callable[[Path], str],
-    make_ref_and_hyp: Callable[
-        [list[Path], Callable[[Path], str], Callable[[str], str], int, bool],
-        dict[str, dict[str, list[TRNFormat]]],
+    transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
     max_count: int = -1,
+    sr: int = 16000,
 ) -> dict:
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    t = lambda x: transcriber(x, transcribe_time)
+    t = lambda audio, path: transcriber(audio, path, transcribe_time)
 
     processed_time.start()
-    data = make_ref_and_hyp(data_paths, t, normalizer, max_count)
+    ref, hyp = generate_ref_and_hyp(data_paths, t, normalizer, max_count, sr)
     processed_time.check()
 
     result = {}
-    for key, value in data.items():
-        output = sclite_trn(value["ref"], value["hyp"])
-        result[key] = parse_sclite_summary(output)
+    for r, h in zip(ref, hyp):
+        output = sclite_trn(r, h)
+        result[r.id] = parse_sclite_summary(output)
+
     result["processed_time"] = processed_time.metric()
     result["transcribe_time"] = transcribe_time.metric()
     return result
 
 
 def get_whisper_streaming_transcriber(
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
     rng: np.random.Generator | np.random.RandomState = np.random,
-    sr: int = SAMPLE_RATE,
-    audio_chunk_mean: int = 48000,
-    audio_chunk_std: int = 400,
-    audio_chunk_min_max: float = 0.1,
+    model_size: str = "large-v3",
+    language: str = "en",
+    audio_chunk_mean: int = 48_000,
+    audio_chunk_std: int = 0,
+    audio_chunk_max_div: int = 0,
 ):
     from whisper_online import FasterWhisperASR, OnlineASRProcessor
 
-    asr = FasterWhisperASR("en", MODEL_SIZE)
+    _audio_chunk_mean = audio_chunk_mean
+    _audio_chunk_std = audio_chunk_std
+    _audio_chunk_max_div = audio_chunk_max_div
+
+    asr = FasterWhisperASR(language, model_size)
     asr.use_vad()
     online = OnlineASRProcessor(asr)
 
-    def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
-
-        audio, _ = load_audio(src, sr=sr)
+    def transcriber(
+        audio: np.ndarray,
+        transcribe_time: TimeChecker,
+        audio_chunk_mean: int = _audio_chunk_mean,
+        audio_chunk_std: int = _audio_chunk_std,
+        audio_chunk_max_div: int = _audio_chunk_max_div,
+    ) -> str:
         online.init()
-
         full_text = ""
         for segment in segment_audio(
             audio,
             mean=audio_chunk_mean,
             std=audio_chunk_std,
-            ratio=audio_chunk_min_max,
+            max_div=audio_chunk_max_div,
             rng=rng,
         ):
             transcribe_time.start()
@@ -144,64 +139,20 @@ def get_whisper_streaming_transcriber(
     return transcriber
 
 
-def get_rt_whisper_transcriber(
-    hyperparameter: SafetyDict,
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    sr: int = SAMPLE_RATE,
-    audio_chunk_mean: int = 48000,
-    audio_chunk_std: int = 400,
-    audio_chunk_min_max: float = 0.1,
-):
-    from rt_whisper.data import Param, Result
-    from rt_whisper import streamers
-
-    token_streamer = streamers.get_token_streamer_with_vad_v2_min_filter(hyperparameter)
-
-    def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
-        audio, _ = load_audio(src, sr=sr)
-
-        completed = []
-        param = Param()
-        for segment in segment_audio(
-            audio,
-            mean=audio_chunk_mean,
-            std=audio_chunk_std,
-            ratio=audio_chunk_min_max,
-            rng=rng,
-        ):
-            param.chunk = segment
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-        text = " ".join([s.text for s in completed])
-        return text
-
-    return transcriber
-
-
-def get_faster_whisper_transcriber(
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
-    sr: int = SAMPLE_RATE,
-):
+def get_faster_whisper_transcriber(model_size: str = "large-v3", language: str = "en"):
     from faster_whisper import WhisperModel
 
-    model = WhisperModel(MODEL_SIZE, device="cuda", compute_type="float16")
+    _language = language
 
-    def transcriber(src: Path, transcribe_time: TimeChecker) -> str:
+    model = WhisperModel(model_size, device="cuda", compute_type="float16")
 
-        audio, _ = load_audio(src, sr=sr)
-
+    def transcriber(
+        audio: np.ndarray, transcribe_time: TimeChecker, language: str = _language
+    ) -> str:
         transcribe_time.start()
         segments, _ = model.transcribe(
             audio,
-            beam_size=5,
-            temperature=[0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
-            language="en",
+            language=language,
             word_timestamps=True,
         )
         transcribe_time.check()
@@ -211,98 +162,243 @@ def get_faster_whisper_transcriber(
     return transcriber
 
 
-def get_token_saver_loader_transcriber(
-    source: Path,
-    storage: Path,
-    load_audio: Callable[[Path, int], tuple[np.ndarray, int]],
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    hyperparameter: SafetyDict = None,
-    overlap: int = None,
-    sr: int = SAMPLE_RATE,
+def whisper_streaming(
+    data_paths: list[Path],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
+    ],
+    model_size: str = "large-v3",
+    seed: int = 42,
+    language: str = "en",
+    chunk_size: int = 48_000,
+    test_all: bool = True,
+    max_count: int = -1,
 ):
-    from rt_whisper import saveloaders
-    from rt_whisper.data import Param, Result
+    print("Running Whisper Streaming...")
 
-    saved_hyperparameter = hyperparameter
-    saved_overlap = overlap
+    sr = 16000
+    rng = np.random.default_rng(seed)
+    t = get_whisper_streaming_transcriber(
+        rng,
+        model_size=model_size,
+        language=language,
+        audio_chunk_mean=chunk_size,
+    )
 
-    def token_saver(
-        audio_src: Path,
-        save_path: Path,
-        hyperparameter: SafetyDict,
-        transcribe_time: TimeChecker,
-    ) -> str:
-        token_streamer = saveloaders.get_token_streamer_saver(
-            save_path=save_path, hyperparameter=hyperparameter
+    def transcriber(audio: np.ndarray, _: Path, time_checker: TimeChecker) -> str:
+        return t(audio, time_checker)
+
+    if test_all:
+        result = test_process_all(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
+        )
+    else:
+        result = test_process_each(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
         )
 
-        audio, _ = load_audio(audio_src, sr=sr)
+    del transcriber
+    return result
 
-        completed = []
-        param = Param()
-        for segment in segment_audio(audio, rng=rng):
-            param.chunk = segment
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-        text = " ".join([s.text for s in completed])
-        return text
 
-    def token_loader(
-        saved_path: Path,
-        hyperparameter: SafetyDict,
-        transcribe_time: TimeChecker,
-    ) -> str:
-        token_streamer = saveloaders.get_token_streamer_loader(
-            saved_path=saved_path, hyperparameter=hyperparameter
+def rt_whisper(
+    src: Path,
+    storage: Path,
+    data_paths: list[Path],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
+    ],
+    seed: int = 42,
+    use_save_loader: bool = True,
+    use_prompt: bool = True,
+    language: str = "en",
+    hyperparameter: Path | SafetyDict = None,
+    chunk_size: int = 48_000,
+    test_all: bool = True,
+    max_count: int = -1,
+):
+    print("Running RT Whisper...")
+
+    sr = 16000
+    if isinstance(hyperparameter, Path):
+        _, hyperparameter = load_yaml(hyperparameter)
+        hyperparameter = SafetyDict(hyperparameter)
+    overlap = hyperparameter["asr"]["max_overlap_duration"]
+    rng = np.random.default_rng(seed)
+
+    if use_save_loader:
+        t = get_token_saver_loader_transcriber(
+            source=src,
+            storage=storage,
+            overlap=overlap,
+            hyperparameter=hyperparameter,
+            chunk_size_mean=chunk_size,
+            rng=rng,
+            language=language,
         )
 
-        segment_length = len(list(saved_path.iterdir()))
+        def transcriber(
+            audio: np.ndarray, path: Path, time_checker: TimeChecker
+        ) -> str:
+            return t(audio, path, time_checker)
 
-        completed = []
-        param = Param()
-        for _ in range(segment_length):
-            param.language = "en"
-            transcribe_time.start()
-            result: Result = token_streamer.process(param)
-            transcribe_time.check()
-            completed.extend(result.completed)
-            param.update(result, update_prompt=True)
-        completed.extend(result.candidate)
-        text = " ".join([s.text for s in completed])
-        return text
+    else:
+        t = get_rt_whisper_transcriber(
+            hyperparameter=hyperparameter,
+            chunk_size_mean=chunk_size,
+            rng=rng,
+            language=language,
+            use_prompt=use_prompt,
+        )
 
-    def transcriber(
-        audio_src: Path,
-        transcribe_time: TimeChecker,
-        hyperparameter: SafetyDict = saved_hyperparameter,
-        overlap: int = saved_overlap,
-    ) -> str:
-        if hyperparameter is None:
-            raise ValueError("hyperparameter must be provided")
-        if overlap is None:
-            raise ValueError("overlap must be provided")
+        def transcriber(audio: np.ndarray, _: Path, time_checker: TimeChecker) -> str:
+            return t(audio, time_checker)
 
-        relative_path = audio_src.parent.relative_to(source.parent) / audio_src.stem
-        saved_path = storage / f"{overlap}" / relative_path
+    if test_all:
+        result = test_process_all(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
+        )
+    else:
+        result = test_process_each(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
+        )
 
-        if saved_path.exists():
-            return token_loader(saved_path, hyperparameter, transcribe_time)
-        return token_saver(audio_src, saved_path, hyperparameter, transcribe_time)
+    del transcriber
+    return result
 
-    return transcriber
+
+def whisper(
+    data_paths: list[Path],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
+    ],
+    model_size: str = "large-v3",
+    language: str = "en",
+    test_all: bool = True,
+    max_count: int = -1,
+):
+    print("Running Whisper...")
+
+    sr = 16000
+    t = get_faster_whisper_transcriber(model_size, language)
+
+    def transcriber(audio: np.ndarray, _: Path, time_checker: TimeChecker) -> str:
+        return t(audio, time_checker)
+
+    if test_all:
+        result = test_process_all(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
+        )
+    else:
+        result = test_process_each(
+            data_paths=data_paths,
+            transcriber=transcriber,
+            generate_ref_and_hyp=generate_ref_and_hyp,
+            normalizer=normalize_text,
+            max_count=max_count,
+            sr=sr,
+        )
+
+    del transcriber
+    return result
+
+
+def evaluate(
+    src: Path,
+    storage: Path,
+    output_path: Path,
+    description: str,
+    data_paths: list[Path],
+    generate_ref_and_hyp: Callable[
+        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        tuple[list[TRNFormat], list[TRNFormat]],
+    ],
+    models: list[str] = ["rt_whisper"],
+    model_size: str = "large-v3",
+    language: str = "en",
+    test_all: bool = True,
+    max_count: int = -1,
+    seed: int = 42,
+    use_save_loader: bool = True,
+    use_prompt: bool = False,
+    hyperparameter: Path = None,
+    chunk_size: int = 48_000,
+):
+    json_saver = JsonSaver(description)
+
+    results = {}
+    for key in models:
+        if key == "whisper":
+            results[key] = whisper(
+                data_paths=data_paths,
+                generate_ref_and_hyp=generate_ref_and_hyp,
+                model_size=model_size,
+                language=language,
+                test_all=test_all,
+                max_count=max_count,
+            )
+        elif key == "rt_whisper":
+            results[key] = rt_whisper(
+                src=src,
+                storage=storage,
+                data_paths=data_paths,
+                generate_ref_and_hyp=generate_ref_and_hyp,
+                seed=seed,
+                use_save_loader=use_save_loader,
+                use_prompt=use_prompt,
+                language=language,
+                hyperparameter=hyperparameter,
+                chunk_size=chunk_size,
+                test_all=test_all,
+                max_count=max_count,
+            )
+        elif key == "whisper_streaming":
+            results[key] = whisper_streaming(
+                data_paths=data_paths,
+                generate_ref_and_hyp=generate_ref_and_hyp,
+                model_size=model_size,
+                seed=seed,
+                language=language,
+                chunk_size=chunk_size,
+                test_all=test_all,
+                max_count=max_count,
+            )
+
+    json_saver.save(results, output_path)
+    print(f"Results saved to {output_path}")
 
 
 __all__ = [
-    "test_process_all",
-    "test_process_each",
-    "normalize_text",
-    "get_whisper_streaming_transcriber",
-    "get_rt_whisper_transcriber",
-    "get_faster_whisper_transcriber",
-    "get_token_saver_loader_transcriber",
+    "whisper_streaming",
+    "rt_whisper",
+    "whisper",
+    "evaluate",
 ]

@@ -4,35 +4,31 @@ from typing import TYPE_CHECKING
 import os
 import time
 import joblib
-import librosa
-import random
 import optuna
 import copy
+import random
 import optuna.visualization as vis
 
 import numpy as np
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
-from typing import Callable
-from functools import lru_cache
+from typing import Callable, Generator
+
+from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
+from sj_utils.logger import generate
+from sj_utils.evaluator import TimeChecker
+from sj_utils.collection import SafetyDict
 
 from sj_ai_utils.evaluator.sclite_utils import (
     TRNFormat,
     sclite_trn,
     parse_sclite_summary,
 )
-from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
-from sj_utils.logger import generate
-from sj_utils.evaluator import TimeChecker
-from sj_utils.collection import SafetyDict
-from sj_utils.typing import override
-from sj_utils.audio import load_audio_from_mp4
 
 from rt_whisper_optimizer.data import TEMPLATE, StudyParam
 from rt_whisper_optimizer.service import (
     get_token_saver_loader_transcriber,
-    get_rt_whisper_transcriber,
     normalize_text,
 )
 
@@ -82,7 +78,13 @@ class Optimizer(ABC):
     def get_example() -> dict:
         return copy.deepcopy(TEMPLATE)
 
-    def optimize(self, instructions: Path | dict) -> None:
+    def optimize(
+        self,
+        instructions: Path | dict,
+        load_data: Callable[
+            [list[Path], int], Generator[tuple[np.ndarray, str, str, Path], None, None]
+        ],
+    ) -> None:
         if isinstance(instructions, Path):
             instructions = read_yaml(instructions)
 
@@ -96,6 +98,8 @@ class Optimizer(ABC):
         use_cache = optimizer["use_cache"]
         use_prompt = optimizer["use_prompt"]
         random_seed = optimizer["random_seed"]
+        chunk_size = optimizer["chunk_size"]
+        language = optimizer["language"]
         top_k = optimizer.get("top_k", 30)
         percentiles = optimizer.get("percentiles", [1, 5, 10, 20, 50])
         study_param = instructions["study"]
@@ -109,8 +113,12 @@ class Optimizer(ABC):
                 f"Study path {save_study_path} already exists. Overwriting."
             )
 
-        transcriber = self.__get_transcriber(sample_rate, rng, use_prompt, use_cache)
-        objective = self._get_objective_function(study_param, transcriber, batch_size)
+        transcriber = self._get_transcriber(
+            use_prompt, use_cache, chunk_size, language, rng
+        )
+        objective = self._get_objective_function(
+            study_param, transcriber, batch_size, sample_rate, load_data
+        )
 
         if save_study_path.exists():
             study = joblib.load(save_study_path)
@@ -183,12 +191,13 @@ class Optimizer(ABC):
         fig_ppc = vis.plot_parallel_coordinate(study)
         fig_ppc.write_html(pc)
 
-    def __get_transcriber(
+    def _get_transcriber(
         self,
-        sample_rate: int,
-        rng: np.random.Generator,
         use_prompt: bool,
         use_cache: bool,
+        chunk_size: int,
+        language: str,
+        rng: np.random.Generator,
     ):
         if use_cache:
             if self.cache_storage is None:
@@ -199,194 +208,91 @@ class Optimizer(ABC):
                 self.logger.warning(
                     "Using cache with prompt is not supported. Using default transcriber."
                 )
-            return self._get_save_loader(sample_rate, rng)
-        return self._get_streamer(sample_rate, use_prompt, rng)
+            return self._get_save_loader(chunk_size, rng, language)
 
-    @abstractmethod
+        return self._get_streamer(use_prompt, chunk_size, language, rng)
+
     def _get_save_loader(
-        self, sr: int, rng: np.random.Generator | np.random.RandomState = np.random
-    ) -> Callable[[Path, TimeChecker], str]: ...
-
-    @abstractmethod
-    def _get_streamer(
         self,
-        sr: int,
-        use_prompt: bool,
+        chunk_size_mean: int = 48_000,
         rng: np.random.Generator | np.random.RandomState = np.random,
-    ) -> Callable[[Path, TimeChecker], str]: ...
-
-    @abstractmethod
-    def _get_objective_function(
-        self,
-        study: StudyParam,
-        transcriber: Callable[[Path, TimeChecker], str],
-        batch_size: int,
-    ) -> Callable[[optuna.Trial], float]: ...
-
-
-class ESICOptimizer(Optimizer):
-
-    @lru_cache(maxsize=1024)
-    def __load_audio(self, src: Path, sr: int) -> tuple[np.ndarray, int]:
-        return load_audio_from_mp4(src, sr)
-
-    @override
-    def _get_save_loader(
-        self, sr: int, rng: np.random.Generator | np.random.RandomState = np.random
+        language: str = "en",
     ) -> Callable[[Path, TimeChecker], str]:
         return get_token_saver_loader_transcriber(
             self.data_path,
             self.cache_storage,
-            sr,
-            self.__load_audio,
+            chunk_size_mean=chunk_size_mean,
             rng=rng,
+            language=language,
         )
 
-    @override
     def _get_streamer(
         self,
-        sr: int,
-        use_prompt: bool,
+        chunk_size_mean: int = 48_000,
         rng: np.random.Generator | np.random.RandomState = np.random,
+        language: str = "en",
+        use_prompt: bool = False,
     ) -> Callable[[Path, TimeChecker], str]:
-        return get_rt_whisper_transcriber(
-            sr,
-            self.__load_audio,
-            use_prompt=use_prompt,
+        t = get_rt_whisper_transcriber(
+            chunk_size_mean=chunk_size_mean,
             rng=rng,
+            language=language,
+            use_prompt=use_prompt,
         )
 
-    @override
+        def transcriber(
+            audio: np.ndarray,
+            audio_src: Path,
+            transcribe_time: TimeChecker,
+            overlap: int = None,
+            hyperparameter: SafetyDict = None,
+        ):
+            return t(
+                audio,
+                transcribe_time,
+                hyperparameter=hyperparameter,
+            )
+
+        return transcriber
+
     def _get_objective_function(
         self,
         study: StudyParam,
-        transcriber: Callable[[Path, TimeChecker], str],
+        transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
         batch_size: int,
+        sr: int,
+        load_data: Callable[
+            [list[Path], int], Generator[tuple[np.ndarray, str, str, Path], None, None]
+        ],
     ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.esic_v1.service import select_file_from_dir
-        from sj_ai_utils.datasets.esic_v1.file_type import ORTO, MP4
 
         data_folders = self.train_data_paths
 
         def objective(trial: optuna.Trial) -> float:
             hyperparameter = SafetyDict(study.suggest_all(trial))
-
             samples = random.sample(data_folders, min(len(data_folders), batch_size))
+            overlap = int(hyperparameter["asr"]["max_overlap_duration"])
 
-            data = {}
-            for sample in samples:
-                key = sample.absolute()
-
-                trans_txt = select_file_from_dir(sample, ORTO)
-                txt = trans_txt.read_text(encoding="utf-8")
-                txt = normalize_text(txt)
+            refs = []
+            hyps = []
+            for audio, key, y, path in load_data(samples, sr=sr):
+                txt = normalize_text(y)
                 ref = TRNFormat(id=key, text=txt)
 
                 pred_txt = transcriber(
-                    select_file_from_dir(sample, MP4),
-                    TimeChecker(),
-                    hyperparameter,
-                    int(hyperparameter["asr"]["max_overlap_duration"]),
+                    audio=audio,
+                    audio_src=path,
+                    transcribe_time=TimeChecker(),
+                    hyperparameter=hyperparameter,
+                    overlap=overlap,
                 )
                 pred_txt = normalize_text(pred_txt)
                 hyp = TRNFormat(id=key, text=pred_txt)
 
-                data[key] = {"ref": ref, "hyp": hyp}
+                refs.append(ref)
+                hyps.append(hyp)
 
-            concat_result = {}
-            for value in data.values():
-                for k, v in value.items():
-                    if k not in concat_result:
-                        concat_result[k] = []
-                    concat_result[k].append(v)
-
-            output = sclite_trn(concat_result["ref"], concat_result["hyp"])
-            result = parse_sclite_summary(output)
-
-            return result["wer_percent"]
-
-        return objective
-
-
-class LibriOptimizer(Optimizer):
-
-    @lru_cache(maxsize=1024)
-    def __load_audio(self, src: Path, sr: int) -> tuple[np.ndarray, int]:
-        return librosa.load(src, sr=sr)
-
-    @override
-    def _get_save_loader(
-        self, sr: int, rng: np.random.Generator | np.random.RandomState = np.random
-    ) -> Callable[[Path, TimeChecker], str]:
-        return get_token_saver_loader_transcriber(
-            self.data_path,
-            self.cache_storage,
-            sr,
-            self.__load_audio,
-            rng=rng,
-        )
-
-    @override
-    def _get_streamer(
-        self,
-        sr: int,
-        use_prompt: bool,
-        rng: np.random.Generator | np.random.RandomState = np.random,
-    ) -> Callable[[Path, TimeChecker], str]:
-        return get_rt_whisper_transcriber(
-            sr,
-            self.__load_audio,
-            use_prompt=use_prompt,
-            rng=rng,
-        )
-
-    @override
-    def _get_objective_function(
-        self,
-        study: StudyParam,
-        transcriber: Callable[[Path, TimeChecker], str],
-        batch_size: int,
-    ) -> Callable[[optuna.Trial], float]:
-        from sj_ai_utils.datasets.libri_speech_asr_corpus.sclite import (
-            trans_txt_to_sclite_trn,
-        )
-        from sj_ai_utils.datasets.libri_speech_asr_corpus.file_type import X, Y
-
-        data_folders = self.train_data_paths
-
-        def objective(trial: optuna.Trial) -> float:
-            hyperparameter = SafetyDict(study.suggest_all(trial))
-
-            samples = random.sample(data_folders, min(len(data_folders), batch_size))
-
-            data = {}
-            for sample in samples:
-                trans_txt = next(sample.glob(Y))
-                ref = trans_txt_to_sclite_trn(trans_txt, normalize_text)
-                hyp = [
-                    TRNFormat(
-                        id=flac.stem,
-                        text=normalize_text(
-                            transcriber(
-                                flac,
-                                TimeChecker(),
-                                hyperparameter,
-                                int(hyperparameter["asr"]["max_overlap_duration"]),
-                            )
-                        ),
-                    )
-                    for flac in sorted(sample.glob(X))
-                ]
-                data[sample.stem] = {"ref": ref, "hyp": hyp}
-
-            concat_result = {}
-            for value in data.values():
-                for k, v in value.items():
-                    if k not in concat_result:
-                        concat_result[k] = []
-                    concat_result[k].extend(v)
-
-            output = sclite_trn(concat_result["ref"], concat_result["hyp"])
+            output = sclite_trn(refs, hyps)
             result = parse_sclite_summary(output)
 
             return result["wer_percent"]
@@ -396,6 +302,4 @@ class LibriOptimizer(Optimizer):
 
 __all__ = [
     "Optimizer",
-    "ESICOptimizer",
-    "LibriOptimizer",
 ]

@@ -3,120 +3,128 @@ import sys
 
 os.chdir("/workspaces/dev")
 paths = [
-    "/workspaces/dev/modules/python-utils",
-    "/workspaces/dev/modules/ai-utils",
-    "/workspaces/dev",
-    "/workspaces/dev/test/modules/whisper_streaming",
     "/workspaces/dev/test/performance_test",
 ]
 for path in paths:
     sys.path.append(os.path.abspath(path))
 
-import librosa
-import numpy as np
-
 from pathlib import Path
-from typing import Callable
-from functools import lru_cache
 
-from sj_ai_utils.datasets.libri_speech_asr_corpus.sclite import generate_trn
+from sj_ai_utils.datasets.libri_speech_asr_corpus.sclite import generate_ref_and_hyp
 from sj_utils.collection import SafetyDict
-from sj_utils.evaluator import TimeChecker
 
 from common_util import (
-    test_process_all as tpa,
-    test_process_each as tpe,
-    normalize_text,
-    get_whisper_streaming_transcriber as gwst,
-    get_rt_whisper_transcriber as grwt,
-    get_faster_whisper_transcriber as gfwt,
-    get_token_saver_loader_transcriber as gtslt,
+    whisper_streaming as ws,
+    rt_whisper as rw,
+    whisper as w,
+    evaluate as ev,
 )
 
 
-@lru_cache(maxsize=4196)
-def load_audio(audio, sr):
-    return librosa.load(audio, sr=sr)
-
-
-def test_process_all(
+def whisper(
     data_paths: list[Path],
-    transcriber: Callable[[Path, TimeChecker], str],
-    normalizer: Callable[[Path], Path] = normalize_text,
+    model_size: str = "large-v3",
+    language: str = "en",
+    test_all: bool = True,
     max_count: int = -1,
-) -> dict:
-    return tpa(data_paths, transcriber, generate_trn, normalizer, max_count)
-
-
-def test_process_each(
-    data_paths: list[Path],
-    transcriber: Callable[[Path, TimeChecker], str],
-    normalizer: Callable[[Path], Path] = normalize_text,
-    max_count: int = -1,
-) -> dict:
-    return tpe(data_paths, transcriber, generate_trn, normalizer, max_count)
-
-
-def get_whisper_streaming_transcriber(
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    audio_chunk_mean: int = 48000,
-    audio_chunk_std: int = 400,
-    audio_chunk_min_max: float = 0.1,
-) -> Callable[[Path, TimeChecker], str]:
-    return gwst(
-        load_audio,
-        rng,
-        audio_chunk_mean=audio_chunk_mean,
-        audio_chunk_std=audio_chunk_std,
-        audio_chunk_min_max=audio_chunk_min_max,
+):
+    return w(
+        data_paths=data_paths,
+        generate_ref_and_hyp=generate_ref_and_hyp,
+        model_size=model_size,
+        language=language,
+        test_all=test_all,
+        max_count=max_count,
     )
 
 
-def get_rt_whisper_transcriber(
-    hyperparameter: SafetyDict,
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    audio_chunk_mean: int = 48000,
-    audio_chunk_std: int = 400,
-    audio_chunk_min_max: float = 0.1,
-) -> Callable[[Path, TimeChecker], str]:
-    return grwt(
-        hyperparameter,
-        load_audio,
-        rng,
-        audio_chunk_mean=audio_chunk_mean,
-        audio_chunk_std=audio_chunk_std,
-        audio_chunk_min_max=audio_chunk_min_max,
-    )
-
-
-def get_faster_whisper_transcriber() -> Callable[[Path, TimeChecker], str]:
-    return gfwt(load_audio)
-
-
-def get_token_saver_loader_transcriber(
-    source: Path,
+def rt_whisper(
+    src: Path,
     storage: Path,
-    rng: np.random.Generator | np.random.RandomState = np.random,
-    hyperparameter: SafetyDict = None,
-    overlap: int = None,
-) -> Callable[[Path, TimeChecker], str]:
-    return gtslt(
-        source,
-        storage,
-        load_audio,
-        rng,
+    data_paths: list[Path],
+    seed: int = 42,
+    use_save_loader: bool = True,
+    use_prompt: bool = False,
+    language: str = "en",
+    hyperparameter: Path | SafetyDict = None,
+    chunk_size: int = 48000,
+    test_all: bool = True,
+    max_count: int = -1,
+):
+    return rw(
+        src=src,
+        storage=storage,
+        data_paths=data_paths,
+        generate_ref_and_hyp=generate_ref_and_hyp,
+        seed=seed,
+        use_save_loader=use_save_loader,
+        use_prompt=use_prompt,
+        language=language,
         hyperparameter=hyperparameter,
-        overlap=overlap,
+        chunk_size=chunk_size,
+        test_all=test_all,
+        max_count=max_count,
     )
 
 
-__all__ = [
-    "test_process_all",
-    "test_process_each",
-    "load_audio",
-    "normalize_text",
-    "get_whisper_streaming_transcriber",
-    "get_rt_whisper_transcriber",
-    "get_faster_whisper_transcriber",
-    "get_token_saver_loader_transcriber",
-]
+def whisper_streaming(
+    data_paths: list[Path],
+    model_size: str = "large-v3",
+    seed: int = 42,
+    language: str = "en",
+    chunk_size: int = 48000,
+    test_all: bool = True,
+    max_count: int = -1,
+):
+    return ws(
+        data_paths=data_paths,
+        generate_ref_and_hyp=generate_ref_and_hyp,
+        model_size=model_size,
+        seed=seed,
+        language=language,
+        chunk_size=chunk_size,
+        test_all=test_all,
+        max_count=max_count,
+    )
+
+
+def evaluate(
+    src: Path,
+    storage: Path,
+    output_path: Path,
+    description: str,
+    data_paths: list[Path],
+    models: list[str] = ["rt_whisper"],
+    model_size: str = "large-v3",
+    language: str = "en",
+    test_all: bool = True,
+    max_count: int = -1,
+    sr: int = 16000,
+    seed: int = 42,
+    use_save_loader: bool = True,
+    use_prompt: bool = False,
+    hyperparameter: Path = None,
+    chunk_size: int = 48_000,
+):
+    return ev(
+        src=src,
+        storage=storage,
+        output_path=output_path,
+        description=description,
+        data_paths=data_paths,
+        generate_ref_and_hyp=generate_ref_and_hyp,
+        models=models,
+        model_size=model_size,
+        language=language,
+        test_all=test_all,
+        max_count=max_count,
+        sr=sr,
+        seed=seed,
+        use_save_loader=use_save_loader,
+        use_prompt=use_prompt,
+        hyperparameter=hyperparameter,
+        chunk_size=chunk_size,
+    )
+
+
+__all__ = ["evaluate", "whisper_streaming", "rt_whisper", "whisper"]

@@ -179,8 +179,10 @@ datasets/**
 storage/**
 
 test/modules
+
+test/optimize/esic/study
+test/optimize/libri/study
+
 test/performance_test/esic/output/**
-test/performance_test/esic/study/**
 test/performance_test/libri/output/**
-test/performance_test/libri/study/**
 

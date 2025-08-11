@@ -3,15 +3,11 @@ import sys
 
 os.chdir("/workspaces/dev")
 paths = [
-    "/workspaces/dev/modules/python-utils",
-    "/workspaces/dev/modules/ai-utils",
     "/workspaces/dev/test/performance_test",
     "/workspaces/dev/test/performance_test/libri",
 ]
 for path in paths:
     sys.path.append(os.path.abspath(path))
-
-import numpy as np
 
 from pathlib import Path
 
@@ -28,60 +24,59 @@ from summarize_util import (
     show_line_plot,
 )
 
-from util import (
-    get_rt_whisper_transcriber,
-    get_whisper_streaming_transcriber,
-    get_faster_whisper_transcriber,
-    test_process_all,
-)
+from util import rt_whisper as rtw, whisper_streaming as ws, whisper as w
 
 
 def whisper(data_dirs: list[Path], repeat: int = 1, count: int = 1) -> list[dict]:
     result = []
-    transcriber = get_faster_whisper_transcriber()
     for _ in range(repeat):
-        result.append(test_process_all(data_dirs, transcriber, max_count=count))
+        result.append(w(data_dirs, max_count=count))
     return result
 
 
 def rt_whisper(
     data_dirs: list[Path],
     hyperparameter: SafetyDict,
-    chunk_mean: int,
-    chunk_std: int,
-    chunk_min_max: float,
+    chunk_size: int,
     repeat: int = 1,
     count: int = 1,
     random_seed: int = 42,
 ) -> list[dict]:
-    rng = np.random.default_rng(random_seed)
-
     result = []
-    transcriber = get_rt_whisper_transcriber(
-        hyperparameter, rng, chunk_mean, chunk_std, chunk_min_max
-    )
     for _ in range(repeat):
-        result.append(test_process_all(data_dirs, transcriber, max_count=count))
+        result.append(
+            rtw(
+                Path("/"),
+                Path("/"),
+                data_dirs,
+                seed=random_seed,
+                use_save_loader=False,
+                use_prompt=True,
+                hyperparameter=hyperparameter,
+                chunk_size=chunk_size,
+                max_count=count,
+            )
+        )
     return result
 
 
 def whisper_streaming(
     data_dirs: list[Path],
-    chunk_mean: int,
-    chunk_std: int,
-    chunk_min_max: float,
+    chunk_size: int,
     repeat: int = 1,
     count: int = 1,
     random_seed: int = 42,
 ) -> list[dict]:
-    rng = np.random.default_rng(random_seed)
-
     result = []
-    transcriber = get_whisper_streaming_transcriber(
-        rng, chunk_mean, chunk_std, chunk_min_max
-    )
     for _ in range(repeat):
-        result.append(test_process_all(data_dirs, transcriber, max_count=count))
+        result.append(
+            ws(
+                data_dirs,
+                seed=random_seed,
+                chunk_size=chunk_size,
+                max_count=count,
+            )
+        )
     return result
 
 
