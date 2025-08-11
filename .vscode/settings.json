@@ -17,8 +17,8 @@
         "**/hyperparameters",
         "**/output",
         "**/logs",
-        "datasets",
-        "storage",
+        ".datasets",
+        ".storage",
     ],
     "files.watcherExclude": {
         "**/.git/objects/**": true,
@@ -27,8 +27,8 @@
         "**/.data/**": true,
         "**/.venv/**": true,
         "**/__pycache__/**": true,
-        "datasets/**": true,
-        "storage/**": true,
+        ".datasets/**": true,
+        ".storage/**": true,
     },
     // Editor
     "editor.fontFamily": "JetBrains Mono, D2Coding",

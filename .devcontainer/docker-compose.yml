@@ -8,17 +8,16 @@ services:
             - ../:/workspaces/dev
 
             #   - ../.model/huggingface:/root/.cache/huggingface
-            - F:/Models/huggingface:/root/.cache/huggingface
+            - F:/docker-volume/cache/huggingface:/home/vscode/.cache/huggingface
             #   - ../.model/torch:/root/.cache/torch
-            - F:/Models/torch:/root/.cache/torch
+            - F:/docker-volume/cache/torch:/home/vscode/.cache/torch
 
-            - C:/Env/python/RTWhisper-Dev:/workspaces/dev/.venv
-            # - /workspaces/dev/.venv # no cache
+            - /workspaces/dev/.venv # no sync
 
             # dataset
-            - F:/Datasets:/workspaces/dev/datasets:ro
-            - F:/Datasets/asr-rankformer-datasets:/workspaces/dev/datasets/asr-rankformer-datasets:rw
-            - F:/Models/storage/rt-whisper:/workspaces/dev/storage:rw
+            - F:/docker-volume/datasets:/workspaces/dev/.datasets:ro
+            - F:/docker-volume/datasets/asr-rankformer-datasets:/workspaces/dev/.datasets/asr-rankformer-datasets:rw
+            - F:/docker-volume/storage/rt-whisper:/workspaces/dev/.storage:rw
         deploy:
             resources:
                 reservations:

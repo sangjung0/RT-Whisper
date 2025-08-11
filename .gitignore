@@ -175,8 +175,8 @@ cython_debug/
 
 .data/**
 .model/**
-datasets/**
-storage/**
+.datasets/**
+.storage/**
 
 test/modules
 
