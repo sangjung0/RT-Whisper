@@ -28,6 +28,7 @@ from sj_ai_utils.evaluator.sclite_utils import (
 
 from rt_whisper_optimizer.data import TEMPLATE, StudyParam
 from rt_whisper_optimizer.service import (
+    get_rt_whisper_transcriber,
     get_token_saver_loader_transcriber,
     normalize_text,
 )
