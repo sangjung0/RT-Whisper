@@ -30,5 +30,3 @@ RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${OHMYZSH_T
 
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN echo 'alias ls="ls -lsaF"' >> .zshrc
-
-ENV PATH="${PATH}:/usr/lib/sctk/bin"

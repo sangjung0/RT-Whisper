@@ -23,6 +23,4 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 RUN echo 'alias ls="ls -lsaF"' >> .zshrc
 RUN chsh -s /bin/zsh root
 
-ENV PATH="${PATH}:/usr/lib/sctk/bin"
-
 CMD ["tail", "-f", "/dev/null"]
