@@ -14,7 +14,7 @@ for path in paths:
 import numpy as np
 
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Any
 
 from sj_utils.file.yaml import load_yaml
 from sj_utils.file.json import JsonSaver
@@ -36,10 +36,10 @@ from rt_whisper_optimizer.service import (
 
 
 def test_process_all(
-    data_paths: list[Path],
+    data_paths: Any,
     transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
@@ -52,7 +52,9 @@ def test_process_all(
     t = lambda audio, path: transcriber(audio, path, transcribe_time)
 
     processed_time.start()
-    ref, hyp = generate_ref_and_hyp(data_paths, t, normalizer, max_count, sr)
+    ref, hyp = generate_ref_and_hyp(
+        data_paths, t, normalizer=normalizer, sr=sr, size=max_count
+    )
     processed_time.check()
 
     output = sclite_trn(ref, hyp)
@@ -64,10 +66,10 @@ def test_process_all(
 
 
 def test_process_each(
-    data_paths: list[Path],
+    data_paths: Any,
     transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     normalizer: Callable[[Path], Path] = normalize_text,
@@ -80,7 +82,9 @@ def test_process_each(
     t = lambda audio, path: transcriber(audio, path, transcribe_time)
 
     processed_time.start()
-    ref, hyp = generate_ref_and_hyp(data_paths, t, normalizer, max_count, sr)
+    ref, hyp = generate_ref_and_hyp(
+        data_paths, t, normalizer=normalizer, sr=sr, size=max_count
+    )
     processed_time.check()
 
     result = {}
@@ -163,9 +167,9 @@ def get_faster_whisper_transcriber(model_size: str = "large-v3", language: str =
 
 
 def whisper_streaming(
-    data_paths: list[Path],
+    data_paths: Any,
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     model_size: str = "large-v3",
@@ -213,11 +217,10 @@ def whisper_streaming(
 
 
 def rt_whisper(
-    src: Path,
     storage: Path,
-    data_paths: list[Path],
+    data_paths: Any,
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     seed: int = 42,
@@ -240,7 +243,6 @@ def rt_whisper(
 
     if use_save_loader:
         t = get_token_saver_loader_transcriber(
-            source=src,
             storage=storage,
             overlap=overlap,
             hyperparameter=hyperparameter,
@@ -290,9 +292,9 @@ def rt_whisper(
 
 
 def whisper(
-    data_paths: list[Path],
+    data_paths: Any,
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     model_size: str = "large-v3",
@@ -332,13 +334,12 @@ def whisper(
 
 
 def evaluate(
-    src: Path,
     storage: Path,
     output_path: Path,
     description: str,
-    data_paths: list[Path],
+    data_paths: Any,
     generate_ref_and_hyp: Callable[
-        [list[Path], Callable[[np.ndarray, Path], str], Callable[[str], str], int],
+        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
         tuple[list[TRNFormat], list[TRNFormat]],
     ],
     models: list[str] = ["rt_whisper"],
@@ -367,7 +368,6 @@ def evaluate(
             )
         elif key == "rt_whisper":
             results[key] = rt_whisper(
-                src=src,
                 storage=storage,
                 data_paths=data_paths,
                 generate_ref_and_hyp=generate_ref_and_hyp,

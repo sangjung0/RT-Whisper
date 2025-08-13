@@ -47,7 +47,6 @@ def rt_whisper(
         result.append(
             rtw(
                 Path("/"),
-                Path("/"),
                 data_dirs,
                 seed=random_seed,
                 use_save_loader=False,

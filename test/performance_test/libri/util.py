@@ -39,7 +39,6 @@ def whisper(
 
 
 def rt_whisper(
-    src: Path,
     storage: Path,
     data_paths: list[Path],
     seed: int = 42,
@@ -52,7 +51,6 @@ def rt_whisper(
     max_count: int = -1,
 ):
     return rw(
-        src=src,
         storage=storage,
         data_paths=data_paths,
         generate_ref_and_hyp=generate_ref_and_hyp,
@@ -89,7 +87,6 @@ def whisper_streaming(
 
 
 def evaluate(
-    src: Path,
     storage: Path,
     output_path: Path,
     description: str,
@@ -106,7 +103,6 @@ def evaluate(
     chunk_size: int = 48_000,
 ):
     return ev(
-        src=src,
         storage=storage,
         output_path=output_path,
         description=description,

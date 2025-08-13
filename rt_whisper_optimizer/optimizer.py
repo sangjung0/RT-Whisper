@@ -6,14 +6,13 @@ import time
 import joblib
 import optuna
 import copy
-import random
 import optuna.visualization as vis
 
 import numpy as np
 
 from abc import ABC
 from pathlib import Path
-from typing import Callable, Generator
+from typing import Callable, Generator, Any
 
 from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
 from sj_utils.logger import generate
@@ -40,21 +39,18 @@ if TYPE_CHECKING:
 class Optimizer(ABC):
     def __init__(
         self,
-        train_data_paths: list[Path],
+        dataset: Any,
         study_path: Path,
         output_path: Path,
-        data_path: Path | None = None,
+        data_loader: Callable[
+            [Any, int, np.random.Generator | np.random.RandomState],
+            Generator[tuple[np.ndarray, str, str, Path], None, None],
+        ],
         cache_storage: Path | None = None,
     ):
         if study_path.exists() and study_path.is_file():
             raise ValueError(
                 f"Study path {study_path} should be a directory, not a file."
-            )
-        if not train_data_paths:
-            raise ValueError("At least one train data path must be provided.")
-        if any(not p.exists() for p in train_data_paths):
-            raise FileNotFoundError(
-                f"One or more train data paths do not exist: {train_data_paths}"
             )
 
         config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
@@ -68,10 +64,10 @@ class Optimizer(ABC):
         cache_storage.mkdir(parents=True, exist_ok=True)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        self.train_data_paths = train_data_paths
+        self.datasets = dataset
         self.study_path = study_path
         self.output_path = output_path
-        self.data_path = data_path
+        self.data_loader = data_loader
         self.cache_storage = cache_storage
         self.logger = logger
 
@@ -79,13 +75,7 @@ class Optimizer(ABC):
     def get_example() -> dict:
         return copy.deepcopy(TEMPLATE)
 
-    def optimize(
-        self,
-        instructions: Path | dict,
-        load_data: Callable[
-            [list[Path], int], Generator[tuple[np.ndarray, str, str, Path], None, None]
-        ],
-    ) -> None:
+    def optimize(self, instructions: Path | dict) -> None:
         if isinstance(instructions, Path):
             instructions = read_yaml(instructions)
 
@@ -118,7 +108,7 @@ class Optimizer(ABC):
             use_prompt, use_cache, chunk_size, language, rng
         )
         objective = self._get_objective_function(
-            study_param, transcriber, batch_size, sample_rate, load_data
+            study_param, transcriber, batch_size, sample_rate, rng
         )
 
         if save_study_path.exists():
@@ -203,39 +193,19 @@ class Optimizer(ABC):
         if use_cache:
             if self.cache_storage is None:
                 raise ValueError("Cache storage is not set. Cannot use cache.")
-            if self.data_path is None:
-                raise ValueError("Data path is not set. Cannot use cache.")
             if use_prompt:
                 self.logger.warning(
                     "Using cache with prompt is not supported. Using default transcriber."
                 )
-            return self._get_save_loader(chunk_size, rng, language)
+            return get_token_saver_loader_transcriber(
+                self.cache_storage,
+                chunk_size_mean=chunk_size,
+                rng=rng,
+                language=language,
+            )
 
-        return self._get_streamer(use_prompt, chunk_size, language, rng)
-
-    def _get_save_loader(
-        self,
-        chunk_size_mean: int = 48_000,
-        rng: np.random.Generator | np.random.RandomState = np.random,
-        language: str = "en",
-    ) -> Callable[[Path, TimeChecker], str]:
-        return get_token_saver_loader_transcriber(
-            self.data_path,
-            self.cache_storage,
-            chunk_size_mean=chunk_size_mean,
-            rng=rng,
-            language=language,
-        )
-
-    def _get_streamer(
-        self,
-        chunk_size_mean: int = 48_000,
-        rng: np.random.Generator | np.random.RandomState = np.random,
-        language: str = "en",
-        use_prompt: bool = False,
-    ) -> Callable[[Path, TimeChecker], str]:
         t = get_rt_whisper_transcriber(
-            chunk_size_mean=chunk_size_mean,
+            chunk_size_mean=chunk_size,
             rng=rng,
             language=language,
             use_prompt=use_prompt,
@@ -243,7 +213,7 @@ class Optimizer(ABC):
 
         def transcriber(
             audio: np.ndarray,
-            audio_src: Path,
+            audio_key: Path | str,
             transcribe_time: TimeChecker,
             overlap: int = None,
             hyperparameter: SafetyDict = None,
@@ -262,33 +232,30 @@ class Optimizer(ABC):
         transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
         batch_size: int,
         sr: int,
-        load_data: Callable[
-            [list[Path], int], Generator[tuple[np.ndarray, str, str, Path], None, None]
-        ],
+        rng: np.random.Generator | np.random.RandomState = np.random,
     ) -> Callable[[optuna.Trial], float]:
-
-        data_folders = self.train_data_paths
 
         def objective(trial: optuna.Trial) -> float:
             hyperparameter = SafetyDict(study.suggest_all(trial))
-            samples = random.sample(data_folders, min(len(data_folders), batch_size))
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
 
             refs = []
             hyps = []
-            for audio, key, y, path in load_data(samples, sr=sr):
+            for audio, _id, y, key in self.data_loader(
+                self.datasets, sr=sr, sample_size=batch_size, rng=rng
+            ):
                 txt = normalize_text(y)
-                ref = TRNFormat(id=key, text=txt)
+                ref = TRNFormat(id=_id, text=txt)
 
                 pred_txt = transcriber(
                     audio=audio,
-                    audio_src=path,
+                    audio_key=key,
                     transcribe_time=TimeChecker(),
                     hyperparameter=hyperparameter,
                     overlap=overlap,
                 )
                 pred_txt = normalize_text(pred_txt)
-                hyp = TRNFormat(id=key, text=pred_txt)
+                hyp = TRNFormat(id=_id, text=pred_txt)
 
                 refs.append(ref)
                 hyps.append(hyp)

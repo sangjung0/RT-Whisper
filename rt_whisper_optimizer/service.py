@@ -73,7 +73,6 @@ def get_rt_whisper_transcriber(
 
 
 def get_token_saver_loader_transcriber(
-    source: Path,
     storage: Path,
     overlap: int = None,
     hyperparameter: SafetyDict = None,
@@ -86,7 +85,6 @@ def get_token_saver_loader_transcriber(
     from rt_whisper import saveloaders
     from rt_whisper.data import Param, Result
 
-    _source = source
     _storage = storage
     _overlap = overlap
     _hyperparameter = hyperparameter
@@ -158,9 +156,8 @@ def get_token_saver_loader_transcriber(
 
     def transcriber(
         audio: np.ndarray,
-        audio_src: Path,
+        audio_key: Path | str,
         transcribe_time: TimeChecker,
-        source: Path = _source,
         storage: Path = _storage,
         overlap: int = _overlap,
         hyperparameter: SafetyDict = _hyperparameter,
@@ -175,8 +172,7 @@ def get_token_saver_loader_transcriber(
         if overlap is None:
             raise ValueError("overlap must be provided")
 
-        relative_path = audio_src.parent.relative_to(source.parent) / audio_src.stem
-        saved_path = storage / f"{overlap}" / relative_path
+        saved_path = storage / f"{overlap}" / audio_key
 
         if saved_path.exists():
             return token_loader(

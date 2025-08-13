@@ -9,6 +9,7 @@ for path in paths:
     sys.path.append(os.path.abspath(path))
 
 from pathlib import Path
+from typing import Any
 
 from sj_ai_utils.datasets.esic_v1.sclite import generate_ref_and_hyp
 from sj_utils.collection import SafetyDict
@@ -22,7 +23,7 @@ from common_util import (
 
 
 def whisper(
-    data_paths: list[Path],
+    data_paths: Any,
     model_size: str = "large-v3",
     language: str = "en",
     test_all: bool = True,
@@ -39,9 +40,8 @@ def whisper(
 
 
 def rt_whisper(
-    src: Path,
     storage: Path,
-    data_paths: list[Path],
+    data_paths: Any,
     seed: int = 42,
     use_save_loader: bool = True,
     use_prompt: bool = False,
@@ -52,7 +52,6 @@ def rt_whisper(
     max_count: int = -1,
 ):
     return rw(
-        src=src,
         storage=storage,
         data_paths=data_paths,
         generate_ref_and_hyp=generate_ref_and_hyp,
@@ -68,7 +67,7 @@ def rt_whisper(
 
 
 def whisper_streaming(
-    data_paths: list[Path],
+    data_paths: Any,
     model_size: str = "large-v3",
     seed: int = 42,
     language: str = "en",
@@ -89,11 +88,10 @@ def whisper_streaming(
 
 
 def evaluate(
-    src: Path,
     storage: Path,
     output_path: Path,
     description: str,
-    data_paths: list[Path],
+    data_paths: Any,
     models: list[str] = ["rt_whisper"],
     model_size: str = "large-v3",
     language: str = "en",
@@ -106,7 +104,6 @@ def evaluate(
     chunk_size: int = 48_000,
 ):
     return ev(
-        src=src,
         storage=storage,
         output_path=output_path,
         description=description,
