@@ -6,7 +6,7 @@ from sj_utils.collection import SafetyDict
 from sj_utils.file.yaml import read_yaml_namespace, read_yaml
 from sj_utils.logger import generate
 
-from rt_whisper.logger import RTWhisperLogger
+from rt_whisper.rt_whisper_logger import RTWhisperLogger
 
 package_path = get_top_package_root()
 

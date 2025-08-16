@@ -24,7 +24,7 @@ from rt_whisper.processors.asr.service import (
 
 
 if TYPE_CHECKING:
-    from rt_whisper import RTWhisperLogger
+    from rt_whisper.rt_whisper_logger import RTWhisperLogger
     from rt_whisper.data import TokenState
 
 

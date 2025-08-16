@@ -5,7 +5,7 @@ from sj_utils.string import remove_spaces_and_symbols
 from rt_whisper.data import Sentence
 
 if TYPE_CHECKING:
-    from rt_whisper import RTWhisperLogger
+    from rt_whisper.rt_whisper_logger import RTWhisperLogger
     from rt_whisper.data import Token
     from typing import Callable, Iterable
 
