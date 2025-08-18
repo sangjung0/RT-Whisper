@@ -213,6 +213,7 @@ def whisper_streaming(
         )
 
     del transcriber
+    del t
     return result
 
 
@@ -288,6 +289,7 @@ def rt_whisper(
         )
 
     del transcriber
+    del t
     return result
 
 
@@ -330,6 +332,7 @@ def whisper(
         )
 
     del transcriber
+    del t
     return result
 
 
