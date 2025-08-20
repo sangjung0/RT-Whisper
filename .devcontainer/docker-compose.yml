@@ -20,7 +20,7 @@ services:
             - F:/docker-volume/datasets/ami:/workspaces/dev/.datasets/ami:rw
             - F:/docker-volume/datasets/tedlium:/workspaces/dev/.datasets/tedlium:rw
             - F:/docker-volume/datasets/vox_populi:/workspaces/dev/.datasets/vox_populi:rw
-            - F:/docker-volume/datasets/libri_speech_asr_corpus:/workspaces/dev/.datasets/libri_speech_asr_corpus:rw
+            - F:/docker-volume/datasets/libri_speech:/workspaces/dev/.datasets/libri_speech:rw
 
             # storage
             - F:/docker-volume/storage/rt-whisper:/workspaces/dev/.storage:rw

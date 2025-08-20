@@ -11,7 +11,7 @@ for path in paths:
 from pathlib import Path
 from typing import Any
 
-from sj_ai_utils.hugging_face.tedlium.sclite import generate_ref_and_hyp
+from sj_ai_utils.l_hotse.sclite import generate_ref_and_hyp
 from sj_utils.collection import SafetyDict
 
 from common_util import (

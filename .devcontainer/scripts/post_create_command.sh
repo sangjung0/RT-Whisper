@@ -83,3 +83,4 @@ done
 
 # 후속 작업
 bash /workspaces/dev/.devcontainer/scripts/set_uv.sh
+bash /workspaces/dev/.devcontainer/scripts/set_lhotse.sh

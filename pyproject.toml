@@ -78,6 +78,7 @@ dependencies = [
     "koparadigm==0.10.0",
     "kss==6.0.5",
     "lazy-loader==0.4",
+    "lhotse>=1.30.3",
     "librosa==0.11.0",
     "lightning==2.5.2",
     "lightning-utilities==0.15.2",
