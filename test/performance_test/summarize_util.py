@@ -1,60 +1,101 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+import os
+import sys
+
+os.chdir("/workspaces/dev")
+paths = [
+    "/workspaces/dev/test/performance_test",
+    "/workspaces/dev/test/performance_test/esic",
+]
+for path in paths:
+    sys.path.append(os.path.abspath(path))
+
 import numpy as np
 
-from pathlib import Path
+from typing import Any
 from matplotlib import pyplot as plt
+from pathlib import Path
 
 from sj_utils.collection import SafetyDict
 from sj_utils.statistics import summarize_distribution
+from sj_ai_utils.datasets import Dataset
+
+from common_util import rt_whisper as rtw, whisper_streaming as ws, whisper as w
 
 if TYPE_CHECKING:
-    from typing import Callable
+    pass
+
+
+def whisper(dataset: Any, repeat: int = 1) -> list[dict]:
+    result = []
+    for _ in range(repeat):
+        result.append(w(dataset))
+    return result
+
+
+def rt_whisper(
+    dataset: Dataset,
+    hyperparameter: SafetyDict,
+    chunk_size: int,
+    repeat: int = 1,
+) -> list[dict]:
+    result = []
+    for _ in range(repeat):
+        result.append(
+            rtw(
+                Path("/"),
+                dataset,
+                use_save_loader=False,
+                use_prompt=True,
+                hyperparameter=hyperparameter,
+                chunk_size=chunk_size,
+            )
+        )
+    return result
+
+
+def whisper_streaming(
+    dataset: Dataset,
+    chunk_size: int,
+    repeat: int = 1,
+) -> list[dict]:
+    result = []
+    for _ in range(repeat):
+        result.append(ws(dataset, chunk_size=chunk_size))
+    return result
 
 
 def chunk_test(
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: SafetyDict,
     chunk_start: int,
     chunk_step: int,
     chunk_end: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    whisper_streaming_func: Callable[[list[Path], int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     for chunk_size in range(chunk_start, chunk_end + 1, chunk_step):
         result[chunk_size] = {
-            "rt_whisper": rt_whisper_func(
-                data_dirs, hyperparameter, chunk_size, repeat=1, count=count
-            )[0],
-            "whisper_streaming": whisper_streaming_func(
-                data_dirs, chunk_size, repeat=1, count=count
-            )[0],
+            "rt_whisper": rt_whisper(dataset, hyperparameter, chunk_size, repeat=1)[0],
+            "whisper_streaming": whisper_streaming(dataset, chunk_size, repeat=1)[0],
         }
     return result
 
 
 def max_overlap_duration_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["asr"]["max_overlap_duration"]
     start = original_value - 16000 * test_step
     for od in range(max(0, start), original_value + 16000 * test_step, 16000):
         hyperparameter["asr"]["max_overlap_duration"] = od
-        result[od] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[od] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["asr"]["max_overlap_duration"] = original_value
     return result
@@ -62,23 +103,17 @@ def max_overlap_duration_test(
 
 def max_prompt_words_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["asr"]["max_prompt_words"]
     start = original_value - test_step
     for mpw in range(max(0, start), original_value + test_step, 1):
         hyperparameter["asr"]["max_prompt_words"] = mpw
-        result[mpw] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[mpw] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["asr"]["max_prompt_words"] = original_value
     return result
@@ -86,23 +121,17 @@ def max_prompt_words_test(
 
 def boundary_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: SafetyDict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["position_weighted_filter"]["boundary"]
     start = original_value - test_step * 160
     for bd in range(max(0, start), original_value + test_step * 160, 160):
         hyperparameter["position_weighted_filter"]["boundary"] = bd
-        result[bd] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[bd] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["position_weighted_filter"]["boundary"] = original_value
     return result
@@ -110,23 +139,17 @@ def boundary_test(
 
 def min_duration_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["duration_filter"]["min_dur"]["en"]
     start = original_value - test_step * 160
     for md in range(max(0, start), original_value + test_step * 160, 160):
         hyperparameter["duration_filter"]["min_dur"]["en"] = md
-        result[md] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[md] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["duration_filter"]["min_dur"]["en"] = original_value
     return result
@@ -134,23 +157,17 @@ def min_duration_test(
 
 def min_probability_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["probability_filter"]["min_prob"]["en"]
     start = original_value - test_step * 0.05
     for mp in np.arange(max(0, start), original_value + test_step * 0.05, 0.05):
         hyperparameter["probability_filter"]["min_prob"]["en"] = mp
-        result[mp] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[mp] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["probability_filter"]["min_prob"]["en"] = original_value
     return result
@@ -158,23 +175,17 @@ def min_probability_test(
 
 def iou_threshold_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["selector"]["iou_threshold"]["en"]
     start = original_value - test_step * 0.05
     for iou in np.arange(max(0, start), original_value + test_step * 0.05, 0.05):
         hyperparameter["selector"]["iou_threshold"]["en"] = iou
-        result[iou] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[iou] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["selector"]["iou_threshold"]["en"] = original_value
     return result
@@ -182,23 +193,17 @@ def iou_threshold_test(
 
 def cos_threshold_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["selector"]["cos_threshold"]["en"]
     start = original_value - test_step * 0.05
     for cos in np.arange(max(0, start), original_value + test_step * 0.05, 0.05):
         hyperparameter["selector"]["cos_threshold"]["en"] = cos
-        result[cos] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[cos] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["selector"]["cos_threshold"]["en"] = original_value
     return result
@@ -206,23 +211,17 @@ def cos_threshold_test(
 
 def padding_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     result = {}
     original_value = hyperparameter["selector"]["padding"]["en"]
     start = original_value - test_step * 160
     for padding in range(max(0, start), original_value + test_step * 160, 160):
         hyperparameter["selector"]["padding"]["en"] = padding
-        result[padding] = rt_whisper_func(
-            data_dirs,
-            SafetyDict(hyperparameter),
-            chunk_size,
-            repeat=1,
-            count=count,
+        result[padding] = rt_whisper(
+            dataset, SafetyDict(hyperparameter), chunk_size, repeat=1
         )[0]
     hyperparameter["selector"]["padding"]["en"] = original_value
     return result
@@ -230,77 +229,31 @@ def padding_test(
 
 def hyperparameter_test(
     test_step: int,
-    data_dirs: list[Path],
+    dataset: Dataset,
     hyperparameter: dict,
     chunk_size: int,
-    rt_whisper_func: Callable[[list[Path], SafetyDict, int, int, int, int], dict],
-    count: int = 1,
 ):
     return {
         "max_overlap_duration": max_overlap_duration_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
         "max_prompt_words": max_prompt_words_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
-        "boundary": boundary_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
-        ),
+        "boundary": boundary_test(test_step, dataset, hyperparameter, chunk_size),
         "min_duration": min_duration_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
         "min_probability": min_probability_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
         "iou_threshold": iou_threshold_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
         "cos_threshold": cos_threshold_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
+            test_step, dataset, hyperparameter, chunk_size
         ),
-        "padding": padding_test(
-            test_step,
-            data_dirs,
-            hyperparameter,
-            chunk_size,
-            rt_whisper_func=rt_whisper_func,
-            count=count,
-        ),
+        "padding": padding_test(test_step, dataset, hyperparameter, chunk_size),
     }
 
 
@@ -458,6 +411,9 @@ def show_line_plot(
 
 
 __all__ = [
+    "whisper",
+    "rt_whisper",
+    "whisper_streaming",
     "chunk_test",
     "hyperparameter_test",
     "generate_statistical_list",

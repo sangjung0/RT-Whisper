@@ -14,13 +14,14 @@ for path in paths:
 import numpy as np
 
 from pathlib import Path
-from typing import Callable, Any
+from typing import Callable
 
 from sj_utils.file.yaml import load_yaml
 from sj_utils.file.json import JsonSaver
 from sj_utils.evaluator import TimeChecker
 from sj_utils.audio import segment_audio
 from sj_utils.collection import SafetyDict
+from sj_ai_utils.datasets import Dataset
 from sj_ai_utils.asr.whisper_utils import segments_to_text
 from sj_ai_utils.evaluator.sclite_utils import (
     TRNFormat,
@@ -35,26 +36,37 @@ from rt_whisper_optimizer.service import (
 )
 
 
+def generate_ref_and_hyp(
+    dataset: Dataset,
+    transcriber: Callable[[np.ndarray, Path], str],
+) -> dict[str, dict[str, list[TRNFormat]]]:
+    result_ref = []
+    result_hyp = []
+    for _id, audio, text in dataset:
+        txt = normalize_text(text)
+        ref = TRNFormat(id=_id, text=txt)
+
+        pred = transcriber(audio, _id)
+        pred = normalize_text(pred)
+        hyp = TRNFormat(id=_id, text=pred)
+
+        result_ref.append(ref)
+        result_hyp.append(hyp)
+
+    return result_ref, result_hyp
+
+
 def test_process_all(
-    data_paths: Any,
+    dataset: Dataset,
     transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
-    normalizer: Callable[[Path], Path] = normalize_text,
-    max_count: int = -1,
-    sr: int = 16000,
 ) -> dict:
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    t = lambda audio, path: transcriber(audio, path, transcribe_time)
+    t = lambda audio, _id: transcriber(audio, _id, transcribe_time)
 
     processed_time.start()
-    ref, hyp = generate_ref_and_hyp(
-        data_paths, t, normalizer=normalizer, sr=sr, size=max_count
-    )
+    ref, hyp = generate_ref_and_hyp(dataset, t)
     processed_time.check()
 
     output = sclite_trn(ref, hyp)
@@ -66,25 +78,16 @@ def test_process_all(
 
 
 def test_process_each(
-    data_paths: Any,
+    dataset: Dataset,
     transcriber: Callable[[np.ndarray, Path, TimeChecker], str],
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
-    normalizer: Callable[[Path], Path] = normalize_text,
-    max_count: int = -1,
-    sr: int = 16000,
 ) -> dict:
     processed_time = TimeChecker()
     transcribe_time = TimeChecker()
 
-    t = lambda audio, path: transcriber(audio, path, transcribe_time)
+    t = lambda audio, _id: transcriber(audio, _id, transcribe_time)
 
     processed_time.start()
-    ref, hyp = generate_ref_and_hyp(
-        data_paths, t, normalizer=normalizer, sr=sr, size=max_count
-    )
+    ref, hyp = generate_ref_and_hyp(dataset, t)
     processed_time.check()
 
     result = {}
@@ -167,21 +170,15 @@ def get_faster_whisper_transcriber(model_size: str = "large-v3", language: str =
 
 
 def whisper_streaming(
-    data_paths: Any,
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
+    dataset: Dataset,
     model_size: str = "large-v3",
     seed: int = 42,
     language: str = "en",
     chunk_size: int = 48_000,
     test_all: bool = True,
-    max_count: int = -1,
 ):
     print("Running Whisper Streaming...")
 
-    sr = 16000
     rng = np.random.default_rng(seed)
     t = get_whisper_streaming_transcriber(
         rng,
@@ -190,27 +187,13 @@ def whisper_streaming(
         audio_chunk_mean=chunk_size,
     )
 
-    def transcriber(audio: np.ndarray, _: Path, time_checker: TimeChecker) -> str:
+    def transcriber(audio: np.ndarray, _: str, time_checker: TimeChecker) -> str:
         return t(audio, time_checker)
 
     if test_all:
-        result = test_process_all(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_all(dataset=dataset, transcriber=transcriber)
     else:
-        result = test_process_each(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_each(dataset=dataset, transcriber=transcriber)
 
     del transcriber
     del t
@@ -219,11 +202,7 @@ def whisper_streaming(
 
 def rt_whisper(
     storage: Path,
-    data_paths: Any,
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
+    dataset: Dataset,
     seed: int = 42,
     use_save_loader: bool = True,
     use_prompt: bool = True,
@@ -231,11 +210,9 @@ def rt_whisper(
     hyperparameter: Path | SafetyDict = None,
     chunk_size: int = 48_000,
     test_all: bool = True,
-    max_count: int = -1,
 ):
     print("Running RT Whisper...")
 
-    sr = 16000
     if isinstance(hyperparameter, Path):
         _, hyperparameter = load_yaml(hyperparameter)
         hyperparameter = SafetyDict(hyperparameter)
@@ -252,10 +229,8 @@ def rt_whisper(
             language=language,
         )
 
-        def transcriber(
-            audio: np.ndarray, path: Path, time_checker: TimeChecker
-        ) -> str:
-            return t(audio, path, time_checker)
+        def transcriber(audio: np.ndarray, _id: str, time_checker: TimeChecker) -> str:
+            return t(audio, _id, time_checker)
 
     else:
         t = get_rt_whisper_transcriber(
@@ -270,23 +245,9 @@ def rt_whisper(
             return t(audio, time_checker)
 
     if test_all:
-        result = test_process_all(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_all(dataset=dataset, transcriber=transcriber)
     else:
-        result = test_process_each(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_each(dataset=dataset, transcriber=transcriber)
 
     del transcriber
     del t
@@ -294,42 +255,22 @@ def rt_whisper(
 
 
 def whisper(
-    data_paths: Any,
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
+    dataset: Dataset,
     model_size: str = "large-v3",
     language: str = "en",
     test_all: bool = True,
-    max_count: int = -1,
 ):
     print("Running Whisper...")
 
-    sr = 16000
     t = get_faster_whisper_transcriber(model_size, language)
 
-    def transcriber(audio: np.ndarray, _: Path, time_checker: TimeChecker) -> str:
+    def transcriber(audio: np.ndarray, _: str, time_checker: TimeChecker) -> str:
         return t(audio, time_checker)
 
     if test_all:
-        result = test_process_all(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_all(dataset=dataset, transcriber=transcriber)
     else:
-        result = test_process_each(
-            data_paths=data_paths,
-            transcriber=transcriber,
-            generate_ref_and_hyp=generate_ref_and_hyp,
-            normalizer=normalize_text,
-            max_count=max_count,
-            sr=sr,
-        )
+        result = test_process_each(dataset=dataset, transcriber=transcriber)
 
     del transcriber
     del t
@@ -340,16 +281,11 @@ def evaluate(
     storage: Path,
     output_path: Path,
     description: str,
-    data_paths: Any,
-    generate_ref_and_hyp: Callable[
-        [Any, Callable[[np.ndarray, Path], str], Callable[[str], str], int],
-        tuple[list[TRNFormat], list[TRNFormat]],
-    ],
+    dataset: Dataset,
     models: list[str] = ["rt_whisper"],
     model_size: str = "large-v3",
     language: str = "en",
     test_all: bool = True,
-    max_count: int = -1,
     seed: int = 42,
     use_save_loader: bool = True,
     use_prompt: bool = False,
@@ -362,18 +298,15 @@ def evaluate(
     for key in models:
         if key == "whisper":
             results[key] = whisper(
-                data_paths=data_paths,
-                generate_ref_and_hyp=generate_ref_and_hyp,
+                dataset=dataset,
                 model_size=model_size,
                 language=language,
                 test_all=test_all,
-                max_count=max_count,
             )
         elif key == "rt_whisper":
             results[key] = rt_whisper(
                 storage=storage,
-                data_paths=data_paths,
-                generate_ref_and_hyp=generate_ref_and_hyp,
+                dataset=dataset,
                 seed=seed,
                 use_save_loader=use_save_loader,
                 use_prompt=use_prompt,
@@ -381,18 +314,15 @@ def evaluate(
                 hyperparameter=hyperparameter,
                 chunk_size=chunk_size,
                 test_all=test_all,
-                max_count=max_count,
             )
         elif key == "whisper_streaming":
             results[key] = whisper_streaming(
-                data_paths=data_paths,
-                generate_ref_and_hyp=generate_ref_and_hyp,
+                dataset=dataset,
                 model_size=model_size,
                 seed=seed,
                 language=language,
                 chunk_size=chunk_size,
                 test_all=test_all,
-                max_count=max_count,
             )
 
     json_saver.save(results, output_path)
