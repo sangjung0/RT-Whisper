@@ -18,6 +18,10 @@ declare -a TARGETS=(
     "/workspaces/dev"
     "/home/${USER_NAME}/.cache"
     "/workspaces/dev/.datasets/asr-rankformer-datasets"
+    "/workspaces/dev/.datasets/ami"
+    "/workspaces/dev/.datasets/vox_populi"
+    "/workspaces/dev/.datasets/tedlium"
+    "/workspaces/dev/.datasets/libri_speech"
 )
 
 # 2) 타깃별 제외(:로 구분; 공백 포함 경로 안전)
@@ -25,6 +29,10 @@ declare -A EXCLUDES
 EXCLUDES["/workspaces/dev"]="/workspaces/dev/.datasets"
 EXCLUDES["/home/${USER_NAME}/.cache"]=""
 EXCLUDES["/workspaces/dev/.datasets/asr-rankformer-datasets"]=""
+EXCLUDES["/workspaces/dev/.datasets/ami"]=""
+EXCLUDES["/workspaces/dev/.datasets/vox_populi"]=""
+EXCLUDES["/workspaces/dev/.datasets/tedlium"]=""
+EXCLUDES["/workspaces/dev/.datasets/libri_speech"]=""
 
 build_prune_args() {
     local target="$1"
