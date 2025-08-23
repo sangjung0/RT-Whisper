@@ -236,7 +236,7 @@ class Optimizer(ABC):
 
             refs = []
             hyps = []
-            datasets = self.datasets.sample(batch_size, rng)
+            datasets = self.datasets.sample(batch_size, rng=rng)
             datasets.sample_rate = sr
             for _id, audio, y in datasets:
                 txt = normalize_text(y)
