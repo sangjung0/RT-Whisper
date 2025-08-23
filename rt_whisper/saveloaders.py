@@ -89,6 +89,7 @@ def get_token_streamer_saver(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
+                token_group_size=hyperparameter["selector"]["token_group_size"],
             ),
             Composer(c_logger),
         ],
@@ -128,6 +129,7 @@ def get_token_streamer_loader(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
+                token_group_size=hyperparameter["selector"]["token_group_size"],
             ),
             Composer(c_logger),
         ],
@@ -142,3 +144,4 @@ __all__ = [
     "get_token_streamer_saver",
     "get_token_streamer_loader",
 ]
+

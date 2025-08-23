@@ -84,6 +84,7 @@ def get_token_streamer(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
+                token_group_size=hyperparameter["selector"]["token_group_size"],
             ),
             Composer(c_logger),
         ],
@@ -146,6 +147,7 @@ def get_token_streamer_with_vad_v2(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
+                token_group_size=hyperparameter["selector"]["token_group_size"],
             ),
             Composer(c_logger),
         ],
@@ -206,6 +208,7 @@ def get_token_streamer_with_vad_v2_min_filter(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
+                token_group_size=hyperparameter["selector"]["token_group_size"],
             ),
             Composer(c_logger),
         ],
@@ -221,3 +224,4 @@ __all__ = [
     "get_token_streamer_with_vad_v2",
     "get_token_streamer_with_vad_v2_min_filter",
 ]
+

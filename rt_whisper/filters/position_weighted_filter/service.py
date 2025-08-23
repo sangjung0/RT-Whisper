@@ -4,6 +4,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rt_whisper.data import Token
 
+FACTOR = 2
+
 
 def filter_by_position_weighted(
     tokens: list[Token], offset: int, chunk_length: int, boundary: float
@@ -33,11 +35,11 @@ def __get_weighted_probability(
     center = (start + end) / 2
     chunk_center = duration / 2
     if center < boundary and center <= chunk_center:
-        return probability * (center / boundary) ** 3
+        return probability * (center / boundary) ** FACTOR
     elif center < duration - boundary:
         return probability
     else:
-        return probability * ((duration - center) / boundary) ** 3
+        return probability * ((duration - center) / boundary) ** FACTOR
 
 
 __all__ = ["filter_by_position_weighted"]

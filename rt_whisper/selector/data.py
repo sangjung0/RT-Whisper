@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 @dataclass(slots=True)
 class SelectorContext:
-    segment_tokens: list[Token] = field(default_factory=list)
+    token_groups: list[list[Token]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -29,13 +29,13 @@ class SelectorState:
 class SelectorParam:
     segment_tokens: list[Token]
     language: str | None
-    prev_segment_tokens: list[Token]
+    prev_token_groups: list[list[Token]]
 
     @staticmethod
     def from_state(state: TokenState, sct_state: SelectorState) -> "SelectorParam":
         return SelectorParam(
             segment_tokens=state.segment_tokens,
-            prev_segment_tokens=sct_state.prev.segment_tokens,
+            prev_token_groups=sct_state.prev.token_groups,
             language=state.language,
         )
 
@@ -43,30 +43,34 @@ class SelectorParam:
 @dataclass(slots=True)
 class SelectorResult:
     segment_tokens: list[Token]
+    token_groups: list[list[Token]]
 
-    def update_state(self, state: TokenState) -> None:
+    def update_state(self, state: TokenState, sct_state: SelectorState) -> None:
         state.segment_tokens = self.segment_tokens
+        sct_state.context.token_groups = self.token_groups
 
 
 @dataclass(slots=True)
 class SelectorContextBuilderParam:
-    segment_tokens: list[Token]
     anchor_timestamp: float
+    token_groups: list[list[Token]]
 
     @staticmethod
-    def from_state(state: TokenState) -> "SelectorContextBuilderParam":
+    def from_state(
+        state: TokenState, sct_state: SelectorState
+    ) -> "SelectorContextBuilderParam":
         return SelectorContextBuilderParam(
-            segment_tokens=state.segment_tokens,
             anchor_timestamp=state.anchor_timestamp,
+            token_groups=sct_state.context.token_groups,
         )
 
 
 @dataclass(slots=True)
 class SelectorContextBuilderResult:
-    context_segment_tokens: list[Token]
+    context_token_groups: list[list[Token]]
 
     def update_state(self, state: SelectorState) -> None:
-        state.context.segment_tokens = self.context_segment_tokens
+        state.context.token_groups = self.context_token_groups
 
 
 __all__ = [
@@ -77,3 +81,4 @@ __all__ = [
     "SelectorContextBuilderParam",
     "SelectorContextBuilderResult",
 ]
+

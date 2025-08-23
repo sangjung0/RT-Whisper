@@ -42,10 +42,6 @@ class Optimizer(ABC):
         dataset: Any,
         study_path: Path,
         output_path: Path,
-        data_loader: Callable[
-            [Any, int, np.random.Generator | np.random.RandomState],
-            Generator[tuple[np.ndarray, str, str, Path], None, None],
-        ],
         cache_storage: Path | None = None,
     ):
         if study_path.exists() and study_path.is_file():
@@ -67,7 +63,6 @@ class Optimizer(ABC):
         self.datasets = dataset
         self.study_path = study_path
         self.output_path = output_path
-        self.data_loader = data_loader
         self.cache_storage = cache_storage
         self.logger = logger
 
@@ -241,15 +236,15 @@ class Optimizer(ABC):
 
             refs = []
             hyps = []
-            for audio, _id, y, key in self.data_loader(
-                self.datasets, sr=sr, sample_size=batch_size, rng=rng
-            ):
+            datasets = self.datasets.sample(batch_size, rng)
+            datasets.sample_rate = sr
+            for _id, audio, y in datasets:
                 txt = normalize_text(y)
                 ref = TRNFormat(id=_id, text=txt)
 
                 pred_txt = transcriber(
                     audio=audio,
-                    audio_key=key,
+                    audio_key=_id,
                     transcribe_time=TimeChecker(),
                     hyperparameter=hyperparameter,
                     overlap=overlap,

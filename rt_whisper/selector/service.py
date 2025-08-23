@@ -3,7 +3,8 @@ from typing import TYPE_CHECKING
 
 import torch
 
-from functools import lru_cache
+from functools import lru_cache, reduce
+from operator import mul, add
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
@@ -18,66 +19,87 @@ def group_similar_tokens(
     smooth: float,
 ) -> tuple[list[list[Token]], list[Token]]:
     orphan_tokens = []
-    idx_group = 0
+    group_idx = 0
+    new_token_groups = [[t for t in tg] for tg in token_groups]
     # print(f"similarity grouping")
-    for token in source:
-        if not token.is_word:
-            orphan_tokens.append(token)
+    for t in source:
+        if not t.is_word:
+            orphan_tokens.append(t)
             continue
+        # print(f"\tProcessing token: {t.text}")
 
-        # print(f"\tProcessing token: {token.text}")
+        ss = {}
+        # while group_idx < len(token_groups):
+        #     if all(gt.start >= t.start for gt in token_groups[group_idx]):
+        #         break
+        #     group_idx += 1
 
-        similarities = []
-        for i in range(idx_group, len(token_groups)):
-            group_token = token_groups[i][0]
-            iou = __token_iou(token, group_token, padding, smooth)
-            # print(f"\t\tToken: {token.text}, Group Token: {group_token.text}: IOU: {iou}")
-            if iou < iou_threshold:
-                if group_token.start < token.start or group_token.end < token.end:
-                    continue
+        for i in range(group_idx, len(token_groups)):
+            for gt in token_groups[i]:
+                iou = __token_iou(t, gt, padding, smooth)
+                # print(f"\t\tToken: {t.text}, Group Token: {gt.text}: IOU: {iou}")
+                if iou < iou_threshold:
+                    if gt.start < t.start or gt.end < t.end:
+                        continue
+                    else:
+                        break
                 else:
-                    break
-            else:
-                if token.text == group_token.text:
-                    similarity = 1.0
-                else:
-                    similarity = __cosine_similarity(token, group_token)
-                similarities.append((i, similarity))
-                # print(f"\t\t\tSimilarity: {similarity}")
+                    if t.text == gt.text:
+                        s = 1.0
+                    else:
+                        s = __cosine_similarity(t, gt)
+                    ss[i] = ss.get(i, [])
+                    ss[i].append(s)
+                    # print(f"\t\t\tSimilarity: {s}")
 
-        if not similarities:
-            orphan_tokens.append(token)
+        if not ss:
+            orphan_tokens.append(t)
             continue
 
-        # print(f"\t\tSimilarities: {similarities}")
-        max_arg = max(range(len(similarities)), key=lambda i: similarities[i][1])
-        if similarities[max_arg][1] < cos_threshold:
-            orphan_tokens.append(token)
+        # print(f"\t\tSimilarities: {ss}")
+        ss = {i: reduce(mul, s, 1) for i, s in ss.items()}
+        max_arg = max(ss.keys(), key=lambda i: ss[i])
+        if ss[max_arg] < cos_threshold:
+            orphan_tokens.append(t)
             continue
-        token_groups[similarities[max_arg][0]].append(token)
-        idx_group = similarities[max_arg][0]
+        new_token_groups[max_arg].append(t)
+        group_idx = max_arg
 
-    return token_groups, orphan_tokens
+    return new_token_groups, orphan_tokens
 
 
-def merge_tokens(
+def new_group_tokens(token_groups: list[list[Token]], orphan_tokens: list[Token]):
+    orphan_token_groups = [[ot] for ot in orphan_tokens]
+    token_groups.extend(orphan_token_groups)
+    token_groups.sort(key=lambda tg: reduce(add, [t.start for t in tg], 0) / len(tg))
+    return token_groups
+
+
+def select_tokens(
     token_groups: list[list[Token]],
-    orphan_tokens: list[Token],
 ) -> list[Token]:
-    best_tokens = []
-    prev = None
+    tokens = []
+    prev_embedding = None
+    prev_token: Token = None
     for tg in token_groups:
-        best = __select_best(tg, prev)
-        prev = (
-            best.embedding
-            if prev is None
-            else torch.mean(torch.stack([prev, best.embedding]), dim=0)
-        )
-        best_tokens.append(best)
-    tokens = best_tokens + orphan_tokens
-    tokens.sort(key=lambda t: t.start if t.is_word else t.end)
+        best = __select_best(tg, prev_embedding)
+        if best.is_word:
+            prev_embedding = (
+                best.embedding
+                if prev_embedding is None
+                else torch.mean(torch.stack([prev_embedding, best.embedding]), dim=0)
+            )
+            if prev_token and best.start < prev_token.start:
+                best.start = prev_token.end
+        tokens.append(best)
 
     return tokens
+
+
+def filter_token_groups(token_groups: list[list[Token]], time: int, n: int):
+    token_groups = [[t for t in tg if t.is_word] for tg in token_groups]
+    token_groups = [tg[-n:] for tg in token_groups if tg]
+    return [tg for tg in token_groups if all(t.end > time for t in tg)]
 
 
 def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
@@ -99,23 +121,20 @@ def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
         # mean_sim = torch.nn.functional.cosine_similarity(
         #     mean, t.embedding, dim=0
         # ).item()
+        # mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
 
         prev_sim = (
             1
             if prev is None
             else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
         )
-
-        # mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
-
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
 
-        # sim = mean_sim * t.probability * prev_sim
-
-        sim = t.probability * prev_sim
+        # sim = mean_sim * prev_sim
+        sim = prev_sim
 
         # print(
-        # f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim}, Probability: {t.probability}, Combined: {sim}"
+        #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
         # )
         similarities.append(sim)
 
@@ -146,4 +165,5 @@ def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float
     return inner / outer
 
 
-__all__ = ["group_similar_tokens", "merge_tokens"]
+__all__ = ["group_similar_tokens", "select_tokens", "new_group_tokens"]
+

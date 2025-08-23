@@ -11,7 +11,9 @@ from rt_whisper.selector.data import (
 )
 from rt_whisper.selector.service import (
     group_similar_tokens,
-    merge_tokens,
+    select_tokens,
+    new_group_tokens,
+    filter_token_groups,
 )
 
 if TYPE_CHECKING:
@@ -41,14 +43,6 @@ class SelectorProcessor(Worker):
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
         sct_state: SelectorState = context.get_state(SelectorState)
-        current = context.segment_tokens
-        prev = sct_state.prev.segment_tokens
-        if len(prev) == 0:
-            return None
-        elif len(current) >= len(prev) and all(
-            c.text == p.text for c, p in zip(current[: len(prev)], prev)
-        ):
-            return None
         return SelectorParam.from_state(context, sct_state)
 
     # override
@@ -56,16 +50,16 @@ class SelectorProcessor(Worker):
         self.logger.debug(f"Processing Selector", group_level=1)
 
         current = param.segment_tokens
-        prev = param.prev_segment_tokens
+        token_groups = param.prev_token_groups
         language = param.language
         self.logger.debug(
             f"Current: {''.join(str(t) for t in current if t.is_word)}", group_level=2
         )
         self.logger.debug(
-            f"Previous: {''.join(str(t) for t in prev if t.is_word)}", group_level=2
+            f"Previous Grouped tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
+            group_level=2,
         )
 
-        token_groups = [[t] for t in prev]
         token_groups, orphan_tokens = group_similar_tokens(
             source=current,
             token_groups=token_groups,
@@ -83,44 +77,52 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
 
-        new_tokens = merge_tokens(
-            token_groups=token_groups,
-            orphan_tokens=orphan_tokens,
+        token_groups = new_group_tokens(token_groups, orphan_tokens)
+        self.logger.debug(
+            f"Sorted Grouped tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
+            group_level=2,
         )
+
+        new_tokens = select_tokens(token_groups=token_groups)
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
             group_level=2,
         )
 
-        return SelectorResult(segment_tokens=new_tokens)
+        return SelectorResult(segment_tokens=new_tokens, token_groups=token_groups)
 
     # override
     def _update(self, context: TokenState, result: SelectorResult) -> None:
-        result.update_state(context)
+        sct_state: SelectorState = context.get_state(SelectorState)
+        result.update_state(context, sct_state)
 
 
 class SelectorContextBuilder(SelectorProcessor):
+    def __init__(
+        self,
+        *args,
+        token_group_size: int,
+        **kwargs,
+    ):
+        super().__init__(*args, **kwargs)
+        self.__TOKEN_GROUP_SIZE = token_group_size
+
     # override
     def _can_build(self, state: TokenState) -> SelectorParam:
-        return SelectorContextBuilderParam.from_state(state)
+        sct_state: SelectorState = state.get_state(SelectorState)
+        return SelectorContextBuilderParam.from_state(state, sct_state)
 
     # override
     def _context_build(self, param: SelectorContextBuilderParam):
         self.logger.debug(f"Building SelectorContext", group_level=1)
-
-        context_segment_tokens = [
-            t
-            for t in param.segment_tokens
-            if t.is_word and t.end > param.anchor_timestamp
-        ]
+        token_groups = filter_token_groups(
+            param.token_groups, param.anchor_timestamp, self.__TOKEN_GROUP_SIZE
+        )
         self.logger.debug(
-            f"Context segment tokens: {''.join(str(t) for t in context_segment_tokens)}",
+            f"Context segment tokens: {''.join(str(t) for t in token_groups)}",
             group_level=2,
         )
-
-        return SelectorContextBuilderResult(
-            context_segment_tokens=context_segment_tokens
-        )
+        return SelectorContextBuilderResult(context_token_groups=token_groups)
 
     # override
     def _context_update(
@@ -137,6 +139,7 @@ class Selector(SelectorContextBuilder):
         cos_threshold: float,
         padding: int,
         logger: RTWhisperLogger,
+        token_group_size: int,
         smooth: float = 1e-6,
     ):
         super().__init__(
@@ -144,6 +147,7 @@ class Selector(SelectorContextBuilder):
             cos_threshold=cos_threshold,
             padding=padding,
             logger=logger,
+            token_group_size=token_group_size,
             smooth=smooth,
         )
 
@@ -153,3 +157,4 @@ class Selector(SelectorContextBuilder):
 
 
 __all__ = ["Selector"]
+

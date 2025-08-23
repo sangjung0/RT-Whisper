@@ -143,6 +143,7 @@ TEMPLATE = {
                     "step": 160,
                 },
             },
+            "token_group_size": 2,
         },
     },
 }
@@ -261,3 +262,4 @@ __all__ = [
     "IntParam",
     "StudyParam",
 ]
+
