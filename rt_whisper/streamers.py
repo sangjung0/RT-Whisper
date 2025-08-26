@@ -67,6 +67,7 @@ def get_token_streamer(
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationFilter(
@@ -130,6 +131,7 @@ def get_token_streamer_with_vad_v2(
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationFilter(
@@ -193,6 +195,7 @@ def get_token_streamer_with_vad_v2_min_filter(
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -224,4 +227,6 @@ __all__ = [
     "get_token_streamer_with_vad_v2",
     "get_token_streamer_with_vad_v2_min_filter",
 ]
+
+
 

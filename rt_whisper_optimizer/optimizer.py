@@ -12,13 +12,16 @@ import numpy as np
 
 from abc import ABC
 from pathlib import Path
-from typing import Callable, Generator, Any
+from typing import Callable
+from optuna.samplers import TPESampler
+from optuna.pruners import SuccessiveHalvingPruner
 
 from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
 from sj_utils.logger import generate
 from sj_utils.evaluator import TimeChecker
 from sj_utils.collection import SafetyDict
 
+from sj_ai_utils.datasets import Dataset
 from sj_ai_utils.evaluator.sclite_utils import (
     TRNFormat,
     sclite_trn,
@@ -39,14 +42,19 @@ if TYPE_CHECKING:
 class Optimizer(ABC):
     def __init__(
         self,
-        dataset: Any,
+        dataset: Dataset,
         study_path: Path,
         output_path: Path,
+        param_cache_path: Path = None,
         cache_storage: Path | None = None,
     ):
         if study_path.exists() and study_path.is_file():
             raise ValueError(
                 f"Study path {study_path} should be a directory, not a file."
+            )
+        if param_cache_path and param_cache_path.exists() and param_cache_path.is_dir():
+            raise ValueError(
+                f"Parameter cache path {param_cache_path} should be a file, not a directory."
             )
 
         config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
@@ -63,6 +71,7 @@ class Optimizer(ABC):
         self.datasets = dataset
         self.study_path = study_path
         self.output_path = output_path
+        self.param_cache_path = param_cache_path
         self.cache_storage = cache_storage
         self.logger = logger
 
@@ -77,7 +86,6 @@ class Optimizer(ABC):
         description = instructions["description"]
         optimizer = instructions["optimizer"]
         sample_rate = optimizer["model_sample_rate"]
-        batch_size = optimizer["batch_size"]
         max_study_steps = optimizer["max_study_steps"]
         study_file_name = optimizer["study_file_name"]
         backup = optimizer["backup"]
@@ -94,30 +102,69 @@ class Optimizer(ABC):
         yaml_saver = YamlSaver(description)
         rng = np.random.default_rng(random_seed)
         save_study_path = self.study_path / f"{study_file_name}.pkl"
+        backup_path = self.study_path / f"{study_file_name}.bak.pkl"
         if save_study_path.exists():
             self.logger.warning(
                 f"Study path {save_study_path} already exists. Overwriting."
             )
 
+        self.datasets.sample_rate = sample_rate
+
+        if self.param_cache_path and self.param_cache_path.exists():
+            cache = joblib.load(self.param_cache_path)
+        else:
+            cache = {}
+
         transcriber = self._get_transcriber(
             use_prompt, use_cache, chunk_size, language, rng
         )
         objective = self._get_objective_function(
-            study_param, transcriber, batch_size, sample_rate, rng
+            study_param, transcriber, cache, chunk_size
         )
 
-        if save_study_path.exists():
-            study = joblib.load(save_study_path)
+        if save_study_path.exists() or backup_path.exists():
+            try:
+                study = joblib.load(save_study_path)
+            except Exception as e:
+                self.logger.error(f"Failed to load study from {save_study_path}: {e}")
+                try:
+                    study = joblib.load(backup_path)
+                except Exception as e:
+                    self.logger.error(f"Failed to load study from {backup_path}: {e}")
+                    raise e
         else:
-            study = optuna.create_study(direction="minimize")
+            study = optuna.create_study(
+                direction="minimize",
+                sampler=TPESampler(
+                    multivariate=True, group=True, n_startup_trials=40, seed=random_seed
+                ),
+                pruner=SuccessiveHalvingPruner(
+                    min_resource=1, reduction_factor=3, min_early_stopping_rate=0
+                ),
+            )
 
-        while len(study.trials) < max_study_steps:
-            if backup:
-                joblib.dump(
-                    study, save_study_path.parent / f"{save_study_path.stem}.bak.pkl"
-                )
-            study.optimize(objective, n_trials=5)
+        done = len(
+            [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+        )
+        remaining = max(0, max_study_steps - done)
+        if remaining > 0:
+
+            def _backup_cb(
+                study_obj: optuna.Study, trial_obj: optuna.trial.FrozenTrial
+            ):
+                if trial_obj.number % 10 == 0:
+                    if backup:
+                        joblib.dump(study_obj, save_study_path)
+                    if self.param_cache_path and cache.get(
+                        "__optimizer_key_dirty__", False
+                    ):
+                        del cache["__optimizer_key_dirty__"]
+                        joblib.dump(cache, self.param_cache_path)
+
+            study.optimize(objective, n_trials=remaining, callbacks=[_backup_cb])
             joblib.dump(study, save_study_path)
+            if self.param_cache_path:
+                joblib.dump(cache, self.param_cache_path)
 
         values = np.array(
             [
@@ -225,20 +272,21 @@ class Optimizer(ABC):
         self,
         study: StudyParam,
         transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
-        batch_size: int,
-        sr: int,
-        rng: np.random.Generator | np.random.RandomState = np.random,
+        cache: dict,
+        chunk_size: int,
     ) -> Callable[[optuna.Trial], float]:
 
-        def objective(trial: optuna.Trial) -> float:
-            hyperparameter = SafetyDict(study.suggest_all(trial))
-            overlap = int(hyperparameter["asr"]["max_overlap_duration"])
+        l = len(self.datasets)
+        s1_size = int(l * 0.05)
+        s2_size = int(l * 0.20)
+        s1 = self.datasets[:s1_size]
+        s2 = self.datasets[:s2_size]
+        s3 = self.datasets
 
-            refs = []
-            hyps = []
-            datasets = self.datasets.sample(batch_size, rng=rng)
-            datasets.sample_rate = sr
-            for _id, audio, y in datasets:
+        def _eval(hyperparameter: SafetyDict, dataset: Dataset):
+            overlap = int(hyperparameter["asr"]["max_overlap_duration"])
+            refs, hyps = [], []
+            for _id, audio, y in dataset:
                 txt = normalize_text(y)
                 ref = TRNFormat(id=_id, text=txt)
 
@@ -255,12 +303,39 @@ class Optimizer(ABC):
                 refs.append(ref)
                 hyps.append(hyp)
 
-            output = sclite_trn(refs, hyps)
-            result = parse_sclite_summary(output)
+            wer = parse_sclite_summary(sclite_trn(refs, hyps))["wer_percent"]
+            return wer
 
-            return result["wer_percent"]
+        def objective(trial: optuna.Trial) -> float:
+            hyperparameter = SafetyDict(study.suggest_all(trial))
+
+            key = self._get_param_key(chunk_size, hyperparameter)
+            s1s, s2s, s3s = cache.get(key, (None, None, None))
+
+            s1s = _eval(hyperparameter, s1) if s1s is None else s1s
+            trial.report(s1s, step=1)
+            if trial.should_prune():
+                cache[key] = (s1s, s2s, s3s)
+                raise optuna.TrialPruned()
+
+            s2s = _eval(hyperparameter, s2) if s2s is None else s2s
+            trial.report(s2s, step=2)
+            if trial.should_prune():
+                cache[key] = (s1s, s2s, s3s)
+                raise optuna.TrialPruned()
+
+            s3s = _eval(hyperparameter, s3) if s3s is None else s3s
+            trial.report(s3s, step=3)
+
+            if key not in cache:
+                cache[key] = (s1s, s2s, s3s)
+                cache["__optimizer_key_dirty__"] = True
+            return s3s
 
         return objective
+
+    def _get_param_key(self, chunk_size: int, hyperparameter: SafetyDict):
+        return f"{chunk_size}_{hyperparameter['asr']['max_overlap_duration']*1}_{hyperparameter['position_weighted_filter']['boundary']*1}_{hyperparameter['position_weighted_filter']['exponent']*1}_{hyperparameter['duration_filter']['z_thresh']['en']*1}_{hyperparameter['duration_filter']['min_dur']['en']*1}_{hyperparameter['probability_filter']['z_thresh']['en']*1}_{hyperparameter['probability_filter']['min_prob']['en']*1}_{hyperparameter['selector']['iou_threshold']['en']*1}_{hyperparameter['selector']['cos_threshold']['en']*1}_{hyperparameter['selector']['padding']['en']*1}_{hyperparameter['selector']['token_group_size']*1}"
 
 
 __all__ = [

@@ -17,10 +17,11 @@ if TYPE_CHECKING:
 
 
 class PositionWeightedFilter(Worker):
-    def __init__(self, boundary: float, logger: RTWhisperLogger):
+    def __init__(self, boundary: float, exponent: float, logger: RTWhisperLogger):
         super().__init__()
         self.logger = logger
         self.__BOUNDARY = boundary
+        self.__EXPONENT = exponent
 
     # override
     def _can_process(self, context: TokenState):
@@ -48,6 +49,7 @@ class PositionWeightedFilter(Worker):
             param.offset - param.merged_chunk.shape[0],
             param.merged_chunk.shape[0],
             self.__BOUNDARY,
+            self.__EXPONENT,
         )
         self.logger.debug(
             f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2
@@ -65,3 +67,5 @@ class PositionWeightedFilter(Worker):
 
 
 __all__ = ["PositionWeightedFilter"]
+
+

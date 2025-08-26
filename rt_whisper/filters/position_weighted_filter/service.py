@@ -4,11 +4,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from rt_whisper.data import Token
 
-FACTOR = 2
-
 
 def filter_by_position_weighted(
-    tokens: list[Token], offset: int, chunk_length: int, boundary: float
+    tokens: list[Token],
+    offset: int,
+    chunk_length: int,
+    boundary: float,
+    exponent: float,
 ):
     for token in tokens:
         if not token.is_word:
@@ -20,6 +22,7 @@ def filter_by_position_weighted(
             token.end - offset,
             chunk_length,
             boundary,
+            exponent,
         )
 
     return tokens
@@ -31,15 +34,18 @@ def __get_weighted_probability(
     end: int,
     duration: int,
     boundary: float,
+    exponent: float,
 ):
     center = (start + end) / 2
     chunk_center = duration / 2
     if center < boundary and center <= chunk_center:
-        return probability * (center / boundary) ** FACTOR
+        return probability * (center / boundary) ** exponent
     elif center < duration - boundary:
         return probability
     else:
-        return probability * ((duration - center) / boundary) ** FACTOR
+        return probability * ((duration - center) / boundary) ** exponent
 
 
 __all__ = ["filter_by_position_weighted"]
+
+

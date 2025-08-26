@@ -16,7 +16,6 @@ TEMPLATE = {
     "description": "Test",
     "optimizer": {
         "model_sample_rate": 16000,
-        "batch_size": 16,
         "max_study_steps": 3000,
         "study_file_name": "study.pky",
         "backup": True,
@@ -59,7 +58,15 @@ TEMPLATE = {
                 "minimum": 0,
                 "maximum": 19520,
                 "step": 160,
-            }
+            },
+            "exponent": {
+                "is_train": True,
+                "key": "exponent",
+                "value": 1,
+                "minimum": 0,
+                "maximum": 10,
+                "step": 0.1,
+            },
         },
         "duration_filter": {
             "z_thresh": {
@@ -88,7 +95,7 @@ TEMPLATE = {
         "probability_filter": {
             "z_thresh": {
                 "default": 3.0,
-                "ko": {
+                "en": {
                     "is_train": True,
                     "key": "pf_z_thresh",
                     "value": 3.0,
@@ -262,4 +269,3 @@ __all__ = [
     "IntParam",
     "StudyParam",
 ]
-

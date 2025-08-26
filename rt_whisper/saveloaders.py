@@ -74,6 +74,7 @@ def get_token_streamer_saver(
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -114,6 +115,7 @@ def get_token_streamer_loader(
         [
             PositionWeightedFilter(
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -144,4 +146,6 @@ __all__ = [
     "get_token_streamer_saver",
     "get_token_streamer_loader",
 ]
+
+
 
