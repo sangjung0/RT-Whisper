@@ -1,0 +1,149 @@
+description: "
+    20250826 기점으로 수정된 RT Whisper 알고리즘을 사용함
+    saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
+    배치 16
+    학습 횟수 10000으로 제한
+
+    study: 20250826_step1_16b-96k-16cs.pkl
+
+    (시작, 끝, 스탭)
+
+    - max_overlap_duration: 96000
+
+    - exponent: 0, 10, 0.1
+
+    - boundary: 0, 56000, 160
+
+    - df_min_dur: 0, 1600, 160
+
+    - min_prob: 0, 1, 0.01
+
+    - iou_threshold: 0, 1, 0.01
+
+    - cos_threshold: 0, 1, 0.01
+
+    - padding: 0, 16000, 160
+
+    - token_group_size: 2, 10, 1
+    "
+optimizer:
+    model_sample_rate: 16000
+    batch_size: 16
+    max_study_steps: 10000
+    study_file_name: "20250826_step1_16b-96k-16cs"
+    backup: True
+    use_cache: True
+    use_prompt: False
+    random_seed: 42
+    chunk_size: 16000
+    language: "en"
+study:
+    whisper:
+        model_options:
+            model_size_or_path: "large-v3"
+            device: "cuda"
+            compute_type: "float16"
+        transcribe_options:
+            beam_size: 5
+            vad_filter: False
+            temperature: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    silero_vad:
+        model_options: {}
+        run_options: {}
+    asr:
+        max_prompt_words: 40
+        max_overlap_duration:
+            is_train: False
+            key: "overlap_duration"
+            value: 96000
+            minimum: 0
+            maximum: 112000
+            step: 8000
+    position_weighted_filter:
+        exponent:
+            is_train: True
+            key: "exponent"
+            value: 1
+            minimum: 0
+            maximum: 10
+            step: 0.1
+        boundary:
+            is_train: True
+            key: "boundary"
+            value: 2400
+            minimum: 0
+            maximum: 56000
+            step: 160
+    duration_filter:
+        z_thresh:
+            default: 2.0
+            en:
+                is_train: False
+                key: "df_z_thresh"
+                value: 0
+                minimum: 0.0
+                maximum: 10.0
+                step: 0.01
+        min_dur:
+            default: 160
+            en:
+                is_train: True
+                key: "df_min_dur"
+                value: 160
+                minimum: 0
+                maximum: 1600
+                step: 160
+    probability_filter:
+        z_thresh:
+            default: 3.0
+            en:
+                is_train: False
+                key: "pf_z_thresh"
+                value: 0
+                minimum: 0.0
+                maximum: 10.0
+                step: 0.01
+        min_prob:
+            default: 1.0
+            en:
+                is_train: True
+                key: "pf_min_prob"
+                value: 0.1
+                minimum: 0
+                maximum: 1
+                step: 0.01
+    selector:
+        iou_threshold:
+            default: 0.5
+            en:
+                is_train: True
+                key: "iou_threshold"
+                value: 0
+                minimum: 0
+                maximum: 1
+                step: 0.01
+        cos_threshold:
+            default: 0.5
+            en:
+                is_train: True
+                key: "cos_threshold"
+                value: 0
+                minimum: 0
+                maximum: 1
+                step: 0.01
+        padding:
+            default: 3200
+            en:
+                is_train: True
+                key: "padding"
+                value: 0
+                minimum: 0
+                maximum: 16000
+                step: 160
+        token_group_size:
+            is_train: True
+            key: "token_group_size"
+            value: 2
+            minimum: 2
+            maximum: 10
+            step: 1
