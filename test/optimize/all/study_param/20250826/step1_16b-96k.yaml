@@ -2,7 +2,7 @@ description: "
     20250826 기점으로 수정된 RT Whisper 알고리즘을 사용함
     saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
     배치 16
-    학습 횟수 10000으로 제한
+    학습 횟수 1000으로 제한
 
     study: 20250826_step1_16b-96k.pkl
 
@@ -29,7 +29,7 @@ description: "
 optimizer:
     model_sample_rate: 16000
     batch_size: 16
-    max_study_steps: 10000
+    max_study_steps: 1000
     study_file_name: "20250826_step1_16b-96k"
     backup: True
     use_cache: True
