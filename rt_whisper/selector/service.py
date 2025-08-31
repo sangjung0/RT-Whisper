@@ -3,11 +3,140 @@ from typing import TYPE_CHECKING
 
 import torch
 
+from typing import Callable
 from functools import lru_cache, reduce
 from operator import mul, add
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
+
+
+def __cosine_similarity(A: Token, B: Token) -> float:
+    if hash(A) < hash(B):
+        A, B = B, A
+    return __lru_cosine_similarity(A, B)
+
+
+@lru_cache(maxsize=4096)
+def __lru_cosine_similarity(A: Token, B: Token) -> float:
+    return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
+
+
+def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float:
+    a1 = max(0, A.start - padding)
+    b1 = A.end + padding
+    a2 = max(0, B.start - padding)
+    b2 = B.end + padding
+
+    inner = max(0, min(b1, b2) - max(a1, a2))
+    outer = max(max(b1, b2) - min(a1, a2), smooth)
+
+    return inner / outer
+
+
+def select_best_only_confidence(group: list[Token], _) -> Token:
+    tokens = [t for t in group if t.is_word]
+    if not tokens:
+        return group[0]
+    return max(tokens, key=lambda t: t.probability)
+
+
+def select_best_only_prev(group: list[Token], prev: torch.Tensor | None) -> Token:
+    tokens = [t for t in group if t.is_word]
+    if not tokens:
+        return group[0]
+    elif len(set(t.text for t in tokens)) == 1:
+        return max(tokens, key=lambda t: t.probability)
+
+    similarities = []
+    # print(f"Selecting best token from group of {len(tokens)} tokens")
+    for t in tokens:
+        # print(f"\tToken: {t.text}")
+        sim = (
+            1
+            if prev is None
+            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
+        )
+        sim = (sim + 1) / 2  # Normalize to [0, 1]
+
+        # print(
+        #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
+        # )
+        similarities.append(sim)
+
+    best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
+    return tokens[best_idx]
+
+
+def select_best_confidence_and_prev(
+    group: list[Token], prev: torch.Tensor | None
+) -> Token:
+    tokens = [t for t in group if t.is_word]
+    if not tokens:
+        return group[0]
+    elif len(set(t.text for t in tokens)) == 1:
+        return max(tokens, key=lambda t: t.probability)
+
+    similarities = []
+    # print(f"Selecting best token from group of {len(tokens)} tokens")
+    for t in tokens:
+        # print(f"\tToken: {t.text}")
+
+        prev_sim = (
+            1
+            if prev is None
+            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
+        )
+        prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
+        sim = prev_sim * t.probability
+
+        # print(
+        #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
+        # )
+        similarities.append(sim)
+
+    best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
+    return tokens[best_idx]
+
+
+def select_best_confidence_and_prev_and_mean(
+    group: list[Token], prev: torch.Tensor | None
+) -> Token:
+    tokens = [t for t in group if t.is_word]
+    if not tokens:
+        return group[0]
+    elif len(set(t.text for t in tokens)) == 1:
+        return max(tokens, key=lambda t: t.probability)
+
+    tensors = [t.embedding for t in tokens]
+    mean = torch.mean(torch.stack(tensors), dim=0)
+
+    similarities = []
+    # print(f"Selecting best token from group of {len(tokens)} tokens")
+    for t in tokens:
+        # print(f"\tToken: {t.text}")
+
+        mean_sim = torch.nn.functional.cosine_similarity(
+            mean, t.embedding, dim=0
+        ).item()
+        mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
+
+        prev_sim = (
+            1
+            if prev is None
+            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
+        )
+        prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
+
+        sim = mean_sim * prev_sim * t.probability
+
+        # print(
+        #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
+        # )
+        similarities.append(sim)
+
+    best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
+    return tokens[best_idx]
 
 
 def group_similar_tokens(
@@ -29,11 +158,6 @@ def group_similar_tokens(
         # print(f"\tProcessing token: {t.text}")
 
         ss = {}
-        # while group_idx < len(token_groups):
-        #     if all(gt.start >= t.start for gt in token_groups[group_idx]):
-        #         break
-        #     group_idx += 1
-
         for i in range(group_idx, len(token_groups)):
             for gt in token_groups[i]:
                 iou = __token_iou(t, gt, padding, smooth)
@@ -77,12 +201,15 @@ def new_group_tokens(token_groups: list[list[Token]], orphan_tokens: list[Token]
 
 def select_tokens(
     token_groups: list[list[Token]],
+    select_func: tuple[
+        Callable[[list[Token], torch.Tensor | None], Token]
+    ] = select_best_only_prev,
 ) -> list[Token]:
     tokens = []
     prev_embedding = None
     prev_token: Token = None
     for tg in token_groups:
-        best = __select_best(tg, prev_embedding)
+        best = select_func(tg, prev_embedding)
         if best.is_word:
             prev_embedding = (
                 best.embedding
@@ -102,68 +229,4 @@ def filter_token_groups(token_groups: list[list[Token]], time: int, n: int):
     return [tg for tg in token_groups if all(t.end > time for t in tg)]
 
 
-def __select_best(group: list[Token], prev: torch.Tensor | None) -> Token:
-    tokens = [t for t in group if t.is_word]
-    if not tokens:
-        return group[0]
-    elif len(set(t.text for t in tokens)) == 1:
-        return max(tokens, key=lambda t: t.probability)
-
-    # NOTE 만약 이전 그룹만을 고려하지 않고, 중첩되는 모든 상황을 고려한다면 이 대표성이 중요할 수 있다. 따라서 주석만 함.
-    # tensors = [t.embedding for t in tokens]
-    # mean = torch.mean(torch.stack(tensors), dim=0)
-
-    similarities = []
-    # print(f"Selecting best token from group of {len(tokens)} tokens")
-    for t in tokens:
-        # print(f"\tToken: {t.text}")
-
-        # mean_sim = torch.nn.functional.cosine_similarity(
-        #     mean, t.embedding, dim=0
-        # ).item()
-        # mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
-
-        prev_sim = (
-            1
-            if prev is None
-            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
-        )
-        prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
-
-        # sim = mean_sim * prev_sim
-        sim = prev_sim
-
-        # print(
-        #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
-        # )
-        similarities.append(sim)
-
-    best_idx = max(range(len(similarities)), key=lambda i: similarities[i])
-    return tokens[best_idx]
-
-
-def __cosine_similarity(A: Token, B: Token) -> float:
-    if hash(A) < hash(B):
-        A, B = B, A
-    return __lru_cosine_similarity(A, B)
-
-
-@lru_cache(maxsize=4096)
-def __lru_cosine_similarity(A: Token, B: Token) -> float:
-    return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
-
-
-def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float:
-    a1 = max(0, A.start - padding)
-    b1 = A.end + padding
-    a2 = max(0, B.start - padding)
-    b2 = B.end + padding
-
-    inner = max(0, min(b1, b2) - max(a1, a2))
-    outer = max(max(b1, b2) - min(a1, a2), smooth)
-
-    return inner / outer
-
-
 __all__ = ["group_similar_tokens", "select_tokens", "new_group_tokens"]
-

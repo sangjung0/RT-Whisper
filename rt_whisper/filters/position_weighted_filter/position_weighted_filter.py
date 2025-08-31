@@ -12,16 +12,24 @@ from rt_whisper.filters.position_weighted_filter.service import (
 from rt_whisper.processors.asr.data import ASRState
 
 if TYPE_CHECKING:
-    from rt_whisper import RTWhisperLogger
+    from rt_whisper.rt_whisper_logger import RTWhisperLogger
+    from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
     from rt_whisper.data import TokenState
 
 
 class PositionWeightedFilter(Worker):
-    def __init__(self, boundary: float, exponent: float, logger: RTWhisperLogger):
+    def __init__(
+        self,
+        head_model: BoundaryWordFilter,
+        tail_model: BoundaryWordFilter,
+        boundary: float,
+        logger: RTWhisperLogger,
+    ):
         super().__init__()
         self.logger = logger
+        self.head_model = head_model
+        self.tail_model = tail_model
         self.__BOUNDARY = boundary
-        self.__EXPONENT = exponent
 
     # override
     def _can_process(self, context: TokenState):
@@ -49,7 +57,8 @@ class PositionWeightedFilter(Worker):
             param.offset - param.merged_chunk.shape[0],
             param.merged_chunk.shape[0],
             self.__BOUNDARY,
-            self.__EXPONENT,
+            self.head_model,
+            self.tail_model,
         )
         self.logger.debug(
             f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2
@@ -67,5 +76,3 @@ class PositionWeightedFilter(Worker):
 
 
 __all__ = ["PositionWeightedFilter"]
-
-

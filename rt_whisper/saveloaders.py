@@ -26,6 +26,7 @@ from rt_whisper.utils import (
     get_silero_vad,
     get_whisper,
 )
+from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
 
 if TYPE_CHECKING:
     pass
@@ -73,8 +74,13 @@ def get_token_streamer_saver(
         ],
         [
             PositionWeightedFilter(
+                head_model=BoundaryWordFilter.load(
+                    Path(hyperparameter["position_weighted_filter"]["head_model_path"])
+                ),
+                tail_model=BoundaryWordFilter.load(
+                    Path(hyperparameter["position_weighted_filter"]["tail_model_path"])
+                ),
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -114,8 +120,13 @@ def get_token_streamer_loader(
         [DataLoader(saved_path=saved_path, logger=c_logger)],
         [
             PositionWeightedFilter(
+                head_model=BoundaryWordFilter.load(
+                    Path(hyperparameter["position_weighted_filter"]["head_model_path"])
+                ),
+                tail_model=BoundaryWordFilter.load(
+                    Path(hyperparameter["position_weighted_filter"]["tail_model_path"])
+                ),
                 boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                exponent=hyperparameter["position_weighted_filter"]["exponent"],
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -146,6 +157,3 @@ __all__ = [
     "get_token_streamer_saver",
     "get_token_streamer_loader",
 ]
-
-
-
