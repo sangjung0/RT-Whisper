@@ -63,7 +63,7 @@ study:
     position_weighted_filter:
         head_model_path:
             key: head_model
-            is_train: False
+            is_train: True
             is_model: True
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
@@ -72,7 +72,7 @@ study:
             sigma: 1
         tail_model_path:
             key: tail_model
-            is_train: False
+            is_train: True
             is_model: True
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
