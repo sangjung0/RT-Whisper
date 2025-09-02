@@ -2,28 +2,34 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import yaml
+import numpy as np
+import torch
 
-from abc import ABC, abstractmethod
+from torch import nn
+from pathlib import Path
+from abc import ABC
 from dataclasses import dataclass, field
+from typing_extensions import override
 
 from sj_utils.wrapper import make_float_like, make_int_like
-from sj_utils.typing import override
 
 if TYPE_CHECKING:
-    from optuna import Trial
+    pass
 
 TEMPLATE = {
     "description": "Test",
     "optimizer": {
         "model_sample_rate": 16000,
         "max_study_steps": 3000,
-        "study_file_name": "study.pky",
-        "backup": True,
+        # "study_file_name": "study.pky",
+        # "backup": True,
         "use_cache": True,
         "use_prompt": True,
         "random_seed": 42,
         "chunk_size": 48000,
         "language": "en",
+        "sigma": 1e-1,  # 섭동 크기
+        "top_k": 10,
     },
     "study": {
         "whisper": {
@@ -51,6 +57,26 @@ TEMPLATE = {
             },
         },
         "position_weighted_filter": {
+            "head_model": {
+                "key": "head_model",
+                "is_train": True,
+                "is_model": True,
+                "model_path": "path/to/head_model/params",
+                "device": "cpu",
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "step": 0,
+            },
+            "tail_model": {
+                "key": "tail_model",
+                "is_train": True,
+                "is_model": True,
+                "model_path": "path/to/tail_model/params",
+                "device": "cpu",
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "step": 0,
+            },
             "boundary": {
                 "is_train": True,
                 "key": "boundary",
@@ -58,14 +84,6 @@ TEMPLATE = {
                 "minimum": 0,
                 "maximum": 19520,
                 "step": 160,
-            },
-            "exponent": {
-                "is_train": True,
-                "key": "exponent",
-                "value": 1,
-                "minimum": 0,
-                "maximum": 10,
-                "step": 0.1,
             },
         },
         "duration_filter": {
@@ -161,7 +179,7 @@ class Param(ABC):
     key: str
     minimum: float | int
     maximum: float | int
-    step: float | int
+    step: float | int = field(default=0)
     is_train: bool = field(default=True)
     value: float | int | None = field(default=None)
 
@@ -171,25 +189,26 @@ class Param(ABC):
             key=data["key"],
             minimum=data["minimum"],
             maximum=data["maximum"],
-            step=data["step"],
+            step=data.get("step", 0),
             is_train=data.get("is_train", True),
             value=data.get("value", None),
         )
 
-    @abstractmethod
-    def suggest(self, trial: Trial) -> float | int: ...
+    def get_value(self) -> float | int:
+        return (self.value - self.minimum) / (self.maximum - self.minimum) * 2 - 1
+
+    def set_value(self, value: float | int) -> None:
+        self.value = (value + 1) / 2 * (self.maximum - self.minimum) + self.minimum
+        if self.step > 0:
+            self.value = self.value - (self.value % self.step)
+        if isinstance(self, IntParam):
+            self.value = int(self.value)
 
 
 @make_float_like
 @dataclass(slots=True)
 class FloatParam(Param):
-    @override
-    def suggest(self, trial: Trial) -> float:
-        if self.is_train:
-            self.value = trial.suggest_float(
-                self.key, self.minimum, self.maximum, step=self.step
-            )
-        return self.value
+    pass
 
 
 yaml.add_representer(
@@ -200,28 +219,105 @@ yaml.add_representer(
 @make_int_like
 @dataclass(slots=True)
 class IntParam(Param):
-    @override
-    def suggest(self, trial: Trial) -> int:
-        if self.is_train:
-            self.value = trial.suggest_int(
-                self.key, self.minimum, self.maximum, step=self.step
-            )
-        return self.value
+    pass
 
 
 yaml.add_representer(IntParam, lambda dumper, data: dumper.represent_int(data.value))
 
 
 @dataclass(slots=True)
+class ModelParam(Param):
+    model_path: Path | str = field(default=None)
+    value: np.ndarray | None = field(default=None)
+    device: torch.device | str = field(default=torch.device("cpu"))
+    size: float = field(default=0, init=False)
+    model: nn.Module | None = field(default=None, init=False)
+
+    @classmethod
+    @override
+    def from_dict(cls, data: dict) -> Param:
+        return cls(
+            key=data["key"],
+            minimum=data["minimum"],
+            maximum=data["maximum"],
+            model_path=data["model_path"],
+            step=data.get("step", 0),
+            is_train=data.get("is_train", True),
+            value=data.get("value", None),
+            device=data.get("device", torch.device("cpu")),
+        )
+
+    def __str__(self):
+        return str(self.model_path)
+
+    def __post_init__(self):
+        if isinstance(self.model_path, str):
+            self.model_path = Path(self.model_path)
+        if not (self.model_path.exists() and self.model_path.is_file()):
+            raise ValueError(f"Model parameters file {self.model_path} does not exist.")
+        if isinstance(self.device, str):
+            self.device = torch.device(self.device)
+        # 범용성을 위해 모델 자체 로드
+        self.model = torch.load(
+            self.model_path, map_location=self.device, weights_only=False
+        )
+        self.value = torch.cat(
+            [p.data.view(-1) for p in self.model.parameters()]
+        ).numpy()
+
+    @override
+    def get_value(self) -> np.ndarray:
+        return super(ModelParam, self).get_value()
+
+    @override
+    def set_value(self, value: np.ndarray) -> None:
+        return super(ModelParam, self).set_value(value)
+
+    def set(self, model: nn.Module) -> None:
+        with torch.no_grad():
+            pointer = 0
+            for p in model.parameters():
+                num_param = p.numel()
+                param_values = self.value[pointer : pointer + num_param]
+                param_values = param_values.reshape(p.shape)
+                p.copy_(torch.from_numpy(param_values).to(p.device))
+                pointer += num_param
+            if pointer != len(self.value):
+                raise ValueError(
+                    "The number of parameters in the model does not match the length of the value array."
+                )
+
+    def save(self, path: Path) -> None:
+        if self.model is None:
+            raise ValueError("Model is not loaded.")
+        self.model_path = path
+        torch.save(self.model, path)
+
+
+yaml.add_representer(
+    ModelParam, lambda dumper, data: dumper.represent_data(str(data.model_path))
+)
+
+
+@dataclass(slots=True)
 class StudyParam:
     original_study: dict
     study_objs: dict = field(default_factory=dict, init=False)
+    model_objs: dict = field(default_factory=dict, init=False)
     suggested_params: dict = field(default_factory=dict, init=False)
+    train_study_keys: list[str] = field(default_factory=list, init=False)
+    train_model_keys: list[str] = field(default_factory=list, init=False)
 
     def __post_init__(self):
         if not isinstance(self.original_study, dict):
             raise TypeError("original_study must be a dictionary.")
-        self.suggested_params = self.__find_study_obj(self.original_study)
+        self.suggested_params = self.__find_obj(self.original_study)
+        self.train_study_keys = [
+            k for k in self.study_objs.keys() if self.study_objs[k].is_train
+        ]
+        self.train_model_keys = [
+            k for k in self.model_objs.keys() if self.model_objs[k].is_train
+        ]
 
     def __is_study_param(self, value: dict) -> Param | None:
         if "is_train" not in value:
@@ -237,28 +333,53 @@ class StudyParam:
         self.study_objs[param.key] = param
         return param
 
-    def __find_study_obj(self, obj: dict) -> dict:
+    def __is_model_param(self, value: dict) -> Param | None:
+        if "is_train" not in value or "is_model" not in value:
+            return None
+        key = value["key"]
+        if key in self.model_objs:
+            raise ValueError(f"Duplicate key '{key}' found in model parameters.")
+        param = ModelParam.from_dict(value)
+        self.model_objs[param.key] = param
+        return param
+
+    def __find_obj(self, obj: dict) -> dict:
         copy_dict = {}
         for key, value in obj.items():
             if isinstance(value, dict):
-                param = self.__is_study_param(value)
-                value = param or self.__find_study_obj(value)
+                param = self.__is_model_param(value) or self.__is_study_param(value)
+                value = param or self.__find_obj(value)
             elif isinstance(value, list):
                 value = [
-                    self.__find_study_obj(item) if isinstance(item, dict) else item
+                    self.__find_obj(item) if isinstance(item, dict) else item
                     for item in value
                 ]
             copy_dict[key] = value
         return copy_dict
 
-    def suggest_all(self, trial: Trial) -> dict:
-        for param in self.study_objs.values():
-            param.suggest(trial)
-        return self.suggested_params
+    def get_param(self) -> np.ndarray:
+        params = np.asarray(
+            [self.study_objs[key].get_value() for key in self.train_study_keys]
+        )
+        params = np.concatenate(
+            [
+                params,
+                *[self.model_objs[key].get_value() for key in self.train_model_keys],
+            ]
+        )
 
-    def set_suggest(self, trial_params: dict) -> dict:
-        for key, value in trial_params.items():
-            self.study_objs[key].value = value
+        return params
+
+    def set_param(self, param: np.ndarray) -> dict:
+        off = 0
+        for key in self.train_study_keys:
+            self.study_objs[key].set_value(param[off])
+            off += 1
+        for key in self.train_model_keys:
+            self.model_objs[key].set_value(
+                param[off : len(self.model_objs[key].value) + off]
+            )
+            off += len(self.model_objs[key].value)
         return self.suggested_params
 
 

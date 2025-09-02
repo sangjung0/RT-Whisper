@@ -183,6 +183,7 @@ test/modules
 test/optimize/esic/study
 test/optimize/libri/study
 test/optimize/all/study
+test/optimize/all/model_weight
 
 test/performance_test/output/**
 test/performance_test/all/output/**

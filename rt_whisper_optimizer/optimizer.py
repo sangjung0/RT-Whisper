@@ -2,19 +2,16 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import os
-import time
-import joblib
-import optuna
 import copy
-import optuna.visualization as vis
+import jiwer
+import torch
 
 import numpy as np
+import nevergrad as ng
 
 from abc import ABC
 from pathlib import Path
 from typing import Callable
-from optuna.samplers import TPESampler
-from optuna.pruners import SuccessiveHalvingPruner
 
 from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
 from sj_utils.logger import generate
@@ -22,11 +19,8 @@ from sj_utils.evaluator import TimeChecker
 from sj_utils.collection import SafetyDict
 
 from sj_ai_utils.datasets import Dataset
-from sj_ai_utils.evaluator.sclite_utils import (
-    TRNFormat,
-    sclite_trn,
-    parse_sclite_summary,
-)
+
+from rt_whisper.models import BoundaryWordFilter
 
 from rt_whisper_optimizer.data import TEMPLATE, StudyParam
 from rt_whisper_optimizer.service import (
@@ -42,20 +36,18 @@ if TYPE_CHECKING:
 class Optimizer(ABC):
     def __init__(
         self,
-        dataset: Dataset,
-        study_path: Path,
-        output_path: Path,
-        param_cache_path: Path = None,
-        cache_storage: Path | None = None,
+        study_path: Path,  # 최적화 객체 저장/백업 경로
+        output_path: Path,  # 결과 저장 경로
+        instructions: Path | dict,
+        cache_storage: Path | None = None,  # dataset 모델 결과 캐싱 경로
+        step: int = 0,
     ):
         if study_path.exists() and study_path.is_file():
             raise ValueError(
                 f"Study path {study_path} should be a directory, not a file."
             )
-        if param_cache_path and param_cache_path.exists() and param_cache_path.is_dir():
-            raise ValueError(
-                f"Parameter cache path {param_cache_path} should be a file, not a directory."
-            )
+        if isinstance(instructions, Path):
+            instructions = read_yaml(instructions)
 
         config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
         logger = generate(
@@ -65,164 +57,87 @@ class Optimizer(ABC):
             file_log_level=config.rt_whisper_optimizer.log.file_level,
         )
 
-        cache_storage.mkdir(parents=True, exist_ok=True)
         output_path.mkdir(parents=True, exist_ok=True)
+        cache_storage.mkdir(parents=True, exist_ok=True)
 
-        self.datasets = dataset
         self.study_path = study_path
         self.output_path = output_path
-        self.param_cache_path = param_cache_path
         self.cache_storage = cache_storage
+        self.instructions = instructions
         self.logger = logger
+        self.step = step
 
     @staticmethod
     def get_example() -> dict:
         return copy.deepcopy(TEMPLATE)
 
-    def optimize(self, instructions: Path | dict) -> None:
-        if isinstance(instructions, Path):
-            instructions = read_yaml(instructions)
+    def optimize(self, dataset: Dataset) -> None:
+        description = self.instructions["description"]
+        optimizer = self.instructions["optimizer"]
+        study_param = self.instructions["study"]
 
-        description = instructions["description"]
-        optimizer = instructions["optimizer"]
+        algo = optimizer["algo"].lower()
         sample_rate = optimizer["model_sample_rate"]
         max_study_steps = optimizer["max_study_steps"]
-        study_file_name = optimizer["study_file_name"]
-        backup = optimizer["backup"]
+        # study_file_name = optimizer["study_file_name"]
+        # backup = optimizer["backup"]
         use_cache = optimizer["use_cache"]
         use_prompt = optimizer["use_prompt"]
         random_seed = optimizer["random_seed"]
         chunk_size = optimizer["chunk_size"]
         language = optimizer["language"]
-        top_k = optimizer.get("top_k", 30)
-        percentiles = optimizer.get("percentiles", [1, 5, 10, 20, 50])
-        study_param = instructions["study"]
+        sigma = optimizer["sigma"]
+        top_k = optimizer["top_k"]
 
         study_param = StudyParam(study_param)
         yaml_saver = YamlSaver(description)
         rng = np.random.default_rng(random_seed)
-        save_study_path = self.study_path / f"{study_file_name}.pkl"
-        backup_path = self.study_path / f"{study_file_name}.bak.pkl"
-        if save_study_path.exists():
-            self.logger.warning(
-                f"Study path {save_study_path} already exists. Overwriting."
-            )
-
-        self.datasets.sample_rate = sample_rate
-
-        if self.param_cache_path and self.param_cache_path.exists():
-            cache = joblib.load(self.param_cache_path)
-        else:
-            cache = {}
+        dataset.sample_rate = sample_rate
+        # backup_path = self.study_path / study_file_name
 
         transcriber = self._get_transcriber(
             use_prompt, use_cache, chunk_size, language, rng
         )
-        objective = self._get_objective_function(
-            study_param, transcriber, cache, chunk_size
+        objective = self._get_objective_function(dataset, study_param, transcriber)
+
+        param = (
+            ng.p.Array(init=study_param.get_param())
+            .set_bounds(-1, 1)
+            .set_mutation(sigma=sigma)
         )
 
-        if save_study_path.exists() or backup_path.exists():
-            try:
-                study = joblib.load(save_study_path)
-            except Exception as e:
-                self.logger.error(f"Failed to load study from {save_study_path}: {e}")
-                try:
-                    study = joblib.load(backup_path)
-                except Exception as e:
-                    self.logger.error(f"Failed to load study from {backup_path}: {e}")
-                    raise e
+        history = []
+
+        def add_history(_, param, loss):
+            self.logger.info(f"Step {len(history)+1}: loss={loss}")
+            history.append({"loss": loss, "param": param})
+
+        if algo == "cma":
+            optimizer = ng.optimizers.CMA(parametrization=param, budget=max_study_steps)
+        elif algo == "spsa":
+            optimizer = ng.optimizers.SPSA(
+                parametrization=param, budget=max_study_steps
+            )
         else:
-            study = optuna.create_study(
-                direction="minimize",
-                sampler=TPESampler(
-                    multivariate=True, group=True, n_startup_trials=40, seed=random_seed
-                ),
-                pruner=SuccessiveHalvingPruner(
-                    min_resource=1, reduction_factor=3, min_early_stopping_rate=0
-                ),
-            )
+            raise ValueError(f"Unsupported optimization algorithm: {algo}")
+        # optimizer.enable_pickling()
+        optimizer.register_callback("tell", add_history)
 
-        done = len(
-            [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-        )
-        remaining = max(0, max_study_steps - done)
-        if remaining > 0:
+        optimizer.minimize(objective)
 
-            def _backup_cb(
-                study_obj: optuna.Study, trial_obj: optuna.trial.FrozenTrial
-            ):
-                if trial_obj.number % 10 == 0:
-                    if backup:
-                        joblib.dump(study_obj, save_study_path)
-                    if self.param_cache_path and cache.get(
-                        "__optimizer_key_dirty__", False
-                    ):
-                        del cache["__optimizer_key_dirty__"]
-                        joblib.dump(cache, self.param_cache_path)
+        history.sort(key=lambda x: x["loss"])
+        for i, h in enumerate(history[:top_k]):
+            recommended_param = study_param.set_param(h["param"].args[0])
+            file_name = f"{i+1:03}_{str(round(h['loss'], 3)).replace('.', '_')}"
 
-            study.optimize(objective, n_trials=remaining, callbacks=[_backup_cb])
-            joblib.dump(study, save_study_path)
-            if self.param_cache_path:
-                joblib.dump(cache, self.param_cache_path)
+            for key, value in study_param.model_objs.items():
+                model_file_name = f"{file_name}_{key}.pth"
+                value.save(self.output_path / model_file_name)
 
-        values = np.array(
-            [
-                t.values[0]
-                for t in study.trials
-                if t.state == optuna.trial.TrialState.COMPLETE
-            ]
-        )
-        thresholds = [np.percentile(values, p) for p in percentiles]
-        percentile_trials = [
-            [
-                t
-                for t in study.trials
-                if t.state == optuna.trial.TrialState.COMPLETE
-                and t.values[0] <= threshold
-            ]
-            for threshold in thresholds
-        ]
-        studies = [
-            optuna.create_study(direction=study.direction)
-            for _ in range(len(percentiles))
-        ]
-        for s, t in zip(studies, percentile_trials):
-            s.add_trials(t)
-
-        self.__save_plot(study)
-        for s, p in zip(studies, percentiles):
-            self.__save_plot(s, f"p{p}")
-
-        completed_trials = [
-            t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE
-        ]
-        top_trials = sorted(completed_trials, key=lambda t: t.values[0])[:top_k]
-        cnt_time = time.strftime("%Y%m%d_%H%M%S")
-        for trial in top_trials:
-            suggested_params = study_param.set_suggest(trial.params)
             yaml_saver.save(
-                suggested_params,
-                self.output_path
-                / f"trial_wer{str(trial.values[0]).replace('.', 'o')}_{trial.number}_{cnt_time}.yaml",
+                recommended_param,
+                self.output_path / f"{file_name}.yaml",
             )
-
-    def __save_plot(self, study: optuna.Study, extra_name: str = "") -> None:
-        if extra_name:
-            extra_name = f"_{extra_name}"
-
-        cnt_time = time.strftime("%Y%m%d_%H%M%S")
-
-        pi = self.output_path / f"param_importances{extra_name}_{cnt_time}.html"
-        ps = self.output_path / f"param_slices{extra_name}_{cnt_time}.html"
-        pc = self.output_path / f"parallel_coordinate{extra_name}_{cnt_time}.html"
-
-        fig_pi = vis.plot_param_importances(study)
-        fig_pi.write_html(pi)
-        fig_ps = vis.plot_slice(study)
-        fig_ps.write_html(ps)
-        fig_ppc = vis.plot_parallel_coordinate(study)
-        fig_ppc.write_html(pc)
 
     def _get_transcriber(
         self,
@@ -259,83 +174,59 @@ class Optimizer(ABC):
             transcribe_time: TimeChecker,
             overlap: int = None,
             hyperparameter: SafetyDict = None,
+            head_model: BoundaryWordFilter = None,
+            tail_model: BoundaryWordFilter = None,
         ):
             return t(
                 audio,
                 transcribe_time,
                 hyperparameter=hyperparameter,
+                head_model=head_model,
+                tail_model=tail_model,
             )
 
         return transcriber
 
     def _get_objective_function(
         self,
+        dataset: Dataset,
         study: StudyParam,
         transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
-        cache: dict,
-        chunk_size: int,
-    ) -> Callable[[optuna.Trial], float]:
+    ) -> Callable[[np.ndarray], float]:
 
-        l = len(self.datasets)
-        s1_size = int(l * 0.05)
-        s2_size = int(l * 0.20)
-        s1 = self.datasets[:s1_size]
-        s2 = self.datasets[:s2_size]
-        s3 = self.datasets
+        head_model = BoundaryWordFilter()
+        tail_model = BoundaryWordFilter()
 
-        def _eval(hyperparameter: SafetyDict, dataset: Dataset):
+        def objective(param: np.ndarray) -> float:
+            hyperparameter = SafetyDict(study.set_param(param))
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
+            study.model_objs["head_model"].set(head_model)
+            study.model_objs["tail_model"].set(tail_model)
+
+            def t(audio: np.ndarray, audio_key: str):
+                return transcriber(
+                    audio,
+                    audio_key,
+                    TimeChecker(),
+                    overlap=overlap,
+                    hyperparameter=hyperparameter,
+                    head_model=head_model,
+                    tail_model=tail_model,
+                )
+
             refs, hyps = [], []
             for _id, audio, y in dataset:
                 txt = normalize_text(y)
-                ref = TRNFormat(id=_id, text=txt)
+                refs.append(txt)
 
-                pred_txt = transcriber(
-                    audio=audio,
-                    audio_key=_id,
-                    transcribe_time=TimeChecker(),
-                    hyperparameter=hyperparameter,
-                    overlap=overlap,
-                )
+                pred_txt = t(audio=audio, audio_key=_id)
                 pred_txt = normalize_text(pred_txt)
-                hyp = TRNFormat(id=_id, text=pred_txt)
+                hyps.append(pred_txt)
 
-                refs.append(ref)
-                hyps.append(hyp)
-
-            wer = parse_sclite_summary(sclite_trn(refs, hyps))["wer_percent"]
+            wer = jiwer.wer(refs, hyps)
             return wer
 
-        def objective(trial: optuna.Trial) -> float:
-            hyperparameter = SafetyDict(study.suggest_all(trial))
-
-            key = self._get_param_key(chunk_size, hyperparameter)
-            s1s, s2s, s3s = cache.get(key, (None, None, None))
-
-            s1s = _eval(hyperparameter, s1) if s1s is None else s1s
-            trial.report(s1s, step=1)
-            if trial.should_prune():
-                cache[key] = (s1s, s2s, s3s)
-                raise optuna.TrialPruned()
-
-            s2s = _eval(hyperparameter, s2) if s2s is None else s2s
-            trial.report(s2s, step=2)
-            if trial.should_prune():
-                cache[key] = (s1s, s2s, s3s)
-                raise optuna.TrialPruned()
-
-            s3s = _eval(hyperparameter, s3) if s3s is None else s3s
-            trial.report(s3s, step=3)
-
-            if key not in cache:
-                cache[key] = (s1s, s2s, s3s)
-                cache["__optimizer_key_dirty__"] = True
-            return s3s
-
         return objective
-
-    def _get_param_key(self, chunk_size: int, hyperparameter: SafetyDict):
-        return f"{chunk_size}_{hyperparameter['asr']['max_overlap_duration']*1}_{hyperparameter['position_weighted_filter']['boundary']*1}_{hyperparameter['position_weighted_filter']['exponent']*1}_{hyperparameter['duration_filter']['z_thresh']['en']*1}_{hyperparameter['duration_filter']['min_dur']['en']*1}_{hyperparameter['probability_filter']['z_thresh']['en']*1}_{hyperparameter['probability_filter']['min_prob']['en']*1}_{hyperparameter['selector']['iou_threshold']['en']*1}_{hyperparameter['selector']['cos_threshold']['en']*1}_{hyperparameter['selector']['padding']['en']*1}_{hyperparameter['selector']['token_group_size']*1}"
 
 
 __all__ = [
