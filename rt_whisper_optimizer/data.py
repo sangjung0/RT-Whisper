@@ -28,7 +28,6 @@ TEMPLATE = {
         "random_seed": 42,
         "chunk_size": 48000,
         "language": "en",
-        "sigma": 1e-1,  # 섭동 크기
         "top_k": 10,
     },
     "study": {
@@ -65,7 +64,7 @@ TEMPLATE = {
                 "device": "cpu",
                 "maximum": 1.0,
                 "minimum": 0.0,
-                "step": 0,
+                "sigma": 1,
             },
             "tail_model": {
                 "key": "tail_model",
@@ -75,7 +74,7 @@ TEMPLATE = {
                 "device": "cpu",
                 "maximum": 1.0,
                 "minimum": 0.0,
-                "step": 0,
+                "sigma": 1,
             },
             "boundary": {
                 "is_train": True,
@@ -194,16 +193,6 @@ class Param(ABC):
             value=data.get("value", None),
         )
 
-    def get_value(self) -> float | int:
-        return (self.value - self.minimum) / (self.maximum - self.minimum) * 2 - 1
-
-    def set_value(self, value: float | int) -> None:
-        self.value = (value + 1) / 2 * (self.maximum - self.minimum) + self.minimum
-        if self.step > 0:
-            self.value = self.value - (self.value % self.step)
-        if isinstance(self, IntParam):
-            self.value = int(self.value)
-
 
 @make_float_like
 @dataclass(slots=True)
@@ -229,8 +218,8 @@ yaml.add_representer(IntParam, lambda dumper, data: dumper.represent_int(data.va
 class ModelParam(Param):
     model_path: Path | str = field(default=None)
     value: np.ndarray | None = field(default=None)
+    sigma: float = field(default=None)
     device: torch.device | str = field(default=torch.device("cpu"))
-    size: float = field(default=0, init=False)
     model: nn.Module | None = field(default=None, init=False)
 
     @classmethod
@@ -241,6 +230,7 @@ class ModelParam(Param):
             minimum=data["minimum"],
             maximum=data["maximum"],
             model_path=data["model_path"],
+            sigma=data["sigma"],
             step=data.get("step", 0),
             is_train=data.get("is_train", True),
             value=data.get("value", None),
@@ -264,14 +254,6 @@ class ModelParam(Param):
         self.value = torch.cat(
             [p.data.view(-1) for p in self.model.parameters()]
         ).numpy()
-
-    @override
-    def get_value(self) -> np.ndarray:
-        return super(ModelParam, self).get_value()
-
-    @override
-    def set_value(self, value: np.ndarray) -> None:
-        return super(ModelParam, self).set_value(value)
 
     def set(self, model: nn.Module) -> None:
         with torch.no_grad():
@@ -358,29 +340,43 @@ class StudyParam:
         return copy_dict
 
     def get_param(self) -> np.ndarray:
-        params = np.asarray(
-            [self.study_objs[key].get_value() for key in self.train_study_keys]
-        )
-        params = np.concatenate(
-            [
-                params,
-                *[self.model_objs[key].get_value() for key in self.train_model_keys],
-            ]
-        )
-
-        return params
-
-    def set_param(self, param: np.ndarray) -> dict:
-        off = 0
-        for key in self.train_study_keys:
-            self.study_objs[key].set_value(param[off])
-            off += 1
-        for key in self.train_model_keys:
-            self.model_objs[key].set_value(
-                param[off : len(self.model_objs[key].value) + off]
+        cont = {
+            key: np.arange(
+                self.study_objs[key].minimum,
+                self.study_objs[key].maximum + self.study_objs[key].step,
+                self.study_objs[key].step,
             )
-            off += len(self.model_objs[key].value)
+            for key in self.train_study_keys
+        }
+
+        dist = {
+            key: {
+                "init": self.model_objs[key].value,
+                "minimum": self.model_objs[key].minimum,
+                "maximum": self.model_objs[key].maximum,
+                "sigma": self.model_objs[key].sigma,
+            }
+            for key in self.train_model_keys
+        }
+
+        return {"cont": cont, "dist": dist}
+
+    def set_param(self, param: dict) -> dict:
+        for key in param:
+            if key in self.study_objs:
+                self.study_objs[key].value = param[key]
+            elif key in self.model_objs:
+                self.model_objs[key].value = param[key]
+            else:
+                raise KeyError(f"Key '{key}' not found in study or model parameters.")
+
         return self.suggested_params
+
+    def get_study_key(self) -> str:
+        keys = [str(self.study_objs[key].value) for key in self.train_study_keys] + [
+            str(self.model_objs[key].value) for key in self.train_model_keys
+        ]
+        return "_".join(keys)
 
 
 __all__ = [

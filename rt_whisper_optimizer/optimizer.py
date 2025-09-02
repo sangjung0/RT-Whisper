@@ -86,7 +86,6 @@ class Optimizer(ABC):
         random_seed = optimizer["random_seed"]
         chunk_size = optimizer["chunk_size"]
         language = optimizer["language"]
-        sigma = optimizer["sigma"]
         top_k = optimizer["top_k"]
 
         study_param = StudyParam(study_param)
@@ -100,10 +99,18 @@ class Optimizer(ABC):
         )
         objective = self._get_objective_function(dataset, study_param, transcriber)
 
-        param = (
-            ng.p.Array(init=study_param.get_param())
-            .set_bounds(-1, 1)
-            .set_mutation(sigma=sigma)
+        study_param_dict = study_param.get_param()
+        param = ng.p.Dict(
+            **{
+                key: ng.p.Choice(values)
+                for key, values in study_param_dict["cont"].items()
+            },
+            **{
+                key: ng.p.Array(init=value["init"])
+                .set_bounds(value["minimum"], value["maximum"])
+                .set_mutation(sigma=value["sigma"])
+                for key, value in study_param_dict["dist"].items()
+            },
         )
 
         history = []
@@ -125,19 +132,25 @@ class Optimizer(ABC):
 
         optimizer.minimize(objective)
 
+        extracted = set()
         history.sort(key=lambda x: x["loss"])
         for i, h in enumerate(history[:top_k]):
             recommended_param = study_param.set_param(h["param"].args[0])
+            key = study_param.get_study_key()
+            if key in extracted:
+                continue
             file_name = f"{i+1:03}_{str(round(h['loss'], 3)).replace('.', '_')}"
 
-            for key, value in study_param.model_objs.items():
+            for key in study_param.train_model_keys:
                 model_file_name = f"{file_name}_{key}.pth"
-                value.save(self.output_path / model_file_name)
+                study_param.model_objs[key].save(self.output_path / model_file_name)
 
-            yaml_saver.save(
-                recommended_param,
-                self.output_path / f"{file_name}.yaml",
-            )
+            if len(study_param.train_study_keys) > 0:
+                yaml_saver.save(
+                    recommended_param,
+                    self.output_path / f"{file_name}.yaml",
+                )
+            extracted.add(key)
 
     def _get_transcriber(
         self,
@@ -196,8 +209,13 @@ class Optimizer(ABC):
 
         head_model = BoundaryWordFilter()
         tail_model = BoundaryWordFilter()
+        cache = {}
 
-        def objective(param: np.ndarray) -> float:
+        def objective(param: dict) -> float:
+            key = study.get_study_key()
+            if key in cache:
+                return cache[key]
+
             hyperparameter = SafetyDict(study.set_param(param))
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
             study.model_objs["head_model"].set(head_model)
@@ -224,6 +242,7 @@ class Optimizer(ABC):
                 hyps.append(pred_txt)
 
             wer = jiwer.wer(refs, hyps)
+            cache[key] = wer
             return wer
 
         return objective
