@@ -26,7 +26,7 @@ def get_transcriber(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = get_silero_vad(
-        Whisper.sample_rate, hyperparameter["silero_vad"]["model_options"]
+        Whisper.sample_rate, dict(hyperparameter["silero_vad"]["model_options"])
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -43,8 +43,8 @@ def get_transcriber(
                 embed=whisper_embed(),
                 sample_rate=Whisper.sample_rate,
                 within_eos=True,
-                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
-                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
+                max_overlap_duration=int(hyperparameter["asr"]["max_overlap_duration"]),
                 logger=c_logger,
             ),
         ],
@@ -56,6 +56,5 @@ def get_transcriber(
     pipeline.init(workers=worker_groups)
     return pipeline
 
-__all__ = [
-    "get_transcriber"
-]
+
+__all__ = ["get_transcriber"]

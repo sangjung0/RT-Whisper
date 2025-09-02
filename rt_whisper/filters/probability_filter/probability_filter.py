@@ -17,11 +17,15 @@ from rt_whisper.filters.probability_filter.data import (
 
 if TYPE_CHECKING:
     from rt_whisper.data import TokenState
+    from sj_utils.collection import SafetyDict
 
 
 class ProbabilityFilter(Worker):
     def __init__(
-        self, z_thresh: dict[str, float], min_prob: dict[str, float], logger: Logger
+        self,
+        z_thresh: SafetyDict[str, float],
+        min_prob: SafetyDict[str, float],
+        logger: Logger,
     ):
         super().__init__()
         self.logger = logger

@@ -25,6 +25,7 @@ from rt_whisper.utils import (
     whisper_embed,
     get_silero_vad,
     get_whisper,
+    boundary_word_filter,
 )
 
 if TYPE_CHECKING:
@@ -36,12 +37,12 @@ def get_token_streamer(
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
-    whisper = get_whisper(hyperparameter["whisper"]["model_options"])
+    whisper = get_whisper(dict(hyperparameter["whisper"]["model_options"]))
     transcribe = lambda audio, language, prompt: whisper.transcribe(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = get_silero_vad(
-        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, dict(hyperparameter["silero_vad"]["model_options"])
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -59,15 +60,32 @@ def get_token_streamer(
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
-                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
-                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
+                max_overlap_duration=int(hyperparameter["asr"]["max_overlap_duration"]),
                 logger=c_logger,
             ),
         ],
         [
             PositionWeightedFilter(
-                boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                exponent=hyperparameter["position_weighted_filter"]["exponent"],
+                head_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "head_model_path"
+                            ]
+                        )
+                    )
+                ),
+                tail_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "tail_model_path"
+                            ]
+                        )
+                    )
+                ),
+                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
                 logger=c_logger,
             ),
             DurationFilter(
@@ -85,7 +103,7 @@ def get_token_streamer(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
-                token_group_size=hyperparameter["selector"]["token_group_size"],
+                token_group_size=int(hyperparameter["selector"]["token_group_size"]),
             ),
             Composer(c_logger),
         ],
@@ -106,7 +124,7 @@ def get_token_streamer_with_vad_v2(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = get_silero_vad(
-        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, dict(hyperparameter["silero_vad"]["model_options"])
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -123,15 +141,32 @@ def get_token_streamer_with_vad_v2(
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
-                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
-                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
+                max_overlap_duration=int(hyperparameter["asr"]["max_overlap_duration"]),
                 logger=c_logger,
             ),
         ],
         [
             PositionWeightedFilter(
-                boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                exponent=hyperparameter["position_weighted_filter"]["exponent"],
+                head_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "head_model_path"
+                            ]
+                        )
+                    )
+                ),
+                tail_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "tail_model_path"
+                            ]
+                        )
+                    )
+                ),
+                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
                 logger=c_logger,
             ),
             DurationFilter(
@@ -149,7 +184,7 @@ def get_token_streamer_with_vad_v2(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
-                token_group_size=hyperparameter["selector"]["token_group_size"],
+                token_group_size=int(hyperparameter["selector"]["token_group_size"]),
             ),
             Composer(c_logger),
         ],
@@ -170,7 +205,7 @@ def get_token_streamer_with_vad_v2_min_filter(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = get_silero_vad(
-        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, dict(hyperparameter["silero_vad"]["model_options"])
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -187,15 +222,32 @@ def get_token_streamer_with_vad_v2_min_filter(
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
-                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
-                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
+                max_overlap_duration=int(hyperparameter["asr"]["max_overlap_duration"]),
                 logger=c_logger,
             ),
         ],
         [
             PositionWeightedFilter(
-                boundary=hyperparameter["position_weighted_filter"]["boundary"],
-                exponent=hyperparameter["position_weighted_filter"]["exponent"],
+                head_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "head_model_path"
+                            ]
+                        )
+                    )
+                ),
+                tail_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "tail_model_path"
+                            ]
+                        )
+                    )
+                ),
+                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -211,7 +263,7 @@ def get_token_streamer_with_vad_v2_min_filter(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
-                token_group_size=hyperparameter["selector"]["token_group_size"],
+                token_group_size=int(hyperparameter["selector"]["token_group_size"]),
             ),
             Composer(c_logger),
         ],
@@ -227,6 +279,3 @@ __all__ = [
     "get_token_streamer_with_vad_v2",
     "get_token_streamer_with_vad_v2_min_filter",
 ]
-
-
-

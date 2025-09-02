@@ -19,6 +19,7 @@ from rt_whisper.selector.service import (
 if TYPE_CHECKING:
     from rt_whisper.rt_whisper_logger import RTWhisperLogger
     from rt_whisper.data import TokenState
+    from sj_utils.collection import SafetyDict
 
 N = "\n\t\t\t"
 
@@ -26,9 +27,9 @@ N = "\n\t\t\t"
 class SelectorProcessor(Worker):
     def __init__(
         self,
-        iou_threshold: float,
-        cos_threshold: float,
-        padding: int,
+        iou_threshold: SafetyDict[str, float],
+        cos_threshold: SafetyDict[str, float],
+        padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
         smooth: float = 1e-6,
     ):
@@ -135,9 +136,9 @@ class SelectorContextBuilder(SelectorProcessor):
 class Selector(SelectorContextBuilder):
     def __init__(
         self,
-        iou_threshold: float,
-        cos_threshold: float,
-        padding: int,
+        iou_threshold: SafetyDict[str, float],
+        cos_threshold: SafetyDict[str, float],
+        padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
         token_group_size: int,
         smooth: float = 1e-6,
@@ -157,4 +158,3 @@ class Selector(SelectorContextBuilder):
 
 
 __all__ = ["Selector"]
-

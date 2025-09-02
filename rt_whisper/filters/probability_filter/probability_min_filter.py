@@ -11,10 +11,11 @@ from rt_whisper.filters.probability_filter.service import filter_probability_by_
 if TYPE_CHECKING:
     from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
+    from sj_utils.collection import SafetyDict
 
 
 class ProbabilityMinFilter(Worker):
-    def __init__(self, min_prob: dict[str, float], logger: RTWhisperLogger):
+    def __init__(self, min_prob: SafetyDict[str, float], logger: RTWhisperLogger):
         super().__init__()
         self.logger = logger
 

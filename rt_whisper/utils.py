@@ -9,7 +9,7 @@ from sj_utils.file.yaml import read_yaml
 from sj_utils.decorator import lru_dict_cache
 
 from rt_whisper.core import hyperparameter as default_hyperparameter, config
-from rt_whisper.models import Whisper, SileroVad
+from rt_whisper.models import Whisper, SileroVad, BoundaryWordFilter
 
 
 def init_hyperparameter(
@@ -67,9 +67,15 @@ def get_silero_vad(sample_rate: int, options: dict = {}) -> SileroVad:
     return SileroVad(sample_rate, options)
 
 
+@lru_cache(maxsize=1)
+def boundary_word_filter(path: Path) -> BoundaryWordFilter:
+    return BoundaryWordFilter.load(path)
+
+
 __all__ = [
     "init_hyperparameter",
     "whisper_embed",
     "get_whisper",
     "get_silero_vad",
+    "boundary_word_filter",
 ]

@@ -18,11 +18,15 @@ from rt_whisper.filters.duration_filter.service import (
 if TYPE_CHECKING:
     from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
+    from sj_utils.collection import SafetyDict
 
 
 class DurationFilter(Worker):
     def __init__(
-        self, z_thresh: dict[str:float], min_dur: int, logger: RTWhisperLogger
+        self,
+        z_thresh: SafetyDict[str, float],
+        min_dur: SafetyDict[str, float],
+        logger: RTWhisperLogger,
     ):
         super().__init__()
         self.logger = logger

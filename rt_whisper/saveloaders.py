@@ -25,8 +25,8 @@ from rt_whisper.utils import (
     whisper_embed,
     get_silero_vad,
     get_whisper,
+    boundary_word_filter,
 )
-from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
 
 if TYPE_CHECKING:
     pass
@@ -43,7 +43,7 @@ def get_token_streamer_saver(
         audio, language, prompt, hyperparameter["whisper"]["transcribe_options"]
     )
     silero_vad = get_silero_vad(
-        Whisper.SAMPLE_RATE, hyperparameter["silero_vad"]["model_options"]
+        Whisper.SAMPLE_RATE, dict(hyperparameter["silero_vad"]["model_options"])
     )
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
@@ -61,8 +61,8 @@ def get_token_streamer_saver(
                 embed=whisper_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
-                max_prompt_words=hyperparameter["asr"]["max_prompt_words"],
-                max_overlap_duration=hyperparameter["asr"]["max_overlap_duration"],
+                max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
+                max_overlap_duration=int(hyperparameter["asr"]["max_overlap_duration"]),
                 logger=c_logger,
             ),
         ],
@@ -74,13 +74,25 @@ def get_token_streamer_saver(
         ],
         [
             PositionWeightedFilter(
-                head_model=BoundaryWordFilter.load(
-                    Path(hyperparameter["position_weighted_filter"]["head_model_path"])
+                head_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "head_model_path"
+                            ]
+                        )
+                    )
                 ),
-                tail_model=BoundaryWordFilter.load(
-                    Path(hyperparameter["position_weighted_filter"]["tail_model_path"])
+                tail_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "tail_model_path"
+                            ]
+                        )
+                    )
                 ),
-                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -96,7 +108,7 @@ def get_token_streamer_saver(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
-                token_group_size=hyperparameter["selector"]["token_group_size"],
+                token_group_size=int(hyperparameter["selector"]["token_group_size"]),
             ),
             Composer(c_logger),
         ],
@@ -120,13 +132,25 @@ def get_token_streamer_loader(
         [DataLoader(saved_path=saved_path, logger=c_logger)],
         [
             PositionWeightedFilter(
-                head_model=BoundaryWordFilter.load(
-                    Path(hyperparameter["position_weighted_filter"]["head_model_path"])
+                head_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "head_model_path"
+                            ]
+                        )
+                    )
                 ),
-                tail_model=BoundaryWordFilter.load(
-                    Path(hyperparameter["position_weighted_filter"]["tail_model_path"])
+                tail_model=boundary_word_filter(
+                    Path(
+                        str(
+                            hyperparameter["position_weighted_filter"][
+                                "tail_model_path"
+                            ]
+                        )
+                    )
                 ),
-                boundary=hyperparameter["position_weighted_filter"]["boundary"],
+                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -142,7 +166,7 @@ def get_token_streamer_loader(
                 cos_threshold=hyperparameter["selector"]["cos_threshold"],
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
-                token_group_size=hyperparameter["selector"]["token_group_size"],
+                token_group_size=int(hyperparameter["selector"]["token_group_size"]),
             ),
             Composer(c_logger),
         ],

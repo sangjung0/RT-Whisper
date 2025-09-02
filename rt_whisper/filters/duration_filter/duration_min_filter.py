@@ -14,10 +14,11 @@ from rt_whisper.filters.duration_filter.service import (
 if TYPE_CHECKING:
     from rt_whisper import RTWhisperLogger
     from rt_whisper.data import TokenState
+    from sj_utils.collection import SafetyDict
 
 
 class DurationMinFilter(Worker):
-    def __init__(self, min_dur: int, logger: RTWhisperLogger):
+    def __init__(self, min_dur: SafetyDict[str, int], logger: RTWhisperLogger):
         super().__init__()
         self.logger = logger
         self.__MIN_DUR = min_dur
