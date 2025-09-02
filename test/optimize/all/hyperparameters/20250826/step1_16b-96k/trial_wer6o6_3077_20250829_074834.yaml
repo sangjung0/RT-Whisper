@@ -55,7 +55,7 @@ data:
     max_overlap_duration: 96000
   position_weighted_filter:
     exponent: 0.6000000000000001
-    boundary: 16000
+    boundary: 48480
   duration_filter:
     z_thresh:
       default: 2.0
