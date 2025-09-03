@@ -38,6 +38,7 @@ optimizer:
     chunk_size: 48000
     language: "en"
     top_k: 10
+    sigma: 0.1
 study:
     whisper:
         model_options:
@@ -69,7 +70,6 @@ study:
             device: cpu
             maximum: 100.0
             minimum: -100.0
-            sigma: 1
         tail_model_path:
             key: tail_model
             is_train: False
@@ -78,7 +78,6 @@ study:
             device: cpu
             maximum: 100.0
             minimum: -100.0
-            sigma: 1
         boundary:
             is_train: False
             key: boundary
