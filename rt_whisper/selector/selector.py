@@ -14,6 +14,10 @@ from rt_whisper.selector.service import (
     select_tokens,
     new_group_tokens,
     filter_token_groups,
+    select_best_only_prev,
+    select_best_only_confidence,
+    select_best_confidence_and_prev,
+    select_best_confidence_and_prev_and_mean,
 )
 
 if TYPE_CHECKING:
@@ -22,6 +26,12 @@ if TYPE_CHECKING:
     from sj_utils.collection import SafetyDict
 
 N = "\n\t\t\t"
+ALGO = {
+    "op": select_best_only_prev,
+    "oc": select_best_only_confidence,
+    "cp": select_best_confidence_and_prev,
+    "cpm": select_best_confidence_and_prev_and_mean,
+}
 
 
 class SelectorProcessor(Worker):
@@ -31,6 +41,7 @@ class SelectorProcessor(Worker):
         cos_threshold: SafetyDict[str, float],
         padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
+        algo: str = "op",
         smooth: float = 1e-6,
     ):
         super().__init__()
@@ -40,6 +51,7 @@ class SelectorProcessor(Worker):
         self.__COS_THRESHOLD = cos_threshold
         self.__PADDING = padding
         self.__SMOOTH = smooth
+        self.__ALGO = algo
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
@@ -84,7 +96,9 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
 
-        new_tokens = select_tokens(token_groups=token_groups)
+        new_tokens = select_tokens(
+            token_groups=token_groups, select_func=ALGO[self.__ALGO]
+        )
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
             group_level=2,
@@ -141,6 +155,7 @@ class Selector(SelectorContextBuilder):
         padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
         token_group_size: int,
+        algo: str = "op",
         smooth: float = 1e-6,
     ):
         super().__init__(
@@ -148,6 +163,7 @@ class Selector(SelectorContextBuilder):
             cos_threshold=cos_threshold,
             padding=padding,
             logger=logger,
+            algo=algo,
             token_group_size=token_group_size,
             smooth=smooth,
         )

@@ -133,6 +133,7 @@ TEMPLATE = {
             },
         },
         "selector": {
+            "algo": "op",
             "iou_threshold": {
                 "default": 0.5,
                 "en": {

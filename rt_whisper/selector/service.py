@@ -229,4 +229,12 @@ def filter_token_groups(token_groups: list[list[Token]], time: int, n: int):
     return [tg for tg in token_groups if all(t.end > time for t in tg)]
 
 
-__all__ = ["group_similar_tokens", "select_tokens", "new_group_tokens"]
+__all__ = [
+    "group_similar_tokens",
+    "select_tokens",
+    "new_group_tokens",
+    "select_best_only_confidence",
+    "select_best_only_prev",
+    "select_best_confidence_and_prev",
+    "select_best_confidence_and_prev_and_mean",
+]
