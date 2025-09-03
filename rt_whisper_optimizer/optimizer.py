@@ -86,6 +86,7 @@ class Optimizer(ABC):
         random_seed = optimizer["random_seed"]
         chunk_size = optimizer["chunk_size"]
         language = optimizer["language"]
+        sigma = optimizer["sigma"]
         top_k = optimizer["top_k"]
 
         study_param = StudyParam(study_param)
@@ -99,18 +100,10 @@ class Optimizer(ABC):
         )
         objective = self._get_objective_function(dataset, study_param, transcriber)
 
-        study_param_dict = study_param.get_param()
-        param = ng.p.Dict(
-            **{
-                key: ng.p.Choice(values)
-                for key, values in study_param_dict["cont"].items()
-            },
-            **{
-                key: ng.p.Array(init=value["init"])
-                .set_bounds(value["minimum"], value["maximum"])
-                .set_mutation(sigma=value["sigma"])
-                for key, value in study_param_dict["dist"].items()
-            },
+        param = (
+            ng.p.Array(init=study_param.get_param())
+            .set_bounds(-1, 1)
+            .set_mutation(sigma=sigma)
         )
 
         history = []
@@ -211,12 +204,12 @@ class Optimizer(ABC):
         tail_model = BoundaryWordFilter()
         cache = {}
 
-        def objective(param: dict) -> float:
+        def objective(param: np.ndarray) -> float:
+            hyperparameter = SafetyDict(study.set_param(param))
             key = study.get_study_key()
             if key in cache:
                 return cache[key]
 
-            hyperparameter = SafetyDict(study.set_param(param))
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
             study.model_objs["head_model"].set(head_model)
             study.model_objs["tail_model"].set(tail_model)
