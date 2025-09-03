@@ -92,7 +92,12 @@ def get_token_streamer_saver(
                         )
                     )
                 ),
-                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
+                head_boundary=float(
+                    hyperparameter["position_weighted_filter"]["head_boundary"]
+                ),
+                tail_boundary=float(
+                    hyperparameter["position_weighted_filter"]["tail_boundary"]
+                ),
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -109,7 +114,6 @@ def get_token_streamer_saver(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
             ),
             Composer(c_logger),
         ],
@@ -151,7 +155,12 @@ def get_token_streamer_loader(
                         )
                     )
                 ),
-                boundary=float(hyperparameter["position_weighted_filter"]["boundary"]),
+                head_boundary=float(
+                    hyperparameter["position_weighted_filter"]["head_boundary"]
+                ),
+                tail_boundary=float(
+                    hyperparameter["position_weighted_filter"]["tail_boundary"]
+                ),
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -168,7 +177,6 @@ def get_token_streamer_loader(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
             ),
             Composer(c_logger),
         ],
@@ -183,3 +191,4 @@ __all__ = [
     "get_token_streamer_saver",
     "get_token_streamer_loader",
 ]
+

@@ -22,14 +22,16 @@ class PositionWeightedFilter(Worker):
         self,
         head_model: BoundaryWordFilter,
         tail_model: BoundaryWordFilter,
-        boundary: float,
+        head_boundary: float,
+        tail_boundary: float,
         logger: RTWhisperLogger,
     ):
         super().__init__()
         self.logger = logger
         self.head_model = head_model
         self.tail_model = tail_model
-        self.__BOUNDARY = boundary
+        self.__HEAD_BOUNDARY = head_boundary
+        self.__TAIL_BOUNDARY = tail_boundary
 
     # override
     def _can_process(self, context: TokenState):
@@ -56,7 +58,8 @@ class PositionWeightedFilter(Worker):
             param.segment_tokens,
             param.offset - param.merged_chunk.shape[0],
             param.merged_chunk.shape[0],
-            self.__BOUNDARY,
+            self.__HEAD_BOUNDARY,
+            self.__TAIL_BOUNDARY,
             self.head_model,
             self.tail_model,
         )
@@ -76,3 +79,4 @@ class PositionWeightedFilter(Worker):
 
 
 __all__ = ["PositionWeightedFilter"]
+

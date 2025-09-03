@@ -234,9 +234,16 @@ class Optimizer(ABC):
                 pred_txt = normalize_text(pred_txt)
                 hyps.append(pred_txt)
 
-            wer = jiwer.wer(refs, hyps)
-            cache[key] = wer
-            return wer
+            out = jiwer.process_words(
+                refs,
+                hyps,
+                reference_transform=jiwer.wer_default,
+                hypothesis_transform=jiwer.wer_default,
+            )
+            errors = out.substitutions + out.deletions + out.insertions
+            # wer = jiwer.wer(refs, hyps)
+            # cache[key] = wer
+            return errors
 
         return objective
 

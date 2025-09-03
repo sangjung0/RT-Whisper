@@ -12,7 +12,8 @@ def filter_by_position_weighted(
     tokens: list[Token],
     offset: int,
     chunk_length: int,
-    boundary: float,
+    head_boundary: float,
+    tail_boundary: float,
     head_model: BoundaryWordFilter,
     tail_model: BoundaryWordFilter,
 ):
@@ -25,29 +26,29 @@ def filter_by_position_weighted(
         mid = (start + end) / 2
         dur = end - start
 
-        if end < boundary:
+        if end < head_boundary:
             start, end, mid, dur = (
-                start / boundary,
-                end / boundary,
-                mid / boundary,
-                dur / boundary,
+                start / head_boundary,
+                end / head_boundary,
+                mid / head_boundary,
+                dur / head_boundary,
             )
             with torch.no_grad():
                 weight = head_model(
                     torch.tensor([start, end, mid, dur], dtype=torch.float32)
                 ).item()
             token.probability = token.probability * weight
-        elif chunk_length - start < boundary:
+        elif chunk_length - start < tail_boundary:
             start, end, mid = (
                 chunk_length - end,
                 chunk_length - start,
                 chunk_length - mid,
             )
             start, end, mid, dur = (
-                start / boundary,
-                end / boundary,
-                mid / boundary,
-                dur / boundary,
+                start / tail_boundary,
+                end / tail_boundary,
+                mid / tail_boundary,
+                dur / tail_boundary,
             )
             with torch.no_grad():
                 weight = tail_model(
@@ -61,3 +62,4 @@ def filter_by_position_weighted(
 
 
 __all__ = ["filter_by_position_weighted"]
+

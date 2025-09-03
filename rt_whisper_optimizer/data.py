@@ -75,9 +75,17 @@ TEMPLATE = {
                 "maximum": 1.0,
                 "minimum": 0.0,
             },
-            "boundary": {
+            "head_boundary": {
                 "is_train": True,
-                "key": "boundary",
+                "key": "head_boundary",
+                "value": 8000,
+                "minimum": 0,
+                "maximum": 19520,
+                "step": 160,
+            },
+            "tail_boundary": {
+                "is_train": True,
+                "key": "tail_boundary",
                 "value": 8000,
                 "minimum": 0,
                 "maximum": 19520,
@@ -289,6 +297,7 @@ class ModelParam(Param):
         if self.model is None:
             raise ValueError("Model is not loaded.")
         self.model_path = path
+        self.set(self.model)
         torch.save(self.model, path)
 
 
