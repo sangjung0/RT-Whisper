@@ -4,8 +4,6 @@ description: "
     배치 16
     학습 횟수 350으로 제한
 
-    study: 20250902_step1_16b-96k-hyper.pkl
-
     (시작, 끝, 스탭)
 
     - max_overlap_duration: 96000
@@ -14,7 +12,9 @@ description: "
 
     - tail_model: model_weight/boundary_word_filter_zero
 
-    - boundary: 16000
+    - head_boundary: 16000
+
+    - tail_boundary: 16000
 
     - df_min_dur: 0, 1600, 160
 
@@ -78,9 +78,16 @@ study:
             device: cpu
             maximum: 100.0
             minimum: -100.0
-        boundary:
+        head_boundary:
             is_train: False
-            key: boundary
+            key: head_boundary
+            value: 16000
+            minimum: 0
+            maximum: 0
+            step: 160
+        tail_boundary:
+            is_train: False
+            key: tail_boundary
             value: 16000
             minimum: 0
             maximum: 0
@@ -158,3 +165,4 @@ study:
             minimum: 2
             maximum: 10
             step: 1
+
