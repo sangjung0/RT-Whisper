@@ -12,6 +12,8 @@ if TYPE_CHECKING:
 
 
 def __cosine_similarity(A: Token, B: Token) -> float:
+    if A.text == B.text:
+        return 1
     if hash(A) < hash(B):
         A, B = B, A
     return __lru_cosine_similarity(A, B)
@@ -34,14 +36,16 @@ def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float
     return inner / outer
 
 
-def select_best_only_confidence(group: list[Token], _) -> Token:
+def select_best_only_confidence(group: list[Token], _, __, ___, ____) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
         return group[0]
     return max(tokens, key=lambda t: t.probability)
 
 
-def select_best_only_prev(group: list[Token], prev: torch.Tensor | None) -> Token:
+def select_best_only_prev(
+    group: list[Token], prev: torch.Tensor | None, _, __, ___
+) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
         return group[0]
@@ -69,7 +73,7 @@ def select_best_only_prev(group: list[Token], prev: torch.Tensor | None) -> Toke
 
 
 def select_best_confidence_and_prev(
-    group: list[Token], prev: torch.Tensor | None
+    group: list[Token], prev: torch.Tensor | None, _, p: float = 1, c: float = 1
 ) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
@@ -88,7 +92,7 @@ def select_best_confidence_and_prev(
             else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
         )
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
-        sim = prev_sim * t.probability
+        sim = (prev_sim * p) * (t.probability * c)
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -100,7 +104,11 @@ def select_best_confidence_and_prev(
 
 
 def select_best_confidence_and_prev_and_mean(
-    group: list[Token], prev: torch.Tensor | None
+    group: list[Token],
+    prev: torch.Tensor | None,
+    m: float = 1,
+    p: float = 1,
+    c: float = 1,
 ) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
@@ -128,7 +136,7 @@ def select_best_confidence_and_prev_and_mean(
         )
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
 
-        sim = mean_sim * prev_sim * t.probability
+        sim = (mean_sim * m) * (prev_sim * p) * (t.probability * c)
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -168,10 +176,7 @@ def group_similar_tokens(
                     else:
                         break
                 else:
-                    if t.text == gt.text:
-                        s = 1.0
-                    else:
-                        s = __cosine_similarity(t, gt)
+                    s = __cosine_similarity(t, gt)
                     ss[i] = ss.get(i, [])
                     ss[i].append(s)
                     # print(f"\t\t\tSimilarity: {s}")

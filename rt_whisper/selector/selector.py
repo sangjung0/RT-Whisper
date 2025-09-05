@@ -42,6 +42,9 @@ class SelectorProcessor(Worker):
         padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
         algo: str = "op",
+        m: float = 1,
+        p: float = 1,
+        c: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__()
@@ -52,6 +55,9 @@ class SelectorProcessor(Worker):
         self.__PADDING = padding
         self.__SMOOTH = smooth
         self.__ALGO = algo
+        self.__M = m
+        self.__P = p
+        self.__C = c
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
@@ -96,9 +102,8 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
 
-        new_tokens = select_tokens(
-            token_groups=token_groups, select_func=ALGO[self.__ALGO]
-        )
+        select_func = lambda g, p: ALGO[self.__ALGO](g, p, self.__M, self.__P, self.__C)
+        new_tokens = select_tokens(token_groups=token_groups, select_func=select_func)
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
             group_level=2,
@@ -156,6 +161,9 @@ class Selector(SelectorContextBuilder):
         logger: RTWhisperLogger,
         token_group_size: int,
         algo: str = "op",
+        m: float = 1,
+        p: float = 1,
+        c: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__(
@@ -164,6 +172,9 @@ class Selector(SelectorContextBuilder):
             padding=padding,
             logger=logger,
             algo=algo,
+            m=m,
+            p=p,
+            c=c,
             token_group_size=token_group_size,
             smooth=smooth,
         )

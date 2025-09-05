@@ -141,6 +141,30 @@ TEMPLATE = {
             },
         },
         "selector": {
+            "m": {
+                "is_train": True,
+                "key": "m",
+                "value": 0.5,
+                "minimum": 0,
+                "maximum": 1,
+                "step": 0.001,
+            },
+            "p": {
+                "is_train": True,
+                "key": "p",
+                "value": 0.5,
+                "minimum": 0,
+                "maximum": 0,
+                "step": 0.001,
+            },
+            "c": {
+                "is_train": True,
+                "key": "c",
+                "value": 0.5,
+                "minimum": 0,
+                "maximum": 1,
+                "step": 0.001,
+            },
             "algo": "op",
             "iou_threshold": {
                 "default": 0.5,
