@@ -41,7 +41,7 @@ optimizer:
     use_cache: True
     use_prompt: False
     random_seed: 42
-    chunk_size: 48000
+    chunk_size: 16000
     language: "en"
     top_k: 10
     sigma: 0.1

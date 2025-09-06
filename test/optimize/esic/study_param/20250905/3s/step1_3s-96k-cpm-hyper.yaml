@@ -1,8 +1,8 @@
 description: "
-    20250902 기점으로 수정된 RT Whisper 알고리즘을 사용함 (테스트용, 알고리즘 완전히 적용 안됨)
+    20250905 기점으로 수정된 RT Whisper 알고리즘을 사용함 (테스트용, 알고리즘 완전히 적용 안됨)
     saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
     배치 16
-    학습 횟수 350으로 제한
+    학습 횟수 1000으로 제한
 
     (시작, 끝, 스탭)
 
@@ -16,22 +16,28 @@ description: "
 
     - tail_boundary: 16000
 
-    - df_min_dur: 160
+    - df_min_dur: 0, 1600, 160
 
-    - min_prob: 0.49
+    - min_prob: 0, 1, 0.01
 
-    - iou_threshold: 0.13
+    - m: 0, 1, 0.001
 
-    - cos_threshold: 0.06
+    - p: 0, 1, 0.001
 
-    - padding: 0
+    - c: 0, 1, 0.001
 
-    - token_group_size: 2
+    - iou_threshold: 0, 1, 0.01
+
+    - cos_threshold: 0, 1, 0.01
+
+    - padding: 0, 1600, 160
+
+    - token_group_size: 2, 10, 1
     "
 optimizer:
-    algo: CMA # SPSA or CMA
+    algo: CMA # or CMA
     model_sample_rate: 16000
-    max_study_steps: 350
+    max_study_steps: 1000
     use_cache: True
     use_prompt: False
     random_seed: 42
@@ -64,7 +70,7 @@ study:
     position_weighted_filter:
         head_model_path:
             key: head_model
-            is_train: True
+            is_train: False
             is_model: True
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
@@ -72,7 +78,7 @@ study:
             minimum: -100.0
         tail_model_path:
             key: tail_model
-            is_train: True
+            is_train: False
             is_model: True
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
@@ -105,9 +111,9 @@ study:
         min_dur:
             default: 160
             en:
-                is_train: False
+                is_train: True
                 key: "df_min_dur"
-                value: 320
+                value: 160
                 minimum: 0
                 maximum: 1600
                 step: 160
@@ -124,43 +130,64 @@ study:
         min_prob:
             default: 1.0
             en:
-                is_train: False
+                is_train: True
                 key: "pf_min_prob"
-                value: 0.49
+                value: 0.1
                 minimum: 0
                 maximum: 1
                 step: 0.01
     selector:
         algo: cpm # op|oc|cp|cpm
+        m:
+            is_train: True
+            key: m
+            value: 0
+            minimum: 0
+            maximum: 1
+            step: 0.001
+        p:
+            is_train: True
+            key: p
+            value: 0
+            minimum: 0
+            maximum: 1
+            step: 0.001
+        c:
+            is_train: True
+            key: c
+            value: 0
+            minimum: 0
+            maximum: 1
+            step: 0.001
         iou_threshold:
             default: 0.5
             en:
-                is_train: False
+                is_train: True
                 key: "iou_threshold"
-                value: 0.13
+                value: 0
                 minimum: 0
                 maximum: 1
                 step: 0.01
         cos_threshold:
             default: 0.5
             en:
-                is_train: False
+                is_train: True
                 key: "cos_threshold"
-                value: 0.06
+                value: 0
                 minimum: 0
                 maximum: 1
                 step: 0.01
         padding:
             default: 3200
             en:
-                is_train: False
+                is_train: True
                 key: "padding"
                 value: 0
                 minimum: 0
                 maximum: 1600
                 step: 160
         token_group_size:
-            is_train: False
+            is_train: True
             key: "token_group_size"
             value: 2
             minimum: 2
