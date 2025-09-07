@@ -92,7 +92,7 @@ def test_process_each(
 
     result = {}
     for r, h in zip(ref, hyp):
-        output = sclite_trn(r, h)
+        output = sclite_trn([r], [h])
         result[r.id] = parse_sclite_summary(output)
 
     result["processed_time"] = processed_time.metric()
