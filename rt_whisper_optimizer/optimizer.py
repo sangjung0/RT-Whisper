@@ -71,7 +71,7 @@ class Optimizer(ABC):
     def get_example() -> dict:
         return copy.deepcopy(TEMPLATE)
 
-    def optimize(self, dataset: Dataset) -> None:
+    def optimize(self, dataset: Dataset, plot_history: bool = True) -> None:
         description = self.instructions["description"]
         optimizer = self.instructions["optimizer"]
         study_param = self.instructions["study"]
@@ -144,6 +144,11 @@ class Optimizer(ABC):
                     self.output_path / f"{file_name}.yaml",
                 )
             extracted.add(key)
+
+        if plot_history:
+            self.__plot_history(history)
+
+        return history
 
     def _get_transcriber(
         self,
@@ -246,6 +251,19 @@ class Optimizer(ABC):
             return errors
 
         return objective
+
+    def __plot_history(history: list[dict[str, float | np.ndarray]]):
+        import matplotlib.pyplot as plt
+
+        losses = [h["loss"] for h in history]
+
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(losses) + 1), losses, marker="o")
+        plt.title("Optimization History")
+        plt.xlabel("Step")
+        plt.ylabel("Loss")
+        plt.grid(True)
+        plt.show()
 
 
 __all__ = [

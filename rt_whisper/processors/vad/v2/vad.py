@@ -36,7 +36,6 @@ class VAD(Worker):
     ):
         super().__init__()
         self.logger = logger
-
         self.__vad = vad
 
     # override

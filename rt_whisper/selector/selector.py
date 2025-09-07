@@ -139,7 +139,7 @@ class SelectorContextBuilder(SelectorProcessor):
             param.token_groups, param.anchor_timestamp, self.__TOKEN_GROUP_SIZE
         )
         self.logger.debug(
-            f"Context segment tokens: {''.join(str(t) for t in token_groups)}",
+            f"Context segment tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
             group_level=2,
         )
         return SelectorContextBuilderResult(context_token_groups=token_groups)

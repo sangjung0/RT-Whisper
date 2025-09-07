@@ -200,7 +200,10 @@ def group_similar_tokens(
 def new_group_tokens(token_groups: list[list[Token]], orphan_tokens: list[Token]):
     orphan_token_groups = [[ot] for ot in orphan_tokens]
     token_groups.extend(orphan_token_groups)
-    token_groups.sort(key=lambda tg: reduce(add, [t.start for t in tg], 0) / len(tg))
+    token_groups.sort(
+        key=lambda tg: reduce(add, [t.start if t.is_word else t.end for t in tg], 0)
+        / len(tg)
+    )
     return token_groups
 
 

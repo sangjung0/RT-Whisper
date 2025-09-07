@@ -54,11 +54,12 @@ class PositionWeightedFilter(Worker):
         # TODO 여기서 offset은 이전 ASR에서 한번 업데이트되기 때문에, 현재 청크 이후의 offset이 됨. 따라서, 현재 청크의 길이를 빼줘야함. 설계 오류
         # TODO 여기서 chunk 길이와 이전 청크의 길이까지 빼야함.
 
+        offset = param.offset - param.merged_chunk.shape[0]
         tokens = filter_by_position_weighted(
             param.segment_tokens,
-            param.offset - param.merged_chunk.shape[0],
+            offset,
             param.merged_chunk.shape[0],
-            self.__HEAD_BOUNDARY,
+            self.__HEAD_BOUNDARY if offset != 0 else 0,
             self.__TAIL_BOUNDARY,
             self.head_model,
             self.tail_model,
@@ -79,4 +80,3 @@ class PositionWeightedFilter(Worker):
 
 
 __all__ = ["PositionWeightedFilter"]
-
