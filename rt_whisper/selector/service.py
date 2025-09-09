@@ -76,7 +76,6 @@ def select_best_only_prev(
             if prev is None
             else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
         )
-        sim = (sim + 1) / 2  # Normalize to [0, 1]
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -131,17 +130,12 @@ def select_best_confidence_and_prev_and_mean(
     elif len(set(t.text for t in tokens)) == 1:
         return max(tokens, key=lambda t: t.probability)
 
-    tensors = [t.embedding for t in tokens]
-    mean = torch.mean(torch.stack(tensors), dim=0)
-
     similarities = []
     # print(f"Selecting best token from group of {len(tokens)} tokens")
     for t in tokens:
         # print(f"\tToken: {t.text}")
 
-        mean_sim = torch.nn.functional.cosine_similarity(
-            mean, t.embedding, dim=0
-        ).item()
+        mean_sim = __group_cosine_similarity(tokens, t)
         mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
 
         prev_sim = (
@@ -197,7 +191,7 @@ def group_similar_tokens(
             if iou < iou_threshold and group_start > t.start and group_end > t.end:
                 break
             else:
-                ss[idx] = __group_cosine_similarity(group, t) * s + iou * i
+                ss[idx] = (__group_cosine_similarity(group, t) + 1) / 2 * s + iou * i
                 # ss[i] = __group_cosine_similarity(group, t)
                 # print(f"\t\t\tSimilarity: {s}")
 

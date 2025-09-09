@@ -214,13 +214,13 @@ class Optimizer(ABC):
 
         head_model = BoundaryWordFilter()
         tail_model = BoundaryWordFilter()
-        cache = {}
+        # cache = {}
 
         def objective(param: np.ndarray) -> float:
             hyperparameter = SafetyDict(study.set_param(param))
             key = study.get_study_key()
-            if key in cache:
-                return cache[key]
+            # if key in cache:
+            # return cache[key]
 
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
             study.model_objs["head_model"].set(head_model)
@@ -246,16 +246,9 @@ class Optimizer(ABC):
                 pred_txt = normalize_text(pred_txt)
                 hyps.append(pred_txt)
 
-            out = jiwer.process_words(
-                refs,
-                hyps,
-                reference_transform=jiwer.wer_default,
-                hypothesis_transform=jiwer.wer_default,
-            )
-            errors = out.substitutions + out.deletions + out.insertions
-            # wer = jiwer.wer(refs, hyps)
+            wer = jiwer.wer(refs, hyps)
             # cache[key] = wer
-            return errors
+            return wer
 
         return objective
 
