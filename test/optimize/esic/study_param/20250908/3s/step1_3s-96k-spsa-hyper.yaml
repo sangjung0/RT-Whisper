@@ -1,8 +1,8 @@
 description: "
-    20250905 기점으로 수정된 RT Whisper 알고리즘을 사용함 (테스트용, 알고리즘 완전히 적용 안됨)
+    20250908 기점으로 수정된 RT Whisper 알고리즘을 사용함 (테스트용, 알고리즘 완전히 적용 안됨)
     saver_loader을 사용하여 측정되었으며, prompt는 사용하지 않음
-    배치 16
-    학습 횟수 1000으로 제한
+
+    학습 횟수 500으로 제한
 
     (시작, 끝, 스탭)
 
@@ -18,30 +18,34 @@ description: "
 
     - df_min_dur: 0, 1600, 160
 
-    - min_prob: 0, 1, 0.01
+    - min_prob: 0, 1
 
-    - m: 0, 1, 0.001
+    - m: 0, 1
 
-    - p: 0, 1, 0.001
+    - p: 0, 1
 
-    - c: 0, 1, 0.001
+    - c: 0, 1
 
-    - iou_threshold: 0, 1, 0.01
+    - s: 0, 1
 
-    - cos_threshold: 0, 1, 0.01
+    - i: 0, 1
+
+    - iou_threshold: 0, 1
+
+    - cos_threshold: 0, 1
 
     - padding: 0, 1600, 160
 
     - token_group_size: 2, 10, 1
     "
 optimizer:
-    algo: CMA # or CMA
+    algo: SPSA # SPSA or CMA
     model_sample_rate: 16000
-    max_study_steps: 1000
+    max_study_steps: 500
     use_cache: True
     use_prompt: False
     random_seed: 42
-    chunk_size: 16000
+    chunk_size: 48000
     language: "en"
     top_k: 10
     sigma: 0.1
@@ -62,6 +66,7 @@ study:
         max_prompt_words: 40
         max_overlap_duration:
             is_train: False
+            dtype: integer
             key: "overlap_duration"
             value: 96000
             minimum: 0
@@ -69,118 +74,118 @@ study:
             step: 8000
     position_weighted_filter:
         head_model_path:
-            key: head_model
             is_train: False
-            is_model: True
+            dtype: model
+            key: head_model
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
             maximum: 100.0
             minimum: -100.0
         tail_model_path:
-            key: tail_model
             is_train: False
-            is_model: True
+            dtype: model
+            key: tail_model
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
             maximum: 100.0
             minimum: -100.0
         head_boundary:
             is_train: False
+            dtype: integer
             key: head_boundary
             value: 16000
             minimum: 0
-            maximum: 0
+            maximum: 16000
             step: 160
         tail_boundary:
             is_train: False
+            dtype: integer
             key: tail_boundary
             value: 16000
             minimum: 0
-            maximum: 0
+            maximum: 16000
             step: 160
     duration_filter:
-        z_thresh:
-            default: 2.0
-            en:
-                is_train: False
-                key: "df_z_thresh"
-                value: 0
-                minimum: 0.0
-                maximum: 10.0
-                step: 0.01
         min_dur:
             default: 160
             en:
                 is_train: True
+                dtype: integer
                 key: "df_min_dur"
                 value: 160
                 minimum: 0
                 maximum: 1600
                 step: 160
     probability_filter:
-        z_thresh:
-            default: 3.0
-            en:
-                is_train: False
-                key: "pf_z_thresh"
-                value: 0
-                minimum: 0.0
-                maximum: 10.0
-                step: 0.01
         min_prob:
             default: 1.0
             en:
                 is_train: True
+                dtype: float
                 key: "pf_min_prob"
                 value: 0.1
                 minimum: 0
                 maximum: 1
-                step: 0.01
     selector:
-        algo: cpm # op|oc|cp|cpm
+        algo: cpm
         m:
             is_train: True
+            dtype: float
             key: m
             value: 0
             minimum: 0
             maximum: 1
-            step: 0.001
         p:
             is_train: True
+            dtype: float
             key: p
             value: 0
             minimum: 0
             maximum: 1
-            step: 0.001
         c:
             is_train: True
+            dtype: float
             key: c
             value: 0
             minimum: 0
             maximum: 1
-            step: 0.001
+        s:
+            is_train: True
+            dtype: float
+            key: s
+            value: 0
+            minimum: 0
+            maximum: 1
+        i:
+            is_train: True
+            dtype: float
+            key: i
+            value: 0
+            minimum: 0
+            maximum: 1
         iou_threshold:
             default: 0.5
             en:
                 is_train: True
+                dtype: float
                 key: "iou_threshold"
                 value: 0
                 minimum: 0
                 maximum: 1
-                step: 0.01
         cos_threshold:
             default: 0.5
             en:
                 is_train: True
+                dtype: float
                 key: "cos_threshold"
                 value: 0
                 minimum: 0
                 maximum: 1
-                step: 0.01
         padding:
             default: 3200
             en:
                 is_train: True
+                dtype: integer
                 key: "padding"
                 value: 0
                 minimum: 0
@@ -188,6 +193,7 @@ study:
                 step: 160
         token_group_size:
             is_train: True
+            dtype: integer
             key: "token_group_size"
             value: 2
             minimum: 2

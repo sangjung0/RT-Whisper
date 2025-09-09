@@ -45,6 +45,8 @@ class SelectorProcessor(Worker):
         m: float = 1,
         p: float = 1,
         c: float = 1,
+        s: float = 1,
+        i: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__()
@@ -55,9 +57,15 @@ class SelectorProcessor(Worker):
         self.__PADDING = padding
         self.__SMOOTH = smooth
         self.__ALGO = algo
-        self.__M = m
-        self.__P = p
-        self.__C = c
+
+        t = m + p + c
+        self.__M = m / t
+        self.__P = p / t
+        self.__C = c / t
+
+        t = s + i
+        self.__S = s / t
+        self.__I = i / t
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
@@ -86,6 +94,8 @@ class SelectorProcessor(Worker):
             iou_threshold=self.__IOU_THRESHOLD[language],
             cos_threshold=self.__COS_THRESHOLD[language],
             smooth=self.__SMOOTH,
+            i=self.__I,
+            s=self.__S,
         )
         self.logger.debug(
             f"Grouped tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
@@ -164,6 +174,8 @@ class Selector(SelectorContextBuilder):
         m: float = 1,
         p: float = 1,
         c: float = 1,
+        s: float = 1,
+        i: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__(
@@ -175,6 +187,8 @@ class Selector(SelectorContextBuilder):
             m=m,
             p=p,
             c=c,
+            s=s,
+            i=i,
             token_group_size=token_group_size,
             smooth=smooth,
         )

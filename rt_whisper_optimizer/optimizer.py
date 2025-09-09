@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 import os
 import copy
 import jiwer
-import torch
 
 import numpy as np
 import nevergrad as ng
@@ -71,7 +70,9 @@ class Optimizer(ABC):
     def get_example() -> dict:
         return copy.deepcopy(TEMPLATE)
 
-    def optimize(self, dataset: Dataset, plot_history: bool = True) -> None:
+    def optimize(
+        self, dataset: Dataset, plot_history: bool = True, log_step: int = 20
+    ) -> None:
         description = self.instructions["description"]
         optimizer = self.instructions["optimizer"]
         study_param = self.instructions["study"]
@@ -107,9 +108,16 @@ class Optimizer(ABC):
         )
 
         history = []
+        best_loss = {"loss": float("inf"), "param": None}
 
         def add_history(_, param, loss):
-            self.logger.info(f"Step {len(history)+1}: loss={loss}")
+            if loss < best_loss["loss"]:
+                best_loss["loss"] = loss
+                best_loss["param"] = param
+            if len(history) % log_step == 0:
+                self.logger.info(
+                    f"Step {len(history)+1}: loss={loss} | best_loss={best_loss['loss']}"
+                )
             history.append({"loss": loss, "param": param})
 
         if algo == "cma":
@@ -126,8 +134,7 @@ class Optimizer(ABC):
         optimizer.minimize(objective)
 
         extracted = set()
-        history.sort(key=lambda x: x["loss"])
-        for i, h in enumerate(history[:top_k]):
+        for i, h in enumerate(sorted(history, key=lambda x: x["loss"])[:top_k]):
             recommended_param = study_param.set_param(h["param"].args[0])
             key = study_param.get_study_key()
             if key in extracted:
@@ -252,13 +259,16 @@ class Optimizer(ABC):
 
         return objective
 
-    def __plot_history(history: list[dict[str, float | np.ndarray]]):
+    def __plot_history(self, history: list[dict[str, float | np.ndarray]]):
         import matplotlib.pyplot as plt
 
         losses = [h["loss"] for h in history]
+        steps = range(1, len(losses) + 1)
 
         plt.figure(figsize=(10, 6))
-        plt.plot(range(1, len(losses) + 1), losses, marker="o")
+        plt.plot(steps, losses, color="blue", linewidth=2, zorder=1)
+        plt.scatter(steps, losses, color="red", s=10, zorder=2)
+
         plt.title("Optimization History")
         plt.xlabel("Step")
         plt.ylabel("Loss")

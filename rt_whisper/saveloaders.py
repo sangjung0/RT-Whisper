@@ -114,6 +114,11 @@ def get_token_streamer_saver(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
+                m=float(hyperparameter["selector"]["m"]),
+                p=float(hyperparameter["selector"]["p"]),
+                c=float(hyperparameter["selector"]["c"]),
+                s=float(hyperparameter["selector"]["s"]),
+                i=float(hyperparameter["selector"]["i"]),
             ),
             Composer(c_logger),
         ],
@@ -177,6 +182,11 @@ def get_token_streamer_loader(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
+                m=float(hyperparameter["selector"]["m"]),
+                p=float(hyperparameter["selector"]["p"]),
+                c=float(hyperparameter["selector"]["c"]),
+                s=float(hyperparameter["selector"]["s"]),
+                i=float(hyperparameter["selector"]["i"]),
             ),
             Composer(c_logger),
         ],
@@ -191,4 +201,3 @@ __all__ = [
     "get_token_streamer_saver",
     "get_token_streamer_loader",
 ]
-

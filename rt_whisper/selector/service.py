@@ -11,6 +11,12 @@ if TYPE_CHECKING:
     from rt_whisper.data import Token
 
 
+def __group_cosine_similarity(group: list[Token], T: Token) -> float:
+    if not group:
+        return 0.0
+    return sum(__cosine_similarity(t, T) for t in group) / len(group)
+
+
 def __cosine_similarity(A: Token, B: Token) -> float:
     if A.text == B.text:
         return 1
@@ -24,6 +30,7 @@ def __lru_cosine_similarity(A: Token, B: Token) -> float:
     return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
 
 
+# NOTE 사용하진 않지만 일단 남겨둠
 def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float:
     a1 = max(0, A.start - padding)
     b1 = A.end + padding
@@ -34,6 +41,14 @@ def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float
     outer = max(max(b1, b2) - min(a1, a2), smooth)
 
     return inner / outer
+
+
+def __iou(s1: float, e1: float, s2: float, e2: float, smooth: float = 1e-6) -> float:
+
+    inner = max(0, min(e1, e2) - max(s1, s2))
+    outer = max(e1, e2) - min(s1, s2)
+
+    return inner / (outer + smooth)
 
 
 def select_best_only_confidence(group: list[Token], _, __, ___, ____) -> Token:
@@ -92,7 +107,7 @@ def select_best_confidence_and_prev(
             else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
         )
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
-        sim = (prev_sim * p) * (t.probability * c)
+        sim = (prev_sim * p) + (t.probability * c)
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -136,7 +151,7 @@ def select_best_confidence_and_prev_and_mean(
         )
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
 
-        sim = (mean_sim * m) * (prev_sim * p) * (t.probability * c)
+        sim = (mean_sim * m) + (prev_sim * p) + (t.probability * c)
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -154,6 +169,8 @@ def group_similar_tokens(
     iou_threshold: float,
     cos_threshold: float,
     smooth: float,
+    s: float = 1,
+    i: float = 1,
 ) -> tuple[list[list[Token]], list[Token]]:
     orphan_tokens = []
     group_idx = 0
@@ -166,28 +183,31 @@ def group_similar_tokens(
         # print(f"\tProcessing token: {t.text}")
 
         ss = {}
-        for i in range(group_idx, len(token_groups)):
-            for gt in token_groups[i]:
-                iou = __token_iou(t, gt, padding, smooth)
-                # print(f"\t\tToken: {t.text}, Group Token: {gt.text}: IOU: {iou}")
-                if iou < iou_threshold:
-                    if gt.start < t.start or gt.end < t.end:
-                        continue
-                    else:
-                        break
-                else:
-                    s = __cosine_similarity(t, gt)
-                    ss[i] = ss.get(i, [])
-                    ss[i].append(s)
-                    # print(f"\t\t\tSimilarity: {s}")
+        for idx in range(group_idx, len(token_groups)):
+            group = token_groups[idx]
+            group_start = max(t.start for t in group)
+            group_end = min(t.end for t in group)
+
+            gs = max(0, group_start - padding)
+            ge = group_end + padding
+            ts = max(0, t.start - padding)
+            te = t.end + padding
+            iou = __iou(gs, ge, ts, te, smooth)
+            # print(f"\t\tToken: {t.text}, Group Token: {gt.text}: IOU: {iou}")
+            if iou < iou_threshold and group_start > t.start and group_end > t.end:
+                break
+            else:
+                ss[idx] = __group_cosine_similarity(group, t) * s + iou * i
+                # ss[i] = __group_cosine_similarity(group, t)
+                # print(f"\t\t\tSimilarity: {s}")
 
         if not ss:
             orphan_tokens.append(t)
             continue
 
         # print(f"\t\tSimilarities: {ss}")
-        ss = {i: reduce(mul, s, 1) for i, s in ss.items()}
-        max_arg = max(ss.keys(), key=lambda i: ss[i])
+        max_arg = max(ss.keys(), key=lambda idx: ss[idx])
+        # 더이상 cos_threshold 변수 명이 맞지 않지만, 일단 임시 사용
         if ss[max_arg] < cos_threshold:
             orphan_tokens.append(t)
             continue
