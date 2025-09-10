@@ -5,7 +5,7 @@ import torch
 
 from typing import Callable
 from functools import lru_cache, reduce
-from operator import mul, add
+from operator import add
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
@@ -27,7 +27,47 @@ def __cosine_similarity(A: Token, B: Token) -> float:
 
 @lru_cache(maxsize=4096)
 def __lru_cosine_similarity(A: Token, B: Token) -> float:
-    return torch.nn.functional.cosine_similarity(A.embedding, B.embedding, dim=0).item()
+    return __n_cosine_similarity(A.embedding, B.embedding)
+
+
+def __n_cosine_similarity(A: torch.Tensor, B: torch.Tensor, eps=1e-8) -> float:
+    t, n = A.shape[0], B.shape[0]
+    if t < n:
+        A, B = B, A
+        t, n = n, t
+
+    windows = A.unfold(0, n, 1) # (T-n+1, n, D)
+    windows = windows.reshape(t-n+1, -1) # flatten -> (T-n+1, n*D)
+    b = B.reshape(-1) # (n*D,)
+
+    dots = windows @ b
+    win_norms = windows.norm(dim=1)
+    b_norm = b.norm()
+    cos = dots / (win_norms * b_norm + eps) # (T-n+1,)
+    v = cos.max(dim=0)[0].item()
+    return v
+
+
+def __continuous_cosine_similarity(P: torch.Tensor | None, B: torch.Tensor) -> float:
+    if P is None:
+        return 1.0
+
+    p = P[0]
+    n = B.shape[0]
+
+    cos = 0
+    for i in range(n):
+        cos += torch.nn.functional.cosine_similarity(p, B[i], dim=0).item()
+        p = 0.5 * p + 0.5 * B[i]
+    return cos / n
+
+
+def __ema(values: torch.Tensor, a: float = 0.3) -> torch.Tensor:
+    p = values[0].clone()
+    d = 1.0 - a
+    for i in range(1, values.size(0)):
+        p.mul_(d).add_(values[i], alpha=a)
+    return p.unsqueeze(0)
 
 
 # NOTE 사용하진 않지만 일단 남겨둠
@@ -44,14 +84,13 @@ def __token_iou(A: Token, B: Token, padding: int, smooth: float = 1e-6) -> float
 
 
 def __iou(s1: float, e1: float, s2: float, e2: float, smooth: float = 1e-6) -> float:
-
     inner = max(0, min(e1, e2) - max(s1, s2))
     outer = max(e1, e2) - min(s1, s2)
 
     return inner / (outer + smooth)
 
 
-def select_best_only_confidence(group: list[Token], _, __, ___, ____) -> Token:
+def select_best_only_confidence(group: list[Token], *args, **kwargs) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
         return group[0]
@@ -59,7 +98,7 @@ def select_best_only_confidence(group: list[Token], _, __, ___, ____) -> Token:
 
 
 def select_best_only_prev(
-    group: list[Token], prev: torch.Tensor | None, _, __, ___
+    group: list[Token], prev: torch.Tensor | None, *args, **kwargs
 ) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
@@ -71,11 +110,7 @@ def select_best_only_prev(
     # print(f"Selecting best token from group of {len(tokens)} tokens")
     for t in tokens:
         # print(f"\tToken: {t.text}")
-        sim = (
-            1
-            if prev is None
-            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
-        )
+        sim = __continuous_cosine_similarity(prev, t.embedding)
 
         # print(
         #     f"\t\tMean similarity: {mean_sim}, Previous similarity: {prev_sim},  Combined: {sim}"
@@ -87,7 +122,11 @@ def select_best_only_prev(
 
 
 def select_best_confidence_and_prev(
-    group: list[Token], prev: torch.Tensor | None, _, p: float = 1, c: float = 1
+    group: list[Token],
+    prev: torch.Tensor | None,
+    _unused_m: float = 1,
+    p: float = 1,
+    c: float = 1,
 ) -> Token:
     tokens = [t for t in group if t.is_word]
     if not tokens:
@@ -100,11 +139,7 @@ def select_best_confidence_and_prev(
     for t in tokens:
         # print(f"\tToken: {t.text}")
 
-        prev_sim = (
-            1
-            if prev is None
-            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
-        )
+        prev_sim = __continuous_cosine_similarity(prev, t.embedding)
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
         sim = (prev_sim * p) + (t.probability * c)
 
@@ -138,11 +173,7 @@ def select_best_confidence_and_prev_and_mean(
         mean_sim = __group_cosine_similarity(tokens, t)
         mean_sim = (mean_sim + 1) / 2  # Normalize to [0, 1]
 
-        prev_sim = (
-            1
-            if prev is None
-            else torch.nn.functional.cosine_similarity(t.embedding, prev, dim=0).item()
-        )
+        prev_sim = __continuous_cosine_similarity(prev, t.embedding)
         prev_sim = (prev_sim + 1) / 2  # Normalize to [0, 1]
 
         sim = (mean_sim * m) + (prev_sim * p) + (t.probability * c)
@@ -233,10 +264,10 @@ def select_tokens(
     for tg in token_groups:
         best = select_func(tg, prev_embedding)
         if best.is_word:
-            prev_embedding = (
+            prev_embedding = __ema(
                 best.embedding
                 if prev_embedding is None
-                else torch.mean(torch.stack([prev_embedding, best.embedding]), dim=0)
+                else torch.cat([prev_embedding, best.embedding])
             )
             if prev_token and best.start < prev_token.start:
                 best.start = prev_token.end

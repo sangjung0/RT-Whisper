@@ -1,4 +1,5 @@
 import torch
+import torch.nn.functional as F
 
 from pathlib import Path
 from transformers import WhisperTokenizer, WhisperModel
@@ -28,18 +29,19 @@ def init_hyperparameter(
 
 
 @lru_cache(maxsize=1)
-def whisper_embed(model_size: str = config.rt_whisper.huggingface.path):
+def whisper_embed(
+    model_size: str = config.rt_whisper.huggingface.path, device: str = "cpu"
+):
     tokenizer = WhisperTokenizer.from_pretrained(model_size)
-    embedding_table = _whisper_embedding_weight(model_size)
+    table = _whisper_embedding_weight(model_size)
 
     @lru_cache(maxsize=4096)
-    def embed(text: str):
-        tokens = torch.tensor(tokenizer.encode(text))
-        if len(tokens) == 0:
-            return torch.zeros(embedding_table.shape[1])
-        embedding = embedding_table[tokens]
-
-        return embedding.mean(dim=0)
+    def embed(text: str) -> torch.Tensor:
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        if not ids:
+            return torch.zeros(1, table.shape[1], device=device, dtype=table.dtype)
+        idx = torch.tensor(ids, dtype=torch.long, device=device)
+        return table.index_select(0, idx)
 
     return embed
 

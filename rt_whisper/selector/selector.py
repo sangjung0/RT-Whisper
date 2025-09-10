@@ -44,9 +44,7 @@ class SelectorProcessor(Worker):
         algo: str = "op",
         m: float = 1,
         p: float = 1,
-        c: float = 1,
         s: float = 1,
-        i: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__()
@@ -58,14 +56,12 @@ class SelectorProcessor(Worker):
         self.__SMOOTH = smooth
         self.__ALGO = algo
 
-        t = m + p + c
-        self.__M = m / t
-        self.__P = p / t
-        self.__C = c / t
+        self.__M = m
+        self.__P = p
+        self.__C = 1 - m - p
 
-        t = s + i
-        self.__S = s / t
-        self.__I = i / t
+        self.__S = s
+        self.__I = 1 - s
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
@@ -173,9 +169,7 @@ class Selector(SelectorContextBuilder):
         algo: str = "op",
         m: float = 1,
         p: float = 1,
-        c: float = 1,
         s: float = 1,
-        i: float = 1,
         smooth: float = 1e-6,
     ):
         super().__init__(
@@ -186,9 +180,7 @@ class Selector(SelectorContextBuilder):
             algo=algo,
             m=m,
             p=p,
-            c=c,
             s=s,
-            i=i,
             token_group_size=token_group_size,
             smooth=smooth,
         )
