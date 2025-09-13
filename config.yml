@@ -4,6 +4,8 @@ rt_whisper:
     huggingface:
         path: "openai/whisper-large-v3"
 
+    fasttext_path: /home/vscode/.cache/fasttext/crawl-300d-2M-subword.bin
+
     log:
         level: 20 # INFO: 20, DEBUG: 10
         dir_path: ${RT_WHISPER_LOG_DIR:./logs}
