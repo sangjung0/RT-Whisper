@@ -156,14 +156,6 @@ TEMPLATE = {
                 "maximum": 0,
                 "step": 0.001,
             },
-            # "c": {
-            #     "is_train": True,
-            #     "key": "c",
-            #     "value": 0.5,
-            #     "minimum": 0,
-            #     "maximum": 1,
-            #     "step": 0.001,
-            # },
             "s": {
                 "is_train": True,
                 "key": "s",
@@ -172,15 +164,6 @@ TEMPLATE = {
                 "maximum": 0,
                 "step": 0.001,
             },
-            # "i": {
-            #     "is_train": True,
-            #     "key": "i",
-            #     "value": 0.5,
-            #     "minimum": 0,
-            #     "maximum": 1,
-            #     "step": 0.001,
-            # },
-            "algo": "op",
             "iou_threshold": {
                 "default": 0.5,
                 "en": {
@@ -460,3 +443,4 @@ __all__ = [
     "IntParam",
     "StudyParam",
 ]
+

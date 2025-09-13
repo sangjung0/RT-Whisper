@@ -23,6 +23,7 @@ from rt_whisper.archiver import DataSaver, DataLoader
 from rt_whisper.utils import (
     init_hyperparameter,
     whisper_embed,
+    fasttext_embed,
     get_silero_vad,
     get_whisper,
     boundary_word_filter,
@@ -58,7 +59,7 @@ def get_token_streamer_saver(
             VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
-                embed=whisper_embed(),
+                embed=fasttext_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
@@ -114,7 +115,6 @@ def get_token_streamer_saver(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
                 m=float(hyperparameter["selector"]["m"]),
                 p=float(hyperparameter["selector"]["p"]),
                 s=float(hyperparameter["selector"]["s"]),
@@ -181,7 +181,6 @@ def get_token_streamer_loader(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
                 m=float(hyperparameter["selector"]["m"]),
                 p=float(hyperparameter["selector"]["p"]),
                 s=float(hyperparameter["selector"]["s"]),

@@ -109,7 +109,6 @@ def get_token_streamer(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
                 m=float(hyperparameter["selector"]["m"]),
                 p=float(hyperparameter["selector"]["p"]),
                 s=float(hyperparameter["selector"]["s"]),
@@ -199,7 +198,6 @@ def get_token_streamer_with_vad_v2(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
                 m=float(hyperparameter["selector"]["m"]),
                 p=float(hyperparameter["selector"]["p"]),
                 s=float(hyperparameter["selector"]["s"]),
@@ -287,7 +285,6 @@ def get_token_streamer_with_vad_v2_min_filter(
                 padding=hyperparameter["selector"]["padding"],
                 logger=c_logger,
                 token_group_size=int(hyperparameter["selector"]["token_group_size"]),
-                algo=str(hyperparameter["selector"]["algo"]),
                 m=float(hyperparameter["selector"]["m"]),
                 p=float(hyperparameter["selector"]["p"]),
                 s=float(hyperparameter["selector"]["s"]),
@@ -306,3 +303,5 @@ __all__ = [
     "get_token_streamer_with_vad_v2",
     "get_token_streamer_with_vad_v2_min_filter",
 ]
+
+

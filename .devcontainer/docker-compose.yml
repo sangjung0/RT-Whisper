@@ -7,10 +7,9 @@ services:
         volumes:
             - ../:/workspaces/dev
 
-            #   - ../.model/huggingface:/root/.cache/huggingface
             - F:/docker-volume/cache/huggingface:/home/vscode/.cache/huggingface
-            #   - ../.model/torch:/root/.cache/torch
             - F:/docker-volume/cache/torch:/home/vscode/.cache/torch
+            - F:/docker-volume/cache/fasttext:/home/vscode/.cache/fasttext
 
             - /workspaces/dev/.venv # no sync
 

@@ -1,5 +1,5 @@
 import torch
-import torch.nn.functional as F
+import numpy as np
 
 from pathlib import Path
 from transformers import WhisperTokenizer, WhisperModel
@@ -29,19 +29,35 @@ def init_hyperparameter(
 
 
 @lru_cache(maxsize=1)
-def whisper_embed(
-    model_size: str = config.rt_whisper.huggingface.path, device: str = "cpu"
-):
+def whisper_embed(model_size: str = config.rt_whisper.huggingface.path):
     tokenizer = WhisperTokenizer.from_pretrained(model_size)
-    table = _whisper_embedding_weight(model_size)
+    table = _whisper_embedding_weight(model_size).cpu().numpy().astype(np.float32)
+    d = table.shape[1]
 
     @lru_cache(maxsize=4096)
-    def embed(text: str) -> torch.Tensor:
+    def embed(text: str) -> np.ndarray:
         ids = tokenizer.encode(text, add_special_tokens=False)
         if not ids:
-            return torch.zeros(1, table.shape[1], device=device, dtype=table.dtype)
-        idx = torch.tensor(ids, dtype=torch.long, device=device)
-        return table.index_select(0, idx)
+            return np.zeros((d,), dtype=np.float32)
+        e = table[ids].mean(axis=0, dtype=np.float32)
+        return e
+
+    return embed
+
+
+@lru_cache(maxsize=1)
+def fasttext_embed(model_path: str = config.rt_whisper.fasttext_path):
+    import fasttext
+
+    ft = fasttext.load_model(model_path)
+    d = ft.get_dimension()
+
+    @lru_cache(maxsize=4096)
+    def embed(text: str) -> np.ndarray:
+        if not text:
+            return np.zeros((d,), dtype=np.float32)
+        embed = ft.get_word_vector(text).astype(np.float32)
+        return embed
 
     return embed
 
@@ -77,6 +93,7 @@ def boundary_word_filter(path: Path) -> BoundaryWordFilter:
 __all__ = [
     "init_hyperparameter",
     "whisper_embed",
+    "fasttext_embed",
     "get_whisper",
     "get_silero_vad",
     "boundary_word_filter",

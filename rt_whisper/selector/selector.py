@@ -14,10 +14,6 @@ from rt_whisper.selector.service import (
     select_tokens,
     new_group_tokens,
     filter_token_groups,
-    select_best_only_prev,
-    select_best_only_confidence,
-    select_best_confidence_and_prev,
-    select_best_confidence_and_prev_and_mean,
 )
 
 if TYPE_CHECKING:
@@ -26,12 +22,6 @@ if TYPE_CHECKING:
     from sj_utils.collection import SafetyDict
 
 N = "\n\t\t\t"
-ALGO = {
-    "op": select_best_only_prev,
-    "oc": select_best_only_confidence,
-    "cp": select_best_confidence_and_prev,
-    "cpm": select_best_confidence_and_prev_and_mean,
-}
 
 
 class SelectorProcessor(Worker):
@@ -41,12 +31,14 @@ class SelectorProcessor(Worker):
         cos_threshold: SafetyDict[str, float],
         padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
-        algo: str = "op",
         m: float = 1,
         p: float = 1,
         s: float = 1,
         smooth: float = 1e-6,
     ):
+        if m < 0 or p < 0 or s < 0 or m + p > 1 or s > 1:
+            raise ValueError("Invalid weights for selection criteria")
+
         super().__init__()
         self.logger = logger
 
@@ -54,7 +46,6 @@ class SelectorProcessor(Worker):
         self.__COS_THRESHOLD = cos_threshold
         self.__PADDING = padding
         self.__SMOOTH = smooth
-        self.__ALGO = algo
 
         self.__M = m
         self.__P = p
@@ -108,8 +99,9 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
 
-        select_func = lambda g, p: ALGO[self.__ALGO](g, p, self.__M, self.__P, self.__C)
-        new_tokens = select_tokens(token_groups=token_groups, select_func=select_func)
+        new_tokens = select_tokens(
+            token_groups=token_groups, m=self.__M, p=self.__P, c=self.__C
+        )
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
             group_level=2,
@@ -166,7 +158,6 @@ class Selector(SelectorContextBuilder):
         padding: SafetyDict[str, int],
         logger: RTWhisperLogger,
         token_group_size: int,
-        algo: str = "op",
         m: float = 1,
         p: float = 1,
         s: float = 1,
@@ -177,7 +168,6 @@ class Selector(SelectorContextBuilder):
             cos_threshold=cos_threshold,
             padding=padding,
             logger=logger,
-            algo=algo,
             m=m,
             p=p,
             s=s,
@@ -191,3 +181,4 @@ class Selector(SelectorContextBuilder):
 
 
 __all__ = ["Selector"]
+

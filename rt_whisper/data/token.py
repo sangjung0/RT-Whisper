@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import torch
+import numpy as np
 
 from pydantic import BaseModel, Field, ConfigDict
 
-from sj_ai_utils.torch import tensor_to_base64, base64_to_tensor
+from sj_utils.numpy import base64_to_numpy, numpy_to_base64
 
 if TYPE_CHECKING:
     pass
@@ -16,7 +16,7 @@ class Token(BaseModel):
     end: int
     text: str
     lang: str
-    embedding: torch.Tensor | None
+    embedding: np.ndarray | None
     probability: float
     is_word: bool = Field(True)
 
@@ -43,7 +43,13 @@ class Token(BaseModel):
             "text": self.text,
             "lang": self.lang,
             "embedding": (
-                tensor_to_base64(self.embedding) if self.embedding is not None else None
+                {
+                    "shape": self.embedding.shape,
+                    "type": self.embedding.dtype.name,
+                    "data": numpy_to_base64(self.embedding),
+                }
+                if self.embedding is not None
+                else None
             ),
             "probability": self.probability,
             "is_word": self.is_word,
@@ -57,7 +63,13 @@ class Token(BaseModel):
             text=data["text"],
             lang=data["lang"],
             embedding=(
-                base64_to_tensor(data["embedding"]) if data["embedding"] else None
+                base64_to_numpy(
+                    data["embedding"]["data"],
+                    dtype=data["embedding"]["type"],
+                    shape=tuple(data["embedding"]["shape"]),
+                )
+                if data["embedding"] is not None
+                else None
             ),
             probability=data["probability"],
             is_word=data.get("is_word", True),
@@ -65,3 +77,4 @@ class Token(BaseModel):
 
 
 __all__ = ["Token"]
+
