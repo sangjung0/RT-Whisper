@@ -30,6 +30,8 @@ class TokenState:
     segment_tokens: list[Token] = field(default_factory=list)
     completed: list[Sentence] = field(default_factory=list)
     candidate: list[Sentence] = field(default_factory=list)
+    completed_tokens: list[Token] = field(default_factory=list)
+    candidate_tokens: list[Token] = field(default_factory=list)
 
     state_dict: dict[Type, object] = field(default_factory=dict)
 

@@ -107,8 +107,8 @@ def group_similar_tokens(
         ss = {}
         for idx in range(group_idx, len(token_groups)):
             group = token_groups[idx]
-            group_start = max(t.start for t in group)
-            group_end = min(t.end for t in group)
+            group_start = sum(t.start for t in group) / len(group)
+            group_end = sum(t.end for t in group) / len(group)
 
             gs = max(0, group_start - padding)
             ge = group_end + padding
@@ -175,14 +175,24 @@ def select_tokens(
     return tokens
 
 
-def filter_token_groups(token_groups: list[list[Token]], time: int, n: int):
-    token_groups = [[t for t in tg if t.is_word] for tg in token_groups]
-    token_groups = [tg[-n:] for tg in token_groups if tg]
-    return [tg for tg in token_groups if all(t.end > time for t in tg)]
+def completed_and_candidate_tokens(
+    tokens: list[Token], anchor_timestamp: int
+) -> tuple[list[Token], list[Token]]:
+    completed = [t for t in tokens if t.end < anchor_timestamp]
+    candidate = tokens[len(completed) :]
+    return completed, candidate
+
+
+def filter_token_groups(token_groups: list[list[Token]], n: int, size: int):
+    new = [[t for t in tg if t.is_word][-size:] for tg in token_groups[n:]]
+    new = [tg for tg in new if tg]
+    return new
 
 
 __all__ = [
     "group_similar_tokens",
     "select_tokens",
     "new_group_tokens",
+    "completed_and_candidate_tokens",
+    "filter_token_groups",
 ]

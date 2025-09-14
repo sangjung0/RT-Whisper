@@ -23,6 +23,7 @@ from rt_whisper.pipeline import Pipeline
 from rt_whisper.utils import (
     init_hyperparameter,
     whisper_embed,
+    fasttext_embed,
     get_silero_vad,
     get_whisper,
     boundary_word_filter,
@@ -57,7 +58,7 @@ def get_token_streamer(
             VADv1(vad=vad),
             ASR(
                 transcriber=transcribe,
-                embed=whisper_embed(),
+                embed=fasttext_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
@@ -146,7 +147,7 @@ def get_token_streamer_with_vad_v2(
             VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
-                embed=whisper_embed(),
+                embed=fasttext_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),
@@ -235,7 +236,7 @@ def get_token_streamer_with_vad_v2_min_filter(
             VAD(vad=vad, logger=c_logger),
             ASR(
                 transcriber=transcribe,
-                embed=whisper_embed(),
+                embed=fasttext_embed(),
                 sample_rate=Whisper.SAMPLE_RATE,
                 within_eos=True,
                 max_prompt_words=int(hyperparameter["asr"]["max_prompt_words"]),

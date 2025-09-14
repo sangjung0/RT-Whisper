@@ -6,8 +6,6 @@ from rt_whisper.tokenizers import Tokenizer
 from rt_whisper.composer.data import (
     ComposerParam,
     ComposerResult,
-    ComposerContextBuilderParam,
-    ComposerContextBuilderResult,
     ComposerState,
 )
 from rt_whisper.composer.service import (
@@ -16,7 +14,6 @@ from rt_whisper.composer.service import (
     cut_by_tokenizer,
     tokens_to_sentences,
     classify_candidate_completed,
-    context_tokens,
 )
 
 
@@ -64,14 +61,20 @@ class Composer(Worker):
             segments = cut_by_tokenizer(tokenizer, tokens, self.logger)
 
         sentences, order = tokens_to_sentences(segments, param.order)
-        completed, candidate = classify_candidate_completed(
-            sentences, param.anchor_timestamp
+        completed, candidate, completed_tokens = classify_candidate_completed(
+            sentences,
+            len([t for t in param.completed_tokens if t.is_word])
+            + len(param.prev_completed_tokens),
         )
         self.logger.debug(
             f"Completed: {N}{N.join(str(s) for s in completed)}", group_level=2
         )
         self.logger.debug(
             f"Candidate: {N}{N.join(str(s) for s in candidate)}", group_level=2
+        )
+        self.logger.debug(
+            f"Completed tokens: {''.join(str(t) for t in completed_tokens if t.is_word)}",
+            group_level=2,
         )
 
         order -= len(candidate)
@@ -80,32 +83,13 @@ class Composer(Worker):
             completed=completed,
             candidate=candidate,
             order=order,
+            completed_tokens=completed_tokens,
         )
 
     # override
     def _update(self, state: TokenState, result: ComposerResult):
-        result.update_context(state)
-
-    # override
-    def _can_build(self, state: TokenState):
-        return ComposerContextBuilderParam.from_state(state)
-
-    # override
-    def _context_build(self, param: ComposerContextBuilderParam):
-        self.logger.debug(f"Building context for composer", group_level=1)
-        completed_tokens = context_tokens(param.candidate, param.anchor_timestamp)
-        self.logger.debug(
-            f"Completed tokens: {''.join(str(t) for t in completed_tokens if t.is_word)}",
-            group_level=2,
-        )
-        return ComposerContextBuilderResult(
-            context_completed_tokens=completed_tokens,
-        )
-
-    # override
-    def _context_update(self, state: TokenState, result: ComposerContextBuilderResult):
         cps_state: ComposerState = state.get_state(ComposerState)
-        result.update_context(cps_state)
+        result.update_context(state, cps_state)
 
 
 __all__ = ["Composer"]

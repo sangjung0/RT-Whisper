@@ -43,12 +43,10 @@ def generate_overlap_context(
     return context_chunk, context_offset, anchor_timestamp
 
 
-def adjust_anchor_timestamp(
-    anchor_timestamp: int, segment_tokens: list[Token], padding: int = 1600
-) -> int:
+def adjust_anchor_timestamp(anchor_timestamp: int, segment_tokens: list[Token]) -> int:
     for token in segment_tokens:
         if anchor_timestamp < token.start:
-            return max(0, token.start - padding)
+            return token.start
     return anchor_timestamp
 
 

@@ -111,12 +111,15 @@ class Optimizer(ABC):
         best_loss = {"loss": float("inf"), "param": None}
 
         def add_history(_, param, loss):
+            self.logger.debug(
+                f"✅ Step {len(history)+1}: loss={loss} | best_loss={best_loss['loss']}"
+            )
             if loss < best_loss["loss"]:
                 best_loss["loss"] = loss
                 best_loss["param"] = param
             if len(history) % log_step == 0:
                 self.logger.info(
-                    f"Step {len(history)+1}: loss={loss} | best_loss={best_loss['loss']}"
+                    f"✅ Step {len(history)+1}: loss={loss} | best_loss={best_loss['loss']}"
                 )
             history.append({"loss": loss, "param": param})
 
@@ -131,6 +134,9 @@ class Optimizer(ABC):
         # optimizer.enable_pickling()
         optimizer.register_callback("tell", add_history)
 
+        self.logger.info(
+            f"🟢 Starting optimization with algorithm={algo}, max_study_steps={max_study_steps}, sample_rate={sample_rate}, use_cache={use_cache}, use_prompt={use_prompt}, random_seed={random_seed}, chunk_size={chunk_size}, language={language}, sigma={sigma}, top_k={top_k}"
+        )
         optimizer.minimize(objective)
 
         extracted = set()

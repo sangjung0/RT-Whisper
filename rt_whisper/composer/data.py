@@ -34,13 +34,13 @@ class ComposerParam:
     segment_tokens: list[Token]
     order: int
     language: str | None
-    anchor_timestamp: int
+    completed_tokens: list[Token]
     prev_completed_tokens: list[Token]
 
     @staticmethod
     def from_context(state: TokenState, cps_state: ComposerState) -> "ComposerParam":
         return ComposerParam(
-            anchor_timestamp=state.anchor_timestamp,
+            completed_tokens=state.completed_tokens,
             order=state.order,
             language=state.language,
             segment_tokens=state.segment_tokens,
@@ -53,32 +53,13 @@ class ComposerResult:
     completed: list[Sentence]
     candidate: list[Sentence]
     order: int
+    completed_tokens: list[Token]
 
-    def update_context(self, state: TokenState):
+    def update_context(self, state: TokenState, cps_state: ComposerState) -> None:
         state.completed = self.completed
         state.candidate = self.candidate
         state.order = self.order
-
-
-@dataclass(slots=True)
-class ComposerContextBuilderParam:
-    candidate: list[Sentence]
-    anchor_timestamp: int
-
-    @staticmethod
-    def from_state(state: TokenState) -> "ComposerContextBuilderParam":
-        return ComposerContextBuilderParam(
-            candidate=state.candidate,
-            anchor_timestamp=state.anchor_timestamp,
-        )
-
-
-@dataclass(slots=True)
-class ComposerContextBuilderResult:
-    context_completed_tokens: list[Token]
-
-    def update_context(self, cps_state: ComposerState):
-        cps_state.context.completed_tokens = self.context_completed_tokens
+        cps_state.context.completed_tokens = self.completed_tokens
 
 
 __all__ = [
@@ -86,6 +67,4 @@ __all__ = [
     "ComposerState",
     "ComposerParam",
     "ComposerResult",
-    "ComposerContextBuilderParam",
-    "ComposerContextBuilderResult",
 ]

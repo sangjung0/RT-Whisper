@@ -9,10 +9,12 @@ from rt_whisper.selector.data import (
     SelectorContextBuilderParam,
     SelectorContextBuilderResult,
 )
+from rt_whisper.composer.data import ComposerState
 from rt_whisper.selector.service import (
     group_similar_tokens,
     select_tokens,
     new_group_tokens,
+    completed_and_candidate_tokens,
     filter_token_groups,
 )
 
@@ -107,7 +109,16 @@ class SelectorProcessor(Worker):
             group_level=2,
         )
 
-        return SelectorResult(segment_tokens=new_tokens, token_groups=token_groups)
+        completed_token, candidate_token = completed_and_candidate_tokens(
+            new_tokens, param.anchor_timestamp
+        )
+
+        return SelectorResult(
+            segment_tokens=new_tokens,
+            token_groups=token_groups,
+            completed_tokens=completed_token,
+            candidate_tokens=candidate_token,
+        )
 
     # override
     def _update(self, context: TokenState, result: SelectorResult) -> None:
@@ -134,7 +145,7 @@ class SelectorContextBuilder(SelectorProcessor):
     def _context_build(self, param: SelectorContextBuilderParam):
         self.logger.debug(f"Building SelectorContext", group_level=1)
         token_groups = filter_token_groups(
-            param.token_groups, param.anchor_timestamp, self.__TOKEN_GROUP_SIZE
+            param.token_groups, len(param.completed_tokens), self.__TOKEN_GROUP_SIZE
         )
         self.logger.debug(
             f"Context segment tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
@@ -181,4 +192,3 @@ class Selector(SelectorContextBuilder):
 
 
 __all__ = ["Selector"]
-

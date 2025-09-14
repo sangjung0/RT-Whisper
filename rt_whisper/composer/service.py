@@ -30,7 +30,7 @@ def cut_by_tokenizer(
     tokenizer: Callable[[str], Iterable[str]],
     tokens: list[Token],
     logger: RTWhisperLogger,
-):
+) -> list[list[Token]]:
     segments = []
 
     word_tokens = [t for t in tokens if t.is_word]
@@ -81,26 +81,20 @@ def tokens_to_sentences(
     return sentences, order
 
 
-def classify_candidate_completed(sentences: list[Sentence], anchor_timestamp: int):
-    completed = [s for s in sentences if s.tokens[-1].end <= anchor_timestamp]
-    candidate = [s for s in sentences if s.tokens[-1].end > anchor_timestamp]
-
-    return completed, candidate
-
-
-def context_tokens(candidate: list[Sentence], anchor_timestamp: int):
+def classify_candidate_completed(sentences: list[Sentence], c: int):
+    completed = []
     completed_tokens = []
-
-    for sentence in candidate:
-        if sentence.tokens[0].start > anchor_timestamp:
+    for s in sentences:
+        l = len(s.tokens)
+        if c - l >= 0:
+            completed.append(s)
+        else:
+            c > 0 and completed_tokens.extend(s.tokens[:c])
             break
-        for token in sentence.tokens:
-            if token.end <= anchor_timestamp:
-                completed_tokens.append(token)
-            else:
-                break
+        c -= l
+    candidate = sentences[len(completed) :]
 
-    return completed_tokens
+    return completed, candidate, completed_tokens
 
 
 __all__ = [
@@ -109,5 +103,4 @@ __all__ = [
     "cut_by_tokenizer",
     "tokens_to_sentences",
     "classify_candidate_completed",
-    "context_tokens",
 ]

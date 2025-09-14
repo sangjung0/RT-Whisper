@@ -105,10 +105,12 @@ class ASRContextBuilder(ASRProcessor):
         self,
         *args,
         max_overlap_duration: int,
+        padding: int = 8000,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.__MAX_OVERLAP_DURATION = max_overlap_duration
+        self.__PADDING = padding
 
     # override
     def _can_build(self, context: TokenState):
@@ -131,7 +133,7 @@ class ASRContextBuilder(ASRProcessor):
         self.logger.debug(f"anchor_timestamp: {anchor_timestamp}", group_level=2)
 
         anchor_timestamp = adjust_anchor_timestamp(
-            anchor_timestamp, param.segment_tokens
+            max(0, anchor_timestamp - self.__PADDING), param.segment_tokens
         )
         self.logger.debug(
             f"Adjusted anchor timestamp: {anchor_timestamp}", group_level=2
@@ -162,6 +164,7 @@ class ASR(ASRContextBuilder):
         max_prompt_words: int,
         max_overlap_duration: int,
         logger: RTWhisperLogger,
+        padding: int = 8000,
         **kwargs,
     ):
         super().__init__(
@@ -173,6 +176,7 @@ class ASR(ASRContextBuilder):
             max_prompt_words=max_prompt_words,
             max_overlap_duration=max_overlap_duration,
             logger=logger,
+            padding=padding,
             **kwargs,
         )
 

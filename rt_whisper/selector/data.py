@@ -30,6 +30,7 @@ class SelectorParam:
     segment_tokens: list[Token]
     language: str | None
     prev_token_groups: list[list[Token]]
+    anchor_timestamp: int
 
     @staticmethod
     def from_state(state: TokenState, sct_state: SelectorState) -> "SelectorParam":
@@ -37,6 +38,7 @@ class SelectorParam:
             segment_tokens=state.segment_tokens,
             prev_token_groups=sct_state.prev.token_groups,
             language=state.language,
+            anchor_timestamp=state.anchor_timestamp,
         )
 
 
@@ -44,15 +46,19 @@ class SelectorParam:
 class SelectorResult:
     segment_tokens: list[Token]
     token_groups: list[list[Token]]
+    completed_tokens: list[Token]
+    candidate_tokens: list[Token]
 
     def update_state(self, state: TokenState, sct_state: SelectorState) -> None:
         state.segment_tokens = self.segment_tokens
         sct_state.context.token_groups = self.token_groups
+        state.completed_tokens = self.completed_tokens
+        state.candidate_tokens = self.candidate_tokens
 
 
 @dataclass(slots=True)
 class SelectorContextBuilderParam:
-    anchor_timestamp: float
+    completed_tokens: list[Token]
     token_groups: list[list[Token]]
 
     @staticmethod
@@ -60,7 +66,7 @@ class SelectorContextBuilderParam:
         state: TokenState, sct_state: SelectorState
     ) -> "SelectorContextBuilderParam":
         return SelectorContextBuilderParam(
-            anchor_timestamp=state.anchor_timestamp,
+            completed_tokens=state.completed_tokens,
             token_groups=sct_state.context.token_groups,
         )
 
@@ -81,4 +87,3 @@ __all__ = [
     "SelectorContextBuilderParam",
     "SelectorContextBuilderResult",
 ]
-
