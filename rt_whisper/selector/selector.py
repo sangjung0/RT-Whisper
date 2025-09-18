@@ -9,7 +9,6 @@ from rt_whisper.selector.data import (
     SelectorContextBuilderParam,
     SelectorContextBuilderResult,
 )
-from rt_whisper.composer.data import ComposerState
 from rt_whisper.selector.service import (
     group_similar_tokens,
     select_tokens,
@@ -29,25 +28,23 @@ N = "\n\t\t\t"
 class SelectorProcessor(Worker):
     def __init__(
         self,
+        logger: RTWhisperLogger,
         iou_threshold: SafetyDict[str, float],
         cos_threshold: SafetyDict[str, float],
         padding: SafetyDict[str, int],
-        logger: RTWhisperLogger,
-        m: float = 1,
-        p: float = 1,
-        s: float = 1,
-        smooth: float = 1e-6,
+        m: float,
+        p: float,
+        s: float,
+        window: int,
+        gs_alpha: float,
+        st_alpha: float,
     ):
-        if m < 0 or p < 0 or s < 0 or m + p > 1 or s > 1:
-            raise ValueError("Invalid weights for selection criteria")
-
         super().__init__()
         self.logger = logger
 
         self.__IOU_THRESHOLD = iou_threshold
         self.__COS_THRESHOLD = cos_threshold
         self.__PADDING = padding
-        self.__SMOOTH = smooth
 
         self.__M = m
         self.__P = p
@@ -55,6 +52,10 @@ class SelectorProcessor(Worker):
 
         self.__S = s
         self.__I = 1 - s
+
+        self.__WINDOW = window
+        self.__GS_ALPHA = gs_alpha
+        self.__ST_ALPHA = st_alpha
 
     # override
     def _can_process(self, context: TokenState) -> SelectorParam:
@@ -82,9 +83,10 @@ class SelectorProcessor(Worker):
             padding=self.__PADDING[language],
             iou_threshold=self.__IOU_THRESHOLD[language],
             cos_threshold=self.__COS_THRESHOLD[language],
-            smooth=self.__SMOOTH,
             i=self.__I,
             s=self.__S,
+            ged_window=self.__WINDOW,
+            ged_alpha=self.__GS_ALPHA,
         )
         self.logger.debug(
             f"Grouped tokens: {N}{N.join(', '.join(str(t) for t in g) for g in token_groups)}",
@@ -102,7 +104,11 @@ class SelectorProcessor(Worker):
         )
 
         new_tokens = select_tokens(
-            token_groups=token_groups, m=self.__M, p=self.__P, c=self.__C
+            token_groups=token_groups,
+            alpha=self.__ST_ALPHA,
+            sb_m=self.__M,
+            sb_p=self.__P,
+            sb_c=self.__C,
         )
         self.logger.debug(
             f"New tokens: {''.join(str(t) for t in new_tokens if t.is_word)}",
@@ -164,15 +170,17 @@ class SelectorContextBuilder(SelectorProcessor):
 class Selector(SelectorContextBuilder):
     def __init__(
         self,
+        logger: RTWhisperLogger,
         iou_threshold: SafetyDict[str, float],
         cos_threshold: SafetyDict[str, float],
         padding: SafetyDict[str, int],
-        logger: RTWhisperLogger,
+        m: float,
+        p: float,
+        s: float,
+        window: int,
+        gs_alpha: float,
+        st_alpha: float,
         token_group_size: int,
-        m: float = 1,
-        p: float = 1,
-        s: float = 1,
-        smooth: float = 1e-6,
     ):
         super().__init__(
             iou_threshold=iou_threshold,
@@ -182,8 +190,10 @@ class Selector(SelectorContextBuilder):
             m=m,
             p=p,
             s=s,
+            window=window,
+            gs_alpha=gs_alpha,
+            st_alpha=st_alpha,
             token_group_size=token_group_size,
-            smooth=smooth,
         )
 
     # override
