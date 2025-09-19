@@ -496,6 +496,7 @@ dependencies = [
     { name = "attrs" },
     { name = "audioread" },
     { name = "av" },
+    { name = "bayesian-optimization" },
     { name = "beartype" },
     { name = "beautifulsoup4" },
     { name = "bidict" },
@@ -504,6 +505,7 @@ dependencies = [
     { name = "cffi" },
     { name = "charset-normalizer" },
     { name = "click" },
+    { name = "cma" },
     { name = "cmudict" },
     { name = "coloredlogs" },
     { name = "colorlog" },
@@ -511,10 +513,12 @@ dependencies = [
     { name = "contourpy" },
     { name = "ctranslate2" },
     { name = "cycler" },
+    { name = "cytoolz" },
     { name = "datasets" },
     { name = "debugpy" },
     { name = "decorator" },
     { name = "dill" },
+    { name = "directsearch" },
     { name = "distance" },
     { name = "docopt" },
     { name = "einops" },
@@ -542,6 +546,7 @@ dependencies = [
     { name = "importlib-metadata" },
     { name = "importlib-resources" },
     { name = "iniconfig" },
+    { name = "intervaltree" },
     { name = "ipykernel" },
     { name = "ipython" },
     { name = "jamo" },
@@ -563,6 +568,7 @@ dependencies = [
     { name = "librosa" },
     { name = "lightning" },
     { name = "lightning-utilities" },
+    { name = "lilcom" },
     { name = "llvmlite" },
     { name = "loguru" },
     { name = "mako" },
@@ -608,6 +614,7 @@ dependencies = [
     { name = "pecab" },
     { name = "pexpect" },
     { name = "pillow" },
+    { name = "pip" },
     { name = "platformdirs" },
     { name = "plotly" },
     { name = "pluggy" },
@@ -674,6 +681,7 @@ dependencies = [
     { name = "tiktoken" },
     { name = "tokenizers" },
     { name = "tomli" },
+    { name = "toolz" },
     { name = "torch" },
     { name = "torch-audiomentations" },
     { name = "torch-pitch-shift" },
@@ -693,11 +701,18 @@ dependencies = [
     { name = "unidecode" },
     { name = "urllib3" },
     { name = "wcwidth" },
+    { name = "wheel" },
     { name = "whoosh" },
     { name = "xlrd" },
     { name = "xxhash" },
     { name = "yarl" },
     { name = "zipp" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pybind11" },
+    { name = "python-mecab-kor" },
 ]
 
 [package.metadata]
@@ -714,6 +729,7 @@ requires-dist = [
     { name = "attrs", specifier = "==25.3.0" },
     { name = "audioread", specifier = "==3.0.1" },
     { name = "av", specifier = "==15.0.0" },
+    { name = "bayesian-optimization", specifier = "==1.4.0" },
     { name = "beartype", specifier = "==0.21.0" },
     { name = "beautifulsoup4", specifier = "==4.13.4" },
     { name = "bidict", specifier = "==0.23.1" },
@@ -722,6 +738,7 @@ requires-dist = [
     { name = "cffi", specifier = "==1.17.1" },
     { name = "charset-normalizer", specifier = "==3.4.3" },
     { name = "click", specifier = "==8.2.1" },
+    { name = "cma", specifier = "==4.3.0" },
     { name = "cmudict", specifier = "==1.1.1" },
     { name = "coloredlogs", specifier = "==15.0.1" },
     { name = "colorlog", specifier = "==6.9.0" },
@@ -729,10 +746,12 @@ requires-dist = [
     { name = "contourpy", specifier = "==1.3.2" },
     { name = "ctranslate2", specifier = "==4.6.0" },
     { name = "cycler", specifier = "==0.12.1" },
+    { name = "cytoolz", specifier = "==1.0.1" },
     { name = "datasets", specifier = "==3.6.0" },
     { name = "debugpy", specifier = "==1.8.16" },
     { name = "decorator", specifier = "==5.2.1" },
     { name = "dill", specifier = "==0.3.8" },
+    { name = "directsearch", specifier = "==1.0" },
     { name = "distance", specifier = "==0.1.3" },
     { name = "docopt", specifier = "==0.6.2" },
     { name = "einops", specifier = "==0.8.1" },
@@ -741,7 +760,7 @@ requires-dist = [
     { name = "executing", specifier = "==2.2.0" },
     { name = "faster-whisper", specifier = "==1.2.0" },
     { name = "fastjsonschema", specifier = "==2.21.1" },
-    { name = "fasttext", specifier = ">=0.9.3" },
+    { name = "fasttext", specifier = "==0.9.3" },
     { name = "ffmpeg-python", specifier = "==0.2.0" },
     { name = "filelock", specifier = "==3.18.0" },
     { name = "flatbuffers", specifier = "==25.2.10" },
@@ -760,12 +779,13 @@ requires-dist = [
     { name = "importlib-metadata", specifier = "==8.7.0" },
     { name = "importlib-resources", specifier = "==6.5.2" },
     { name = "iniconfig", specifier = "==2.1.0" },
+    { name = "intervaltree", specifier = "==3.1.0" },
     { name = "ipykernel", specifier = "==6.30.1" },
     { name = "ipython", specifier = "==8.37.0" },
     { name = "jamo", specifier = "==0.4.1" },
     { name = "jedi", specifier = "==0.19.2" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "jiwer", specifier = ">=4.0.0" },
+    { name = "jiwer", specifier = "==4.0.0" },
     { name = "joblib", specifier = "==1.5.1" },
     { name = "jsonschema", specifier = "==4.25.0" },
     { name = "jsonschema-specifications", specifier = "==2025.4.1" },
@@ -777,10 +797,11 @@ requires-dist = [
     { name = "koparadigm", specifier = "==0.10.0" },
     { name = "kss", specifier = "==6.0.5" },
     { name = "lazy-loader", specifier = "==0.4" },
-    { name = "lhotse", specifier = ">=1.30.3" },
+    { name = "lhotse", specifier = "==1.30.3" },
     { name = "librosa", specifier = "==0.11.0" },
     { name = "lightning", specifier = "==2.5.2" },
     { name = "lightning-utilities", specifier = "==0.15.2" },
+    { name = "lilcom", specifier = "==1.8.1" },
     { name = "llvmlite", specifier = "==0.44.0" },
     { name = "loguru", specifier = "==0.7.3" },
     { name = "mako", specifier = "==1.3.10" },
@@ -798,7 +819,7 @@ requires-dist = [
     { name = "nbformat", specifier = "==5.10.4" },
     { name = "nest-asyncio", specifier = "==1.6.0" },
     { name = "networkx", specifier = "==3.4.2" },
-    { name = "nevergrad", specifier = ">=1.0.12" },
+    { name = "nevergrad", specifier = "==1.0.12" },
     { name = "numba", specifier = "==0.61.2" },
     { name = "numpy", specifier = "==2.2.6" },
     { name = "nvidia-cublas-cu12", specifier = "==12.8.4.1" },
@@ -826,6 +847,7 @@ requires-dist = [
     { name = "pecab", specifier = "==1.0.8" },
     { name = "pexpect", specifier = "==4.9.0" },
     { name = "pillow", specifier = "==11.3.0" },
+    { name = "pip", specifier = "==25.2" },
     { name = "platformdirs", specifier = "==4.3.8" },
     { name = "plotly", specifier = "==6.2.0" },
     { name = "pluggy", specifier = "==1.6.0" },
@@ -892,6 +914,7 @@ requires-dist = [
     { name = "tiktoken", specifier = "==0.10.0" },
     { name = "tokenizers", specifier = "==0.21.4" },
     { name = "tomli", specifier = "==2.2.1" },
+    { name = "toolz", specifier = "==1.0.0" },
     { name = "torch", specifier = "==2.8.0" },
     { name = "torch-audiomentations", specifier = "==0.12.0" },
     { name = "torch-pitch-shift", specifier = "==1.2.5" },
@@ -911,6 +934,7 @@ requires-dist = [
     { name = "unidecode", specifier = "==1.4.0" },
     { name = "urllib3", specifier = "==2.5.0" },
     { name = "wcwidth", specifier = "==0.2.13" },
+    { name = "wheel", specifier = "==0.45.1" },
     { name = "whoosh", specifier = "==2.7.4" },
     { name = "xlrd", specifier = "==1.2.0" },
     { name = "xxhash", specifier = "==3.5.0" },
@@ -919,7 +943,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [
+    { name = "pybind11", path = ".vendor/pybind11-3.0.1-py3-none-any.whl" },
+    { name = "python-mecab-kor", specifier = ">=1.2.8" },
+]
 
 [[package]]
 name = "dill"
@@ -2249,6 +2276,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pip"
+version = "25.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/16/650289cd3f43d5a2fadfd98c68bd1e1e7f2550a1a5326768cddfbcedb2c5/pip-25.2.tar.gz", hash = "sha256:578283f006390f85bb6282dffb876454593d637f5d1be494b5202ce4877e71f2", size = 1840021, upload-time = "2025-07-30T21:50:15.401Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl", hash = "sha256:6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717", size = 1752557, upload-time = "2025-07-30T21:50:13.323Z" },
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.3.8"
 source = { registry = "https://pypi.org/simple" }
@@ -2504,11 +2540,14 @@ wheels = [
 [[package]]
 name = "pybind11"
 version = "3.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2f/7b/a6d8dcb83c457e24a9df1e4d8fd5fb8034d4bbc62f3c324681e8a9ba57c2/pybind11-3.0.1.tar.gz", hash = "sha256:9c0f40056a016da59bab516efb523089139fcc6f2ba7e4930854c61efb932051", size = 546914, upload-time = "2025-08-22T20:09:27.265Z" }
+source = { path = ".vendor/pybind11-3.0.1-py3-none-any.whl" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cd/8a/37362fc2b949d5f733a8b0f2ff51ba423914cabefe69f1d1b6aab710f5fe/pybind11-3.0.1-py3-none-any.whl", hash = "sha256:aa8f0aa6e0a94d3b64adfc38f560f33f15e589be2175e103c0a33c6bce55ee89", size = 293611, upload-time = "2025-08-22T20:09:25.235Z" },
+    { filename = "pybind11-3.0.1-py3-none-any.whl", hash = "sha256:aa8f0aa6e0a94d3b64adfc38f560f33f15e589be2175e103c0a33c6bce55ee89" },
 ]
+
+[package.metadata]
+requires-dist = [{ name = "pybind11-global", marker = "extra == 'global'", specifier = "==3.0.1" }]
+provides-extras = ["global"]
 
 [[package]]
 name = "pycparser"
@@ -2640,6 +2679,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/f6/b0/4bc07ccd3572a2f9d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/ed/539768cf28c661b5b068d66d96a2f155c4971a5d55684a514c1a0e0dec2f/python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc", size = 20556, upload-time = "2025-06-24T04:21:06.073Z" },
 ]
+
+[[package]]
+name = "python-mecab-kor"
+version = "1.2.8"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/2e/7917319425c0f5b8afc80274387ab9613240ff64a4b7c32d23962c5c9dcd/python-mecab-kor-1.2.8.tar.gz", hash = "sha256:7cb8d04d583f736327eb6bbecabb0c68ef9cea91c10d0265419ec6b0643c5b64", size = 12538, upload-time = "2023-05-16T18:31:56.431Z" }
 
 [[package]]
 name = "python-multipart"
@@ -3570,6 +3615,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6c/63/53559446a878410fc5a5974feb13d31d78d752eb18aeba59c7fef1af7598/wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5", size = 101301, upload-time = "2024-01-06T02:10:57.829Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/fd/84/fd2ba7aafacbad3c4201d395674fc6348826569da3c0937e75505ead3528/wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859", size = 34166, upload-time = "2024-01-06T02:10:55.763Z" },
+]
+
+[[package]]
+name = "wheel"
+version = "0.45.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545, upload-time = "2024-11-23T00:18:23.513Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494, upload-time = "2024-11-23T00:18:21.207Z" },
 ]
 
 [[package]]

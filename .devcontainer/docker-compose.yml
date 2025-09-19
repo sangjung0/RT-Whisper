@@ -4,25 +4,30 @@ services:
         build:
             context: ..
             dockerfile: .devcontainer/Dockerfile
+        environment:
+            USER: ${CONTAINER_USER}
+            UID: ${CONTAINER_UID}
+            HOME: ${CONTAINER_HOME}
+            WORKDIR: ${WORKDIR}
         volumes:
             - ../:/workspaces/dev
+            - /workspaces/dev/.venv
+            - /workspaces/dev/.vendor
 
-            - F:/docker-volume/cache/huggingface:/home/vscode/.cache/huggingface
-            - F:/docker-volume/cache/torch:/home/vscode/.cache/torch
-            - F:/docker-volume/cache/fasttext:/home/vscode/.cache/fasttext
-
-            - /workspaces/dev/.venv # no sync
+            - F:/docker-volume/cache/huggingface:${CONTAINER_HOME}/.cache/huggingface
+            - F:/docker-volume/cache/torch:${CONTAINER_HOME}/.cache/torch
+            - F:/docker-volume/cache/fasttext:${CONTAINER_HOME}/.cache/fasttext
 
             # dataset
-            - F:/docker-volume/datasets:/workspaces/dev/.datasets:ro
-            - F:/docker-volume/datasets/asr-rankformer-datasets:/workspaces/dev/.datasets/asr-rankformer-datasets:rw
-            - F:/docker-volume/datasets/ami:/workspaces/dev/.datasets/ami:rw
-            - F:/docker-volume/datasets/tedlium:/workspaces/dev/.datasets/tedlium:rw
-            - F:/docker-volume/datasets/vox_populi:/workspaces/dev/.datasets/vox_populi:rw
-            - F:/docker-volume/datasets/libri_speech:/workspaces/dev/.datasets/libri_speech:rw
+            - F:/docker-volume/datasets:${WORKDIR}/.datasets:ro
+            - F:/docker-volume/datasets/asr-rankformer-datasets:${WORKDIR}/.datasets/asr-rankformer-datasets:rw
+            - F:/docker-volume/datasets/ami:${WORKDIR}/.datasets/ami:rw
+            - F:/docker-volume/datasets/tedlium:${WORKDIR}/.datasets/tedlium:rw
+            - F:/docker-volume/datasets/vox_populi:${WORKDIR}/.datasets/vox_populi:rw
+            - F:/docker-volume/datasets/libri_speech:${WORKDIR}/.datasets/libri_speech:rw
 
             # storage
-            - F:/docker-volume/storage/rt-whisper:/workspaces/dev/.storage:rw
+            - F:/docker-volume/storage/rt-whisper:${WORKDIR}/.storage:rw
         deploy:
             resources:
                 reservations:

@@ -2,18 +2,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Main Python File",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "${workspaceFolder}/app/main.py",
-            "console": "integratedTerminal",
-            "cwd": "${workspaceFolder}",
-            "justMyCode": true,
-            // "env": {
-            //     "PYTHONPATH":"${workspaceFolder}/app:${workspaceFolder}/RTWhisper/modules"
-            // }
-        },
-        {
             "name": "Debug Current Python File",
             "type": "debugpy",
             "request": "launch",

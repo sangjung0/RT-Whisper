@@ -177,6 +177,7 @@ cython_debug/
 .model/**
 .datasets/**
 .storage/**
+.vendor/**
 
 test/modules
 
@@ -192,4 +193,6 @@ test/performance_test/libri/output/**
 test/performance_test/ami/output/**
 test/performance_test/tedlium/output/**
 test/performance_test/vox_populi/output/**
+test/performance_test/ks_pon_speech/output/**
+test/performance_test/zeroth_korean/output/**
 

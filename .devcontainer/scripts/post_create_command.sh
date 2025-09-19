@@ -1,94 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# args: <username>
-if [[ $# -lt 1 || -z "${1:-}" ]]; then
-    echo "Usage: $0 <username>" >&2; exit 1
+USERNAME="${1:-$USER}"
+
+if ! id "$USERNAME" &>/dev/null; then
+    echo "User $USERNAME does not exist" >&2
+    exit 1
 fi
 
-USER_NAME="$1"
-if ! id "$USER_NAME" &>/dev/null; then
-    echo "Error: user '$USER_NAME' does not exist." >&2; exit 1
-fi
+# UID=$(id -u "$USERNAME")
+HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 
-OWNER="${USER_NAME}:${USER_NAME}"
+echo "[INFO] step 1/3: change ownership to $USERNAME"
+bash /workspaces/dev/.devcontainer/scripts/change_owner.sh "$USERNAME"\
+    --target /workspaces/dev:/workspaces/dev/.datasets \
+    --target "$HOME"/.cache \
+    --target /workspaces/dev/.datasets/asr-rankformer-datasets \
+    --target /workspaces/dev/.datasets/ami \
+    --target /workspaces/dev/.datasets/vox_populi \
+    --target /workspaces/dev/.datasets/tedlium \
+    --target /workspaces/dev/.datasets/libri_speech
 
-# 1) 타깃 경로
-declare -a TARGETS=(
-    "/workspaces/dev"
-    "/home/${USER_NAME}/.cache"
-    "/workspaces/dev/.datasets/asr-rankformer-datasets"
-    "/workspaces/dev/.datasets/ami"
-    "/workspaces/dev/.datasets/vox_populi"
-    "/workspaces/dev/.datasets/tedlium"
-    "/workspaces/dev/.datasets/libri_speech"
-)
-
-# 2) 타깃별 제외(:로 구분; 공백 포함 경로 안전)
-declare -A EXCLUDES
-EXCLUDES["/workspaces/dev"]="/workspaces/dev/.datasets"
-EXCLUDES["/home/${USER_NAME}/.cache"]=""
-EXCLUDES["/workspaces/dev/.datasets/asr-rankformer-datasets"]=""
-EXCLUDES["/workspaces/dev/.datasets/ami"]=""
-EXCLUDES["/workspaces/dev/.datasets/vox_populi"]=""
-EXCLUDES["/workspaces/dev/.datasets/tedlium"]=""
-EXCLUDES["/workspaces/dev/.datasets/libri_speech"]=""
-
-build_prune_args() {
-    local target="$1"
-    local excludes_str="${EXCLUDES[$target]-}"
-
-    [[ -z "$excludes_str" ]] && return 0
-
-    local IFS=':'
-    local -a ex_arr
-    read -r -a ex_arr <<< "$excludes_str"
-    ((${#ex_arr[@]}==0)) && return 0
-
-    local -a out
-    out+=( \( )
-    local first=1
-    for e in "${ex_arr[@]}"; do
-        [[ -z "$e" ]] && continue
-        if (( first )); then
-            out+=( -path "$e" )
-            first=0
-        else
-            out+=( -o -path "$e" )
-        fi
-    done
-    out+=( \) -prune -o )
-
-    printf '%s\0' "${out[@]}"
-}
-
-chown_with_excludes() {
-    local target="$1" owner="$2"
-
-    local -a args
-    args+=( "$target" -mindepth 0 )
-
-    # prune 절 안전하게 읽기 (NUL 구분)
-    local -a prune=()
-    mapfile -d '' -t prune < <(build_prune_args "$target" || true)
-    (( ${#prune[@]} )) && args+=( "${prune[@]}" )
-
-    args+=( \( -not -user "$USER_NAME" -o -not -group "$USER_NAME" \) )
-
-    if (( EUID == 0 )); then
-        args+=( -exec chown "$owner" {} + )
-    else
-        args+=( -exec sudo chown "$owner" {} + )
-    fi
-
-    sudo find "${args[@]}" || true
-}
-
-
-for t in "${TARGETS[@]}"; do
-    [[ -e "$t" ]] && chown_with_excludes "$t" "$OWNER"
-done
-
-# 후속 작업
-bash /workspaces/dev/.devcontainer/scripts/set_uv.sh
-bash /workspaces/dev/.devcontainer/scripts/set_lhotse.sh
+echo "[INFO] step 2/3: setup uv for $USERNAME"
+bash /workspaces/dev/.devcontainer/scripts/setup_uv.sh
+echo "[INFO] step 3/3: setup lhotse"
+bash /workspaces/dev/.devcontainer/scripts/setup_lhotse.sh
