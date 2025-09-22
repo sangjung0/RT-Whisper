@@ -49,6 +49,10 @@ def get_token_streamer_saver(
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
+    boundary_word_filter_model = boundary_word_filter(
+        Path(str(hyperparameter["boundary_word_filter"]["model_path"])),
+        boundary=float(hyperparameter["boundary_word_filter"]["boundary"]),
+    )
 
     logger.debug("\n✅Creating token streamer saver")
     c_logger = logger.get_child()
@@ -75,30 +79,7 @@ def get_token_streamer_saver(
         ],
         [
             PositionWeightedFilter(
-                head_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "head_model_path"
-                            ]
-                        )
-                    )
-                ),
-                tail_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "tail_model_path"
-                            ]
-                        )
-                    )
-                ),
-                head_boundary=float(
-                    hyperparameter["position_weighted_filter"]["head_boundary"]
-                ),
-                tail_boundary=float(
-                    hyperparameter["position_weighted_filter"]["tail_boundary"]
-                ),
+                model=boundary_word_filter_model,
                 logger=c_logger,
             ),
             DurationMinFilter(
@@ -137,6 +118,11 @@ def get_token_streamer_loader(
 ):
     hyperparameter = init_hyperparameter(hyperparameter)
 
+    boundary_word_filter_model = boundary_word_filter(
+        Path(str(hyperparameter["boundary_word_filter"]["model_path"])),
+        boundary=float(hyperparameter["boundary_word_filter"]["boundary"]),
+    )
+
     logger.debug("\n✅Creating token streamer loader")
     c_logger = logger.get_child()
 
@@ -144,30 +130,7 @@ def get_token_streamer_loader(
         [DataLoader(saved_path=saved_path, logger=c_logger)],
         [
             PositionWeightedFilter(
-                head_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "head_model_path"
-                            ]
-                        )
-                    )
-                ),
-                tail_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "tail_model_path"
-                            ]
-                        )
-                    )
-                ),
-                head_boundary=float(
-                    hyperparameter["position_weighted_filter"]["head_boundary"]
-                ),
-                tail_boundary=float(
-                    hyperparameter["position_weighted_filter"]["tail_boundary"]
-                ),
+                model=boundary_word_filter_model,
                 logger=c_logger,
             ),
             DurationMinFilter(

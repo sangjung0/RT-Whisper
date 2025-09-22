@@ -13,25 +13,19 @@ from rt_whisper.processors.asr.data import ASRState
 
 if TYPE_CHECKING:
     from rt_whisper.rt_whisper_logger import RTWhisperLogger
-    from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
+    from rt_whisper.models.boundary_word_filter import BoundaryWordFilterWrapper
     from rt_whisper.data import TokenState
 
 
 class PositionWeightedFilter(Worker):
     def __init__(
         self,
-        head_model: BoundaryWordFilter,
-        tail_model: BoundaryWordFilter,
-        head_boundary: float,
-        tail_boundary: float,
+        model: BoundaryWordFilterWrapper,
         logger: RTWhisperLogger,
     ):
         super().__init__()
         self.logger = logger
-        self.head_model = head_model
-        self.tail_model = tail_model
-        self.__HEAD_BOUNDARY = head_boundary
-        self.__TAIL_BOUNDARY = tail_boundary
+        self.model = model
 
     # override
     def _can_process(self, context: TokenState):
@@ -59,10 +53,8 @@ class PositionWeightedFilter(Worker):
             param.segment_tokens,
             offset,
             param.merged_chunk.shape[0],
-            self.__HEAD_BOUNDARY if offset != 0 else 0,
-            self.__TAIL_BOUNDARY,
-            self.head_model,
-            self.tail_model,
+            self.model,
+            self.model.boundary if offset == 0 else 0,
         )
         self.logger.debug(
             f"After: {''.join(str(t) for t in tokens if t.is_word)}", group_level=2

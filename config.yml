@@ -4,7 +4,7 @@ rt_whisper:
     huggingface:
         path: "openai/whisper-large-v3"
 
-    fasttext_path: /home/vscode/.cache/fasttext/crawl-300d-2M-subword.bin
+    fasttext_path: ${CONTAINER_HOME:/root}/.cache/fasttext/crawl-300d-2M-subword.bin
 
     log:
         level: 20 # INFO: 20, DEBUG: 10

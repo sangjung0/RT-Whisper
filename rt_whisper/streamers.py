@@ -48,6 +48,10 @@ def get_token_streamer(
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
+    boundary_word_filter_model = boundary_word_filter(
+        Path(str(hyperparameter["boundary_word_filter"]["model_path"])),
+        boundary=float(hyperparameter["boundary_word_filter"]["boundary"]),
+    )
 
     logger.debug("\n✅Creating token streamer with VADv1")
     c_logger = logger.get_child()
@@ -68,30 +72,7 @@ def get_token_streamer(
         ],
         [
             PositionWeightedFilter(
-                head_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "head_model_path"
-                            ]
-                        )
-                    )
-                ),
-                tail_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "tail_model_path"
-                            ]
-                        )
-                    )
-                ),
-                head_boundary=float(
-                    hyperparameter["position_weighted_filter"]["head_boundary"]
-                ),
-                tail_boundary=float(
-                    hyperparameter["position_weighted_filter"]["tail_boundary"]
-                ),
+                model=boundary_word_filter_model,
                 logger=c_logger,
             ),
             DurationFilter(
@@ -141,6 +122,10 @@ def get_token_streamer_with_vad_v2(
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
+    boundary_word_filter_model = boundary_word_filter(
+        Path(str(hyperparameter["boundary_word_filter"]["model_path"])),
+        boundary=float(hyperparameter["boundary_word_filter"]["boundary"]),
+    )
 
     logger.debug("\n✅Creating token streamer with VADv2")
     c_logger = logger.get_child()
@@ -160,30 +145,7 @@ def get_token_streamer_with_vad_v2(
         ],
         [
             PositionWeightedFilter(
-                head_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "head_model_path"
-                            ]
-                        )
-                    )
-                ),
-                tail_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "tail_model_path"
-                            ]
-                        )
-                    )
-                ),
-                head_boundary=float(
-                    hyperparameter["position_weighted_filter"]["head_boundary"]
-                ),
-                tail_boundary=float(
-                    hyperparameter["position_weighted_filter"]["tail_boundary"]
-                ),
+                model=boundary_word_filter_model,
                 logger=c_logger,
             ),
             DurationFilter(
@@ -233,6 +195,10 @@ def get_token_streamer_with_vad_v2_min_filter(
     vad = lambda audio: silero_vad.run(
         audio, hyperparameter["silero_vad"]["run_options"]
     )
+    boundary_word_filter_model = boundary_word_filter(
+        Path(str(hyperparameter["boundary_word_filter"]["model_path"])),
+        boundary=float(hyperparameter["boundary_word_filter"]["boundary"]),
+    )
 
     logger.debug("\n✅Creating token streamer with VADv2")
     c_logger = logger.get_child()
@@ -252,30 +218,7 @@ def get_token_streamer_with_vad_v2_min_filter(
         ],
         [
             PositionWeightedFilter(
-                head_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "head_model_path"
-                            ]
-                        )
-                    )
-                ),
-                tail_model=boundary_word_filter(
-                    Path(
-                        str(
-                            hyperparameter["position_weighted_filter"][
-                                "tail_model_path"
-                            ]
-                        )
-                    )
-                ),
-                head_boundary=float(
-                    hyperparameter["position_weighted_filter"]["head_boundary"]
-                ),
-                tail_boundary=float(
-                    hyperparameter["position_weighted_filter"]["tail_boundary"]
-                ),
+                model=boundary_word_filter_model,
                 logger=c_logger,
             ),
             DurationMinFilter(

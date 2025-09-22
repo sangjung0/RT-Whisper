@@ -46,6 +46,24 @@ TEMPLATE = {
             },
         },
         "silero_vad": {"model_options": {}, "run_options": {}},
+        "boundary_word_filter": {
+            "model_path": {
+                "key": "model",
+                "is_train": True,
+                "model_path": "path/to/boundary_word_filter/params",
+                "device": "cpu",
+                "maximum": 1.0,
+                "minimum": 0.0,
+            },
+            "boundary": {
+                "is_train": True,
+                "key": "boundary",
+                "value": 4800,
+                "minimum": 0,
+                "maximum": 19520,
+                "step": 160,
+            },
+        },
         "asr": {
             "max_prompt_word": 10,
             "max_overlap_duration": {
@@ -57,40 +75,7 @@ TEMPLATE = {
                 "step": 16000,
             },
         },
-        "position_weighted_filter": {
-            "head_model": {
-                "key": "head_model",
-                "is_train": True,
-                "model_path": "path/to/head_model/params",
-                "device": "cpu",
-                "maximum": 1.0,
-                "minimum": 0.0,
-            },
-            "tail_model": {
-                "key": "tail_model",
-                "is_train": True,
-                "model_path": "path/to/tail_model/params",
-                "device": "cpu",
-                "maximum": 1.0,
-                "minimum": 0.0,
-            },
-            "head_boundary": {
-                "is_train": True,
-                "key": "head_boundary",
-                "value": 8000,
-                "minimum": 0,
-                "maximum": 19520,
-                "step": 160,
-            },
-            "tail_boundary": {
-                "is_train": True,
-                "key": "tail_boundary",
-                "value": 8000,
-                "minimum": 0,
-                "maximum": 19520,
-                "step": 160,
-            },
-        },
+        "position_weighted_filter": {},
         "duration_filter": {
             "z_thresh": {
                 "default": 2.0,
@@ -443,4 +428,3 @@ __all__ = [
     "IntParam",
     "StudyParam",
 ]
-

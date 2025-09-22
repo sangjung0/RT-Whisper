@@ -1,65 +1,43 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import torch
+import numpy as np
 
 if TYPE_CHECKING:
     from rt_whisper.data import Token
-    from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
+    from rt_whisper.models.boundary_word_filter import BoundaryWordFilterWrapper
 
 
 def filter_by_position_weighted(
     tokens: list[Token],
     offset: int,
     chunk_length: int,
-    head_boundary: float,
-    tail_boundary: float,
-    head_model: BoundaryWordFilter,
-    tail_model: BoundaryWordFilter,
+    model: BoundaryWordFilterWrapper,
+    non_apply_width: int = 0,
 ):
+    start_list, end_list = [], []
     for token in tokens:
-        if not token.is_word:
+        if not token.is_word or token.start - offset < non_apply_width:
             continue
 
         start = token.start - offset
         end = token.end - offset
-        mid = (start + end) / 2
-        dur = end - start
+        start_list.append(start)
+        end_list.append(end)
 
-        if end < head_boundary:
-            start, end, mid, dur = (
-                start / head_boundary,
-                end / head_boundary,
-                mid / head_boundary,
-                dur / head_boundary,
-            )
-            with torch.no_grad():
-                weight = head_model(
-                    torch.tensor([start, end, mid, dur], dtype=torch.float32)
-                ).item()
-            token.probability = token.probability * weight
-        elif chunk_length - start < tail_boundary:
-            start, end, mid = (
-                chunk_length - end,
-                chunk_length - start,
-                chunk_length - mid,
-            )
-            start, end, mid, dur = (
-                start / tail_boundary,
-                end / tail_boundary,
-                mid / tail_boundary,
-                dur / tail_boundary,
-            )
-            with torch.no_grad():
-                weight = tail_model(
-                    torch.tensor([start, end, mid, dur], dtype=torch.float32)
-                ).item()
-            token.probability = token.probability * weight
-        else:
+    weights = model(
+        start=np.array(start_list), end=np.array(end_list), length=chunk_length
+    )
+
+    idx = 0
+    for token in tokens:
+        if not token.is_word or token.start - offset < non_apply_width:
             continue
+
+        token.probability = weights[idx] * token.probability
+        idx += 1
 
     return tokens
 
 
 __all__ = ["filter_by_position_weighted"]
-

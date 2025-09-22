@@ -19,7 +19,7 @@ from sj_utils.collection import SafetyDict
 
 from sj_ai_utils.datasets import Dataset
 
-from rt_whisper.models import BoundaryWordFilter
+from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
 
 from rt_whisper_optimizer.data import TEMPLATE, StudyParam
 from rt_whisper_optimizer.service import (
@@ -198,15 +198,13 @@ class Optimizer(ABC):
             transcribe_time: TimeChecker,
             overlap: int = None,
             hyperparameter: SafetyDict = None,
-            head_model: BoundaryWordFilter = None,
-            tail_model: BoundaryWordFilter = None,
+            model: BoundaryWordFilter= None,
         ):
             return t(
                 audio,
                 transcribe_time,
                 hyperparameter=hyperparameter,
-                head_model=head_model,
-                tail_model=tail_model,
+                model=model,
             )
 
         return transcriber
@@ -218,19 +216,17 @@ class Optimizer(ABC):
         transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
     ) -> Callable[[np.ndarray], float]:
 
-        head_model = BoundaryWordFilter()
-        tail_model = BoundaryWordFilter()
+        model = BoundaryWordFilter()
         # cache = {}
 
         def objective(param: np.ndarray) -> float:
             hyperparameter = SafetyDict(study.set_param(param))
-            key = study.get_study_key()
+            # key = study.get_study_key()
             # if key in cache:
             # return cache[key]
 
             overlap = int(hyperparameter["asr"]["max_overlap_duration"])
-            study.model_objs["head_model"].set(head_model)
-            study.model_objs["tail_model"].set(tail_model)
+            study.model_objs["model"].set(model)
 
             def t(audio: np.ndarray, audio_key: str):
                 return transcriber(
@@ -239,8 +235,7 @@ class Optimizer(ABC):
                     TimeChecker(),
                     overlap=overlap,
                     hyperparameter=hyperparameter,
-                    head_model=head_model,
-                    tail_model=tail_model,
+                    model=model,
                 )
 
             refs, hyps = [], []

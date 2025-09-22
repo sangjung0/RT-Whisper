@@ -10,7 +10,7 @@ from sj_utils.evaluator import TimeChecker
 from sj_utils.collection import SafetyDict
 from sj_utils.audio import segment_audio
 
-from rt_whisper.models import BoundaryWordFilter
+from rt_whisper.models.boundary_word_filter import BoundaryWordFilter
 
 if TYPE_CHECKING:
     pass
@@ -40,8 +40,7 @@ def get_rt_whisper_transcriber(
         audio: np.ndarray,
         transcribe_time: TimeChecker,
         hyperparameter: SafetyDict | Path = _hyperparameter,
-        head_model: BoundaryWordFilter = None,
-        tail_model: BoundaryWordFilter = None,
+        model: BoundaryWordFilter= None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -53,10 +52,8 @@ def get_rt_whisper_transcriber(
             hyperparameter=hyperparameter
         )
 
-        if head_model is not None:
-            token_streamer._Pipeline__workers[1][0].head_model = head_model
-        if tail_model is not None:
-            token_streamer._Pipeline__workers[1][0].tail_model = tail_model
+        if model is not None:
+            token_streamer._Pipeline__workers[1][0].model.model = model
 
         completed = []
         param = Param()
@@ -108,8 +105,7 @@ def get_token_saver_loader_transcriber(
         save_path: Path,
         transcribe_time: TimeChecker,
         hyperparameter: SafetyDict = _hyperparameter,
-        head_model: BoundaryWordFilter = None,
-        tail_model: BoundaryWordFilter = None,
+        model: BoundaryWordFilter= None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -119,10 +115,8 @@ def get_token_saver_loader_transcriber(
         token_streamer = saveloaders.get_token_streamer_saver(
             save_path=save_path, hyperparameter=hyperparameter
         )
-        if head_model is not None:
-            token_streamer._Pipeline__workers[1][0].head_model = head_model
-        if tail_model is not None:
-            token_streamer._Pipeline__workers[1][0].tail_model = tail_model
+        if model is not None:
+            token_streamer._Pipeline__workers[2][0].model.model = model
 
         completed = []
         param = Param()
@@ -148,17 +142,14 @@ def get_token_saver_loader_transcriber(
         save_path: Path,
         transcribe_time: TimeChecker,
         hyperparameter: SafetyDict = _hyperparameter,
-        head_model: BoundaryWordFilter = None,
-        tail_model: BoundaryWordFilter = None,
+        model: BoundaryWordFilter= None,
         language: str = _language,
     ) -> str:
         token_streamer = saveloaders.get_token_streamer_loader(
             saved_path=save_path, hyperparameter=hyperparameter
         )
-        if head_model is not None:
-            token_streamer._Pipeline__workers[1][0].head_model = head_model
-        if tail_model is not None:
-            token_streamer._Pipeline__workers[1][0].tail_model = tail_model
+        if model is not None:
+            token_streamer._Pipeline__workers[1][0].model.model = model
 
         segment_length = len(list(save_path.iterdir()))
 
@@ -182,8 +173,7 @@ def get_token_saver_loader_transcriber(
         storage: Path = _storage,
         overlap: int = _overlap,
         hyperparameter: SafetyDict = _hyperparameter,
-        head_model: BoundaryWordFilter = None,
-        tail_model: BoundaryWordFilter = None,
+        model: BoundaryWordFilter= None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -201,18 +191,16 @@ def get_token_saver_loader_transcriber(
             return token_loader(
                 saved_path,
                 transcribe_time,
-                language=language,
                 hyperparameter=hyperparameter,
-                head_model=head_model,
-                tail_model=tail_model,
+                model=model,
+                language=language,
             )
         return token_saver(
             audio,
             saved_path,
             transcribe_time,
             hyperparameter=hyperparameter,
-            head_model=head_model,
-            tail_model=tail_model,
+            model=model,
             chunk_size_mean=chunk_size_mean,
             chunk_size_std=chunk_size_std,
             chunk_size_max_div=chunk_size_max_div,
