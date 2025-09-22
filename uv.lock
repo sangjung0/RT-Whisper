@@ -577,6 +577,7 @@ dependencies = [
     { name = "matplotlib" },
     { name = "matplotlib-inline" },
     { name = "mdurl" },
+    { name = "mecab-python3" },
     { name = "more-itertools" },
     { name = "mpmath" },
     { name = "msgpack" },
@@ -712,7 +713,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "pybind11" },
-    { name = "python-mecab-kor" },
 ]
 
 [package.metadata]
@@ -810,6 +810,7 @@ requires-dist = [
     { name = "matplotlib", specifier = "==3.10.5" },
     { name = "matplotlib-inline", specifier = "==0.1.7" },
     { name = "mdurl", specifier = "==0.1.2" },
+    { name = "mecab-python3", specifier = ">=1.0.10" },
     { name = "more-itertools", specifier = "==10.7.0" },
     { name = "mpmath", specifier = "==1.3.0" },
     { name = "msgpack", specifier = "==1.1.1" },
@@ -943,10 +944,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "pybind11", path = ".vendor/pybind11-3.0.1-py3-none-any.whl" },
-    { name = "python-mecab-kor", specifier = ">=1.2.8" },
-]
+dev = [{ name = "pybind11", path = ".vendor/pybind11-3.0.1-py3-none-any.whl" }]
 
 [[package]]
 name = "dill"
@@ -1769,6 +1767,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729, upload-time = "2022-08-14T12:40:10.846Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979, upload-time = "2022-08-14T12:40:09.779Z" },
+]
+
+[[package]]
+name = "mecab-python3"
+version = "1.0.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/df/eeb4e250fc0a69b0a2deed5573f2c8d8445cf643cb9ecf25674f8186880f/mecab_python3-1.0.10.tar.gz", hash = "sha256:21cd4416043e9a993fcfb986dde93e4366a07543dd95849b5ef2e50c9a9afcce", size = 78691, upload-time = "2024-10-31T08:39:21.198Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/2b/ea98eae4f2c461d78560a6fa51dca13b2d3a6df9417779831bf883b27e7d/mecab_python3-1.0.10-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:ddeeb7e40348066cbcf980dffa19bc84e087bb0fb452ce149defc11747f52f85", size = 524249, upload-time = "2024-10-31T08:44:48.146Z" },
+    { url = "https://files.pythonhosted.org/packages/ac/d3/2662462d3acafafdf25d304369b566b73ac78f7ce37ab6ffbeb419d0923d/mecab_python3-1.0.10-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1acb9f47108170a43549637f3f45449c7018d56e91ca5fc8ad56bbcd8288848c", size = 487860, upload-time = "2024-10-31T08:44:49.986Z" },
+    { url = "https://files.pythonhosted.org/packages/67/23/f01909d734a1fcd4214b508bc0726e8b2b814ef98b6d22c73a9e2b0d7810/mecab_python3-1.0.10-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e487498dc7231926230944ad04e40406d23499240fd35273d8d2c4f775dcc162", size = 483814, upload-time = "2024-10-31T08:44:52.14Z" },
+    { url = "https://files.pythonhosted.org/packages/43/11/d185e233f5fc0d25ba2d4197fc5f0531616f8d58b944f87adf608baddf33/mecab_python3-1.0.10-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:2a2924d9ee1a7eefe0601edf16d2b63c5519e3403b319cfc9d1eda4bf978f6d9", size = 560222, upload-time = "2024-10-31T09:00:14.671Z" },
+    { url = "https://files.pythonhosted.org/packages/23/e6/dd1d502e7473acdd8eb0171cf4f631c9dfb6e05520e0ce4936abe2e19e18/mecab_python3-1.0.10-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:069c176c02b6bec3fdc9e00c42138dc77ef4b683908b6909808bc7528d2996bc", size = 581692, upload-time = "2024-10-31T08:40:29.474Z" },
+    { url = "https://files.pythonhosted.org/packages/6f/a1/a6faf184ca7870815aa665ee4aea65310042ca4541c4b1ec79f9fa8ed17f/mecab_python3-1.0.10-cp310-cp310-win_amd64.whl", hash = "sha256:63cd0a65835257a1fcb88f25a6eaf1a8e472990a9d3f7d08300c5cccf8973931", size = 502463, upload-time = "2024-10-31T08:40:07.548Z" },
 ]
 
 [[package]]
@@ -2679,12 +2691,6 @@ sdist = { url = "https://files.pythonhosted.org/packages/f6/b0/4bc07ccd3572a2f9d
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/ed/539768cf28c661b5b068d66d96a2f155c4971a5d55684a514c1a0e0dec2f/python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc", size = 20556, upload-time = "2025-06-24T04:21:06.073Z" },
 ]
-
-[[package]]
-name = "python-mecab-kor"
-version = "1.2.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2c/2e/7917319425c0f5b8afc80274387ab9613240ff64a4b7c32d23962c5c9dcd/python-mecab-kor-1.2.8.tar.gz", hash = "sha256:7cb8d04d583f736327eb6bbecabb0c68ef9cea91c10d0265419ec6b0643c5b64", size = 12538, upload-time = "2023-05-16T18:31:56.431Z" }
 
 [[package]]
 name = "python-multipart"
