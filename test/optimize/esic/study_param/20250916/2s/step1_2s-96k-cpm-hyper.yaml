@@ -3,19 +3,19 @@ description: "
     use_cache: True
     use_prompt: False
 
-    학습 횟수 5000으로 제한
+    학습 횟수 1000으로 제한
     "
 optimizer:
     algo: CMA # SPSA or CMA
     model_sample_rate: 16000
-    max_study_steps: 5000
+    max_study_steps: 1000
     use_cache: True
     use_prompt: False
     random_seed: 42
     chunk_size: 32000
     language: "en"
     top_k: 10
-    sigma: 0.1
+    sigma: 0.3
 study:
     whisper:
         model_options:
@@ -46,16 +46,16 @@ study:
             key: head_model
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
-            maximum: 100.0
-            minimum: -100.0
+            maximum: 20.0
+            minimum: -20.0
         tail_model_path:
             is_train: False
             dtype: model
             key: tail_model
             model_path: /workspaces/dev/test/optimize/all/model_weight/boundary_word_filter_zero.pth
             device: cpu
-            maximum: 100.0
-            minimum: -100.0
+            maximum: 20.0
+            minimum: -20.0
         head_boundary:
             is_train: False
             dtype: integer
@@ -169,6 +169,6 @@ study:
             dtype: integer
             key: "token_group_size"
             value: 2
-            minimum: 2
+            minimum: 0
             maximum: 10
             step: 1
