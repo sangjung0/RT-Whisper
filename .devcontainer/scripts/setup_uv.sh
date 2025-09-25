@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-MAX_RETRIES=10
-RETRY_DELAY=1
-
 GROUP="${1:-dev}"
 WORK_DIR="${2:-/workspaces/dev}"
 VENV_DIR="${WORK_DIR}/.venv"
@@ -39,22 +36,14 @@ if [[ -z "${PYBIND_WHL:-}" ]]; then
 fi
 echo "[INFO] using pybind11 wheel: ${PYBIND_WHL}"
 
-attempt=1
-while [[ $attempt -le $MAX_RETRIES ]]; do
-    echo "[INFO] uv sync try $attempt/$MAX_RETRIES..."
-    if uv sync --group dev; then
-        echo "[INFO] uv sync succeeded."
-        break
-    else
-        echo "[INFO] uv sync failed, (busy or other error). wait for retry..."
-        sleep $RETRY_DELAY
-    fi
-    ((attempt++))
-done
-
-if [[ $attempt -gt $MAX_RETRIES ]]; then
-    echo "[ERROR] Failed uv sync" >&2
+echo "[INFO] uv sync"
+if uv sync --frozen --group dev; then
+    echo "[INFO] uv sync succeeded."
+    break
+else
+    echo "[INFO] uv sync failed."
     exit 1
 fi
 
 echo "[INFO] Done setup uv."
+
