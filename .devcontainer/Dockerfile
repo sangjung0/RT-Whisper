@@ -1,8 +1,8 @@
 FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04 AS base
 
-ARG USER="ksj"
-ARG UID=1001
-ARG HOME="/home/${USER}"
+ARG USER="root"
+ARG UID=0
+ARG HOME="/${USER}"
 ARG WORKDIR="/workspaces/dev"
 ARG UV_GROUP="dev"
 

@@ -11,7 +11,7 @@ fi
 # UID=$(id -u "$USERNAME")
 HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 
-echo "[INFO] step 1/1: change ownership to $USERNAME"
+echo "[INFO] step 1/2: change ownership to $USERNAME"
 bash /workspaces/dev/.devcontainer/scripts/change_owner.sh "$USERNAME"\
     --target /workspaces/dev:/workspaces/dev/.datasets \
     --target "$HOME"/.cache \
@@ -23,6 +23,6 @@ bash /workspaces/dev/.devcontainer/scripts/change_owner.sh "$USERNAME"\
 
 # echo "[INFO] step 2/3: setup uv for $USERNAME"
 # bash /workspaces/dev/.devcontainer/scripts/setup_uv.sh
-# echo "[INFO] step 3/3: setup lhotse"
-# bash /workspaces/dev/.devcontainer/scripts/setup_lhotse.sh
+echo "[INFO] step 2/2: setup lhotse"
+bash /workspaces/dev/.devcontainer/scripts/setup_lhotse.sh
 
