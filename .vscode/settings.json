@@ -13,12 +13,22 @@
         "**/.data",
         "**/.vscode",
         "**/__pycache__",
-        "**/hyperparameters",
         "**/output",
         "**/logs",
         ".datasets",
         ".storage",
     ],
+    "search.exclude": {
+        "**/.git": true,
+        "**/.data": true,
+        "**/.vscode": true,
+        "**/__pycache__": true,
+        "**/output": true,
+        "**/logs": true,
+        ".datasets": true,
+        ".storage": true,
+        "**/.venv/**": true
+    },
     "files.watcherExclude": {
         "**/.git/objects/**": true,
         "**/.git/subtree-cache/**": true,

@@ -6,7 +6,6 @@ import numpy as np
 from pathlib import Path
 from whisper.normalizers import EnglishTextNormalizer
 
-from sj_utils.evaluator import TimeChecker
 from sj_utils.collection import SafetyDict
 from sj_utils.audio import segment_audio
 
@@ -38,9 +37,8 @@ def get_rt_whisper_transcriber(
 
     def transcriber(
         audio: np.ndarray,
-        transcribe_time: TimeChecker,
         hyperparameter: SafetyDict | Path = _hyperparameter,
-        model: BoundaryWordFilter= None,
+        model: BoundaryWordFilter = None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -66,11 +64,10 @@ def get_rt_whisper_transcriber(
         ):
             param.chunk = segment
             param.language = language
-            transcribe_time.start()
             result: Result = token_streamer.process(param)
-            transcribe_time.check()
             completed.extend(result.completed)
             param.update(result, update_prompt=use_prompt)
+
         completed.extend(result.candidate)
         text = " ".join([s.text for s in completed])
         return text
@@ -103,9 +100,8 @@ def get_token_saver_loader_transcriber(
     def token_saver(
         audio: np.ndarray,
         save_path: Path,
-        transcribe_time: TimeChecker,
         hyperparameter: SafetyDict = _hyperparameter,
-        model: BoundaryWordFilter= None,
+        model: BoundaryWordFilter = None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -129,20 +125,18 @@ def get_token_saver_loader_transcriber(
         ):
             param.chunk = segment
             param.language = language
-            transcribe_time.start()
             result: Result = token_streamer.process(param)
-            transcribe_time.check()
             completed.extend(result.completed)
             param.update(result, update_prompt=False)
+
         completed.extend(result.candidate)
         text = " ".join([s.text for s in completed])
         return text
 
     def token_loader(
         save_path: Path,
-        transcribe_time: TimeChecker,
         hyperparameter: SafetyDict = _hyperparameter,
-        model: BoundaryWordFilter= None,
+        model: BoundaryWordFilter = None,
         language: str = _language,
     ) -> str:
         token_streamer = saveloaders.get_token_streamer_loader(
@@ -157,11 +151,10 @@ def get_token_saver_loader_transcriber(
         param = Param()
         for _ in range(segment_length):
             param.language = language
-            transcribe_time.start()
             result: Result = token_streamer.process(param)
-            transcribe_time.check()
             completed.extend(result.completed)
             param.update(result, update_prompt=False)
+
         completed.extend(result.candidate)
         text = " ".join([s.text for s in completed])
         return text
@@ -169,11 +162,10 @@ def get_token_saver_loader_transcriber(
     def transcriber(
         audio: np.ndarray,
         audio_key: Path | str,
-        transcribe_time: TimeChecker,
         storage: Path = _storage,
         overlap: int = _overlap,
         hyperparameter: SafetyDict = _hyperparameter,
-        model: BoundaryWordFilter= None,
+        model: BoundaryWordFilter = None,
         chunk_size_mean: int = _chunk_size_mean,
         chunk_size_std: int = _chunk_size_std,
         chunk_size_max_div: int = _chunk_size_max_div,
@@ -190,7 +182,6 @@ def get_token_saver_loader_transcriber(
         if saved_path.exists():
             return token_loader(
                 saved_path,
-                transcribe_time,
                 hyperparameter=hyperparameter,
                 model=model,
                 language=language,
@@ -198,7 +189,6 @@ def get_token_saver_loader_transcriber(
         return token_saver(
             audio,
             saved_path,
-            transcribe_time,
             hyperparameter=hyperparameter,
             model=model,
             chunk_size_mean=chunk_size_mean,

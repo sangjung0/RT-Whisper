@@ -58,6 +58,8 @@ class TokenState:
             offset=self.offset,
             completed=self.completed,
             candidate=self.candidate,
+            completed_tokens=self.completed_tokens,
+            candidate_tokens=self.candidate_tokens,
             context_dict=context_dict,
         )
 

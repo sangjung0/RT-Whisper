@@ -181,18 +181,8 @@ cython_debug/
 
 test/modules
 
-test/optimize/esic/study
-test/optimize/libri/study
-test/optimize/all/study
-test/optimize/all/model_weight
+test/optimize/study
+test/optimize/model_weight
 
 test/performance_test/output/**
-test/performance_test/all/output/**
-test/performance_test/esic/output/**
-test/performance_test/libri/output/**
-test/performance_test/ami/output/**
-test/performance_test/tedlium/output/**
-test/performance_test/vox_populi/output/**
-test/performance_test/ks_pon_speech/output/**
-test/performance_test/zeroth_korean/output/**
 

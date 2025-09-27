@@ -14,7 +14,6 @@ from typing import Callable
 
 from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
 from sj_utils.logger import generate
-from sj_utils.evaluator import TimeChecker
 from sj_utils.collection import SafetyDict
 
 from sj_ai_utils.datasets import Dataset
@@ -195,14 +194,12 @@ class Optimizer(ABC):
         def transcriber(
             audio: np.ndarray,
             audio_key: Path | str,
-            transcribe_time: TimeChecker,
             overlap: int = None,
             hyperparameter: SafetyDict = None,
-            model: BoundaryWordFilter= None,
+            model: BoundaryWordFilter = None,
         ):
             return t(
                 audio,
-                transcribe_time,
                 hyperparameter=hyperparameter,
                 model=model,
             )
@@ -213,7 +210,7 @@ class Optimizer(ABC):
         self,
         dataset: Dataset,
         study: StudyParam,
-        transcriber: Callable[[np.ndarray, Path, TimeChecker, SafetyDict, int], str],
+        transcriber: Callable[[np.ndarray, Path, int, SafetyDict, BoundaryWordFilter], str],
     ) -> Callable[[np.ndarray], float]:
 
         model = BoundaryWordFilter()
@@ -232,7 +229,6 @@ class Optimizer(ABC):
                 return transcriber(
                     audio,
                     audio_key,
-                    TimeChecker(),
                     overlap=overlap,
                     hyperparameter=hyperparameter,
                     model=model,
