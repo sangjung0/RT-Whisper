@@ -42,7 +42,7 @@ study:
             is_train: False
             dtype: integer
             key: boundary
-            value: 96000
+            value: 16000
             minimum: 0
             maximum: 112000
             step: 160
