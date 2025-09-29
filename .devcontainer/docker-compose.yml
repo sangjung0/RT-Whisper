@@ -14,11 +14,12 @@ services:
             - venv:${WORKDIR}/.venv
             - vendor:${WORKDIR}/.vendor
             - uv_cache:${CONTAINER_HOME}/.cache/uv
-            - uv_python:${CONTAINER_HOME}/.local/share/uv
+            - local_cache:${CONTAINER_HOME}/.local
 
             - huggingface_cache:${CONTAINER_HOME}/.cache/huggingface
             - torch_cache:${CONTAINER_HOME}/.cache/torch
             - fasttext_cache:${CONTAINER_HOME}/.cache/fasttext
+            - whisper_cache:${CONTAINER_HOME}/.cache/whisper
 
             # dataset
             - datasets:${WORKDIR}/.datasets:ro
@@ -46,7 +47,7 @@ volumes:
       driver: local
     uv_cache:
       driver: local
-    uv_python:
+    local_cache:
       driver: local
     huggingface_cache:
       driver: local
@@ -66,6 +67,12 @@ volumes:
         type: none
         o: bind
         device: ${DOCKER_VOLUME}/cache/fasttext
+    whisper_cache:
+      driver: local
+      driver_opts:
+        type: none
+        o: bind
+        device: ${DOCKER_VOLUME}/cache/whisper
     datasets:
       driver: local
       driver_opts:

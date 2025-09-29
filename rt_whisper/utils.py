@@ -15,6 +15,7 @@ from rt_whisper.models import Whisper, SileroVad, BoundaryWordFilterWrapper
 
 def init_hyperparameter(
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
     if hyperparameter is None:
         hyperparameter = default_hyperparameter
@@ -24,6 +25,11 @@ def init_hyperparameter(
         raise TypeError(
             f"Expected hyperparameter to be SafetyDict, Path, or str, got {type(hyperparameter)}"
         )
+
+    if model_size_or_path:
+        hyperparameter["whisper"]["model_options"][
+            "model_size_or_path"
+        ] = model_size_or_path
 
     return hyperparameter
 

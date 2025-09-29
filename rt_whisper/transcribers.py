@@ -18,8 +18,11 @@ from rt_whisper.utils import (
 
 def get_transcriber(
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(

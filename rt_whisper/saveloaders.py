@@ -8,9 +8,7 @@ from sj_utils.collection import SafetyDict
 from rt_whisper.core import logger
 from rt_whisper.composer import Composer
 from rt_whisper.filters import (
-    DurationFilter,
     PositionWeightedFilter,
-    ProbabilityFilter,
     DurationMinFilter,
     ProbabilityMinFilter,
 )
@@ -36,8 +34,11 @@ if TYPE_CHECKING:
 def get_token_streamer_saver(
     save_path: Path,
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
@@ -115,8 +116,11 @@ def get_token_streamer_saver(
 def get_token_streamer_loader(
     saved_path: Path,
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     boundary_word_filter_model = boundary_word_filter(
         Path(str(hyperparameter["boundary_word_filter"]["model_path"])),

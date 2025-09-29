@@ -35,8 +35,11 @@ if TYPE_CHECKING:
 
 def get_token_streamer(
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     whisper = get_whisper(dict(hyperparameter["whisper"]["model_options"]))
     transcribe = lambda audio, language, prompt: whisper.transcribe(
@@ -109,8 +112,11 @@ def get_token_streamer(
 
 def get_token_streamer_with_vad_v2(
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
@@ -182,8 +188,11 @@ def get_token_streamer_with_vad_v2(
 
 def get_token_streamer_with_vad_v2_min_filter(
     hyperparameter: SafetyDict | Path | str | None = None,
+    model_size_or_path: str | None = None,
 ):
-    hyperparameter = init_hyperparameter(hyperparameter)
+    hyperparameter = init_hyperparameter(
+        hyperparameter, model_size_or_path=model_size_or_path
+    )
 
     whisper = get_whisper(hyperparameter["whisper"]["model_options"])
     transcribe = lambda audio, language, prompt: whisper.transcribe(
