@@ -6,6 +6,7 @@ from sj_ai_utils.datasets.hugging_face import KSPonSpeech
 from sj_ai_utils.datasets.l_hotse import VoxPopuli
 from sj_ai_utils.datasets.l_hotse import Tedlium
 from sj_ai_utils.datasets.l_hotse import LibriSpeech
+from sj_utils.file.yaml import read_yaml
 
 from rt_whisper_optimizer import Optimizer
 
@@ -66,6 +67,7 @@ params = [
         "storage": "/workspaces/dev/.storage/zeroth_korean/3s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_zeroth_korean,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/3s/step2_3s-96k-cpm",
         ],
@@ -78,6 +80,7 @@ params = [
         "storage": "/workspaces/dev/.storage/zeroth_korean/2s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_zeroth_korean,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/2s/step2_2s-96k-cpm",
         ],
@@ -90,6 +93,7 @@ params = [
         "storage": "/workspaces/dev/.storage/zeroth_korean/1s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_zeroth_korean,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/1s/step2_1s-96k-cpm",
         ],
@@ -103,6 +107,7 @@ params = [
         "storage": "/workspaces/dev/.storage/kspon_speech/3s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_ks_pon_speech,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/3s/step2_3s-96k-cpm",
         ],
@@ -115,6 +120,7 @@ params = [
         "storage": "/workspaces/dev/.storage/kspon_speech/2s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_ks_pon_speech,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/2s/step2_2s-96k-cpm",
         ],
@@ -127,6 +133,7 @@ params = [
         "storage": "/workspaces/dev/.storage/kspon_speech/1s",
         "study": "/workspaces/dev/test/optimize/study",
         "dataset": load_ks_pon_speech,
+        "language": "ko",
         "output": [
             "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/1s/step2_1s-96k-cpm",
         ],
@@ -294,10 +301,14 @@ for param in params:
     study_instruction = param["study_instruction"]
     print(f"{name}: {len(datasets)}")
 
+    language = param.get("language", None)
+
     for op, si in zip(output, study_instruction):
         op, si = Path(op), Path(si)
-        optimizer = Optimizer(study, op, si, cache_storage=storage)
+        instruction = read_yaml(si)
+        if language is not None:
+            instruction["optimizer"]["language"] = language
+        optimizer = Optimizer(study, op, instruction, cache_storage=storage)
         optimizer.optimize(datasets, log_step=100, plot_history=False)
 
     del datasets
-
