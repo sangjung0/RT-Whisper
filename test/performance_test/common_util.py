@@ -1,13 +1,11 @@
 import os
 import sys
 
-os.chdir("/workspaces/dev")
-paths = [
-    "/workspaces/dev/test/modules/whisper_streaming",
-    "/workspaces/dev/test/modules/simul_whisper",
-]
-for path in paths:
-    sys.path.append(os.path.abspath(path))
+WORKDIR = os.environ["CONTAINER_WORK_DIR"]
+os.chdir(WORKDIR)
+sys.path.append(f"{WORKDIR}/test/modules/whisper_streaming")
+sys.path.append(f"{WORKDIR}/test/modules/simul_whisper")
+print(f"Current Python version: {sys.version}")
 
 import torch
 import numpy as np
@@ -166,7 +164,7 @@ def get_simul_whisper_transcriber(model_size: str, language: str, chunk_size: in
         language=language,
         buffer_len=20,
         min_seg_len=0.0,
-        if_ckpt_path=f"/workspaces/dev/test/modules/simul_whisper/cif_models/{model_size}.pt",
+        if_ckpt_path=f"{WORKDIR}/test/modules/simul_whisper/cif_models/{model_size}.pt",
     )
     model = PaddedAlignAttWhisper(cfg)
 

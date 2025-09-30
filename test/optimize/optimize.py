@@ -1,3 +1,10 @@
+import os
+import sys
+
+WORKDIR = os.environ["CONTAINER_WORK_DIR"]
+os.chdir(WORKDIR)
+print(f"Current Python version: {sys.version}")
+
 from pathlib import Path
 
 from sj_ai_utils.datasets.esic_v1 import ESICv1Dataset
@@ -10,10 +17,10 @@ from sj_utils.file.yaml import read_yaml
 
 from rt_whisper_optimizer import Optimizer
 
-VOX_POPULI_PATH = "/workspaces/dev/.datasets/vox_populi"
-TEDLIUM_PATH = "/workspaces/dev/.datasets/tedlium"
-LIBRI_PATH = "/workspaces/dev/.datasets/libri_speech"
-ESIC_PATH = "/workspaces/dev/test/performance_test/data/esic_train.json"
+VOX_POPULI_PATH = f"{WORKDIR}/.datasets/vox_populi"
+TEDLIUM_PATH = f"{WORKDIR}/.datasets/tedlium"
+LIBRI_PATH = f"{WORKDIR}/.datasets/libri_speech"
+ESIC_PATH = f"{WORKDIR}/test/performance_test/data/esic_train.json"
 
 load_esic = lambda: ESICv1Dataset.load(Path(ESIC_PATH)).sample(-1)
 load_zeroth_korean = lambda: ZerothKorean().train().sample(1829)
@@ -27,266 +34,266 @@ params = [
     # ESIC
     {
         "name": "ESIC",
-        "storage": "/workspaces/dev/.storage/esic/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/esic/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/esic/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "ESIC",
-        "storage": "/workspaces/dev/.storage/esic/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/esic/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/esic/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "ESIC",
-        "storage": "/workspaces/dev/.storage/esic/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/esic/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/esic/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # Zeroth Korean
     {
         "name": "Zeroth Korean",
-        "storage": "/workspaces/dev/.storage/zeroth_korean/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/zeroth_korean/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "Zeroth Korean",
-        "storage": "/workspaces/dev/.storage/zeroth_korean/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/zeroth_korean/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "Zeroth Korean",
-        "storage": "/workspaces/dev/.storage/zeroth_korean/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/zeroth_korean/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/zeroth_korean/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # KSPonSpeech
     {
         "name": "KSPonSpeech",
-        "storage": "/workspaces/dev/.storage/kspon_speech/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/kspon_speech/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "KSPonSpeech",
-        "storage": "/workspaces/dev/.storage/kspon_speech/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/kspon_speech/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "KSPonSpeech",
-        "storage": "/workspaces/dev/.storage/kspon_speech/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/kspon_speech/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/kspon_speech/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # VoxPopuli
     {
         "name": "Vox populi",
-        "storage": "/workspaces/dev/.storage/vox_populi/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/vox_populi/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/vox_populi/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "vox populi",
-        "storage": "/workspaces/dev/.storage/vox_populi/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/vox_populi/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/vox_populi/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "vox populi",
-        "storage": "/workspaces/dev/.storage/vox_populi/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/vox_populi/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/vox_populi/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # Tedlium
     {
         "name": "Tedlium",
-        "storage": "/workspaces/dev/.storage/tedlium/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/tedlium/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/tedlium/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "Tedlium",
-        "storage": "/workspaces/dev/.storage/tedlium/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/tedlium/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/tedlium/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "Tedlium",
-        "storage": "/workspaces/dev/.storage/tedlium/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/tedlium/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/tedlium/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # LibriSpeech clean
     {
         "name": "LibriSpeech clean",
-        "storage": "/workspaces/dev/.storage/libri_clean/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_clean/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_clean/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "LibriSpeech clean",
-        "storage": "/workspaces/dev/.storage/libri_clean/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_clean/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_clean/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "LibriSpeech clean",
-        "storage": "/workspaces/dev/.storage/libri_clean/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_clean/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_clean/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # LibriSpeech other
     {
         "name": "LibriSpeech other",
-        "storage": "/workspaces/dev/.storage/libri_other/3s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_other/3s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_other/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
         "name": "LibriSpeech other",
-        "storage": "/workspaces/dev/.storage/libri_other/2s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_other/2s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_other/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
         "name": "LibriSpeech other",
-        "storage": "/workspaces/dev/.storage/libri_other/1s",
-        "study": "/workspaces/dev/test/optimize/study",
+        "storage": f"{WORKDIR}/.storage/libri_other/1s",
+        "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            "/workspaces/dev/test/optimize/hyperparameters/libri_other/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            "/workspaces/dev/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
         ],
     },
 

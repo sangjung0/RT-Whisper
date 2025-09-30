@@ -4,13 +4,11 @@ from typing import TYPE_CHECKING
 import os
 import sys
 
-os.chdir("/workspaces/dev")
-paths = [
-    "/workspaces/dev/test/performance_test",
-    "/workspaces/dev/test/performance_test/esic",
-]
-for path in paths:
-    sys.path.append(os.path.abspath(path))
+WORKDIR = os.environ["CONTAINER_WORK_DIR"]
+
+os.chdir(WORKDIR)
+sys.path.append(f"{WORKDIR}/test/performance_test")
+sys.path.append(f"{WORKDIR}/test/performance_test/esic")
 
 import numpy as np
 

@@ -1,6 +1,8 @@
+import os
 from faster_whisper import WhisperModel
 
-TEST_AUDIO_FILE = "/workspaces/dev/.data/news_with_english.mp3"
+WORKDIR = os.environ["CONTAINER_WORK_DIR"]
+TEST_AUDIO_FILE = f"{WORKDIR}/.data/news_with_english.mp3"
 
 model = WhisperModel("large-v3", device="cuda", compute_type="int8")
 
