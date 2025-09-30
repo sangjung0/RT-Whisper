@@ -13,8 +13,8 @@ HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 
 echo "[INFO] step 1/2: change ownership to $USERNAME"
 bash /workspaces/dev/.devcontainer/scripts/change_owner.sh "$USERNAME"\
+    --target "$HOME" \
     --target /workspaces/dev:/workspaces/dev/.datasets \
-    --target "$HOME"/.cache \
     --target /workspaces/dev/.datasets/asr-rankformer-datasets \
     --target /workspaces/dev/.datasets/ami \
     --target /workspaces/dev/.datasets/vox_populi \

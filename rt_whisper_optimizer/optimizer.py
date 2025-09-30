@@ -12,7 +12,7 @@ from abc import ABC
 from pathlib import Path
 from typing import Callable
 
-from sj_utils.file.yaml import read_yaml_namespace, read_yaml, YamlSaver
+from sj_utils.file.yaml import read_yaml_namespace, YamlSaver
 from sj_utils.logger import generate
 from sj_utils.collection import SafetyDict
 
@@ -36,7 +36,7 @@ class Optimizer(ABC):
         self,
         study_path: Path,  # 최적화 객체 저장/백업 경로
         output_path: Path,  # 결과 저장 경로
-        instructions: Path | dict,
+        instructions: dict,
         cache_storage: Path | None = None,  # dataset 모델 결과 캐싱 경로
         step: int = 0,
     ):
@@ -44,8 +44,6 @@ class Optimizer(ABC):
             raise ValueError(
                 f"Study path {study_path} should be a directory, not a file."
             )
-        if isinstance(instructions, Path):
-            instructions = read_yaml(instructions)
 
         config = read_yaml_namespace(Path(os.getenv("CONFIG_PATH", "config.yml")))
         logger = generate(

@@ -23,7 +23,6 @@ services:
 
             # dataset
             - datasets:${WORKDIR}/.datasets:ro
-            - datasets_asr_rankformer_datasets:${WORKDIR}/.datasets/asr-rankformer-datasets:rw
             - datasets_ami:${WORKDIR}/.datasets/ami:rw
             - datasets_tedlium:${WORKDIR}/.datasets/tedlium:rw
             - datasets_vox_populi:${WORKDIR}/.datasets/vox_populi:rw
@@ -79,12 +78,6 @@ volumes:
         type: none
         o: bind
         device: ${DOCKER_VOLUME}/datasets
-    datasets_asr_rankformer_datasets:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets/asr-rankformer-datasets
     datasets_ami:
       driver: local
       driver_opts:
