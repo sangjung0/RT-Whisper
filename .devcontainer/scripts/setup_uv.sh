@@ -1,40 +1,39 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-GROUP="${1:-dev}"
-WORK_DIR="${2:-/workspaces/dev}"
-VENV_DIR="${WORK_DIR}/.venv"
+# usage
+usage() {
+    echo "Usage: $0 <group> <workdir> <home>" >&2
+    exit 1
+}
 
-WHEEL_DIR="${WORK_DIR}/.vendor"
-mkdir -p "${WHEEL_DIR}"
+# args: <group> <workdir>
+if [[ $# -lt 3 ]]; then
+    usage
+fi
 
-cd "${WORK_DIR}"
+# args
+CONTAINER_UV_GROUP="${1}"
+CONTAINER_WORK_DIR="${2}"
+CONTAINER_HOME="${3}"
+CONTAINER_VENV_DIR="${CONTAINER_WORK_DIR}/.venv"
 
-echo "[INFO] install uv"
-curl -LsSf https://astral.sh/uv/install.sh | sh
-export PATH="$HOME/.local/bin:$PATH"
-
-echo "[INFO] Build pybind11 (to ${WHEEL_DIR})"
-if command -v python3 &>/dev/null; then
-    PYBIN="python3"
-else
-    echo "[ERROR] python3가 필요함." >&2
+if [[ ! -d "${CONTAINER_HOME}" ]]; then
+    echo "[ERROR] home directory '${CONTAINER_HOME}' does not exist" >&2
     exit 1
 fi
 
-if ls "${WHEEL_DIR}/pybind11-"*.whl >/dev/null 2>&1; then
-    echo "[INFO] Existing pybind11 wheel found, skipping build."
-else
-    ${PYBIN} -m pip install -U pip setuptools wheel
-    ${PYBIN} -m pip wheel --no-cache-dir -w "${WHEEL_DIR}" pybind11==3.0.1
-fi
-
-PYBIND_WHL="$(ls -t "${WHEEL_DIR}"/pybind11-*.whl | head -n1)"
-if [[ -z "${PYBIND_WHL:-}" ]]; then
-    echo "[ERROR] Failed build pybind11 wheel" >&2
+if ! command -v uv &> /dev/null; then
+    echo "[ERROR] uv is not installed" >&2
     exit 1
 fi
-echo "[INFO] using pybind11 wheel: ${PYBIND_WHL}"
+
+if ! command -v python3 &>/dev/null; then
+    echo "[ERROR] python3 is not installed" >&2
+    exit 1
+fi
+
+cd "${CONTAINER_WORK_DIR}"
 
 echo "[INFO] uv sync"
 if uv sync --frozen --group dev; then

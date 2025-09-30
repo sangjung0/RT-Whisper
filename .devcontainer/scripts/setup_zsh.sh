@@ -7,33 +7,46 @@ if [[ $# -lt 2 ]]; then
     exit 1
 fi
 
-USER_NAME="$1"
-USER_UID="$2"
+CONTAINER_USER="${1:-$CONTAINER_USER}"
+CONTAINER_UID="${2:-$CONTAINER_UID}"
+CONTAINER_HOME="${3:-$CONTAINER_HOME}"
 
-if [[ "$USER_NAME" == "root" || "$USER_UID" == "0" ]]; then
-    echo "[INFO] root user detected → zsh config will be applied to /root"
-    HOME_DIR="/root"
-else
-    HOME_DIR="/home/$USER_NAME"
+if [[ -z "${CONTAINER_USER}" ]]; then
+    echo "[ERROR] CONTAINER_USER is not set" >&2
+    exit 1
+elif [[ -z "${CONTAINER_UID}" ]]; then
+    echo "[ERROR] CONTAINER_UID is not set" >&2
+    exit 1
+elif [[ -z "${CONTAINER_HOME}" ]]; then
+    echo "[ERROR] CONTAINER_HOME is not set" >&2
+    exit 1
+elif [[ "${CONTAINER_USER}" == "root" && "${CONTAINER_UID}" == "0" && "${CONTAINER_HOME}" != "/root" ]]; then
+    echo "[ERROR] HOME is not /root for root user: ${CONTAINER_HOME}" >&2
+    exit 1
+elif [[ "${CONTAINER_USER}" != "root" && "${CONTAINER_UID}" == "0" ]]; then
+    echo "[ERROR] Non-root user cannot have UID 0" >&2
+    exit 1
+elif [[ "${CONTAINER_HOME}" != "/home/${CONTAINER_USER}" && "${CONTAINER_USER}" != "root" ]]; then
+    echo "[ERROR] HOME is not /home/${CONTAINER_USER} for non-root user: ${CONTAINER_HOME}" >&2 exit 1
 fi
 
-echo "[INFO] installing oh-my-zsh for $USER_NAME at $HOME_DIR"
-RUN_AS="sudo -u $USER_NAME"
-[[ "$USER_NAME" == "root" ]] && RUN_AS=""
+echo "[INFO] installing oh-my-zsh for ${CONTAINER_USER} at ${CONTAINER_HOME}"
+RUN_AS="sudo -u ${CONTAINER_USER}"
+[[ "${CONTAINER_USER}" == "root" ]] && RUN_AS=""
 
 $RUN_AS sh -c "curl -LsSf https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | sh || true"
 
 # Install powerlevel10k theme
-OHMYZSH_THEME="$HOME_DIR/.oh-my-zsh/custom/themes"
-mkdir -p "$OHMYZSH_THEME"
-$RUN_AS git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$OHMYZSH_THEME/powerlevel10k" || true
+OHMYZSH_THEME="${CONTAINER_HOME}/.oh-my-zsh/custom/themes"
+mkdir -p "${OHMYZSH_THEME}"
+$RUN_AS git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${OHMYZSH_THEME}/powerlevel10k" || true
 
-ZSHRC="$HOME_DIR/.zshrc"
-if [[ -f "$ZSHRC" ]]; then
-    sed -i 's|^ZSH_THEME=.*|ZSH_THEME="powerlevel10k/powerlevel10k"|' "$ZSHRC"
-    echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> "$ZSHRC"
-    echo 'alias ls="ls -lsaF"' >> "$ZSHRC"
+ZSHRC="${CONTAINER_HOME}/.zshrc"
+if [[ -f "${ZSHRC}" ]]; then
+    sed -i 's|^ZSH_THEME=.*|ZSH_THEME="powerlevel10k/powerlevel10k"|' "${ZSHRC}"
+    echo 'POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true' >> "${ZSHRC}"
+    echo 'alias ls="ls -lsaF"' >> "${ZSHRC}"
 fi
 
-chown -R "$USER_NAME":"$USER_NAME" "$HOME_DIR/.oh-my-zsh" "$HOME_DIR/.zshrc" || true
-chsh -s "$(which zsh)" "$USER_NAME" || true
+chown -R "${CONTAINER_USER}":"${CONTAINER_USER}" "${CONTAINER_HOME}/.oh-my-zsh" "${CONTAINER_HOME}/.zshrc" || true
+chsh -s "$(which zsh)" "${CONTAINER_USER}" || true

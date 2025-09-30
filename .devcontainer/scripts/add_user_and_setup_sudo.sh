@@ -1,28 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# usage
+usage() {
+    echo "Usage: $0 <username> <uid>" >&2
+    exit 1
+}
+
 # args: <username> <uid>
 if [[ $# -lt 2 ]]; then
-    echo "Usage: $0 <username> <uid>" >&2
+    usage
+fi
+
+CONTAINER_USER="${1}"
+CONTAINER_UID="${2}"
+
+if [[ "${CONTAINER_USER}" != "root" && "${CONTAINER_UID}" == "0" ]]; then
+    echo "[ERROR] Non-root user cannot have UID 0" >&2
     exit 1
 fi
 
-USER_NAME="$1"
-USER_UID="$2"
-
-if [[ "$USER_NAME" == "root" || "$USER_UID" == "0" ]]; then
+if [[ "${CONTAINER_UID}" == "0" ]]; then
     echo "[INFO] root user detected → skip useradd/sudo setup"
     exit 0
 fi
 
-if id "$USER_NAME" &>/dev/null; then
-    echo "[INFO] user '$USER_NAME' already exists, skipping creation."
+if id "${CONTAINER_USER}" &>/dev/null; then
+    echo "[INFO] user '${CONTAINER_USER}' already exists, skipping creation."
 else
-    echo "[INFO] creating user '$USER_NAME' with UID $USER_UID"
-    useradd -u "$USER_UID" -m -s /usr/bin/zsh "$USER_NAME"
+    echo "[INFO] creating user '${CONTAINER_USER}' with UID ${CONTAINER_UID}"
+    useradd -u "${CONTAINER_UID}" -m -s /usr/bin/zsh "${CONTAINER_USER}"
 fi
 
-echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$USER_NAME"
-chmod 0440 "/etc/sudoers.d/$USER_NAME"
+echo "${CONTAINER_USER} ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/${CONTAINER_USER}"
+chmod 0440 "/etc/sudoers.d/${CONTAINER_USER}"
 
-echo "[INFO] user '$USER_NAME' configured with sudo rights."
+echo "[INFO] user '${CONTAINER_USER}' configured with sudo rights."

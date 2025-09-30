@@ -1,28 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-USERNAME="${1:-$USER}"
+CONTAINER_USER="${1:-$CONTAINER_USER}"
+CONTAINER_HOME="${2:-$CONTAINER_HOME}"
+CONTAINER_WORK_DIR="${3:-$CONTAINER_WORK_DIR}"
 
-if ! id "$USERNAME" &>/dev/null; then
-    echo "User $USERNAME does not exist" >&2
+if ! id "${CONTAINER_USER}" &>/dev/null; then
+    echo "User ${CONTAINER_USER} does not exist" >&2
+    exit 1
+elif [[ ! -d "${CONTAINER_HOME}" ]]; then
+    echo "Home directory ${CONTAINER_HOME} does not exist" >&2
+    exit 1
+elif [[ ! -d "${CONTAINER_WORK_DIR}" ]]; then
+    echo "Work directory ${CONTAINER_WORK_DIR} does not exist" >&2
     exit 1
 fi
 
-# UID=$(id -u "$USERNAME")
-HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 
-echo "[INFO] step 1/2: change ownership to $USERNAME"
-bash /workspaces/dev/.devcontainer/scripts/change_owner.sh "$USERNAME"\
-    --target "$HOME" \
-    --target /workspaces/dev:/workspaces/dev/.datasets \
-    --target /workspaces/dev/.datasets/asr-rankformer-datasets \
-    --target /workspaces/dev/.datasets/ami \
-    --target /workspaces/dev/.datasets/vox_populi \
-    --target /workspaces/dev/.datasets/tedlium \
-    --target /workspaces/dev/.datasets/libri_speech
+echo "[INFO] step 1/2: change ownership to ${CONTAINER_USER}"
+bash "${CONTAINER_WORK_DIR}/.devcontainer/scripts/change_owner.sh" "${CONTAINER_USER}" \
+    --target "${CONTAINER_HOME}" \
+    --target "${CONTAINER_WORK_DIR}:${CONTAINER_WORK_DIR}/.datasets" \
+    --target "${CONTAINER_WORK_DIR}/.datasets:${CONTAINER_WORK_DIR}/.datasets/pills:${CONTAINER_WORK_DIR}/.datasets/ILSVRC:${CONTAINER_WORK_DIR}/.datasets/asr-rankformer-datasets"
 
-# echo "[INFO] step 2/3: setup uv for $USERNAME"
-# bash /workspaces/dev/.devcontainer/scripts/setup_uv.sh
 echo "[INFO] step 2/2: setup lhotse"
-bash /workspaces/dev/.devcontainer/scripts/setup_lhotse.sh
+bash "${CONTAINER_WORK_DIR}/.devcontainer/scripts/setup_lhotse.sh" "${CONTAINER_WORK_DIR}"
 

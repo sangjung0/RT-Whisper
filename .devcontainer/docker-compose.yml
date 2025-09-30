@@ -1,19 +1,25 @@
-name: RTWhisper-Dev
+name: ${CONTAINER_NAME}
 services:
     dev:
         build:
             context: ..
             dockerfile: .devcontainer/Dockerfile
+            args:
+                CONTAINER_USER: ${CONTAINER_USER}
+                CONTAINER_UID: ${CONTAINER_UID}
+                CONTAINER_HOME: ${CONTAINER_HOME}
+                CONTAINER_WORK_DIR: ${CONTAINER_WORK_DIR}
+                CONTAINER_UV_GROUP: ${CONTAINER_UV_GROUP}
         environment:
-            USER: ${CONTAINER_USER}
-            UID: ${CONTAINER_UID}
-            HOME: ${CONTAINER_HOME}
-            WORKDIR: ${WORKDIR}
+            CONTAINER_USER: ${CONTAINER_USER}
+            CONTAINER_UID: ${CONTAINER_UID}
+            CONTAINER_HOME: ${CONTAINER_HOME}
+            CONTAINER_WORK_DIR: ${CONTAINER_WORK_DIR}
             TZ: ${TZ}
         volumes:
-            - ../:${WORKDIR}
-            - venv:${WORKDIR}/.venv
-            - vendor:${WORKDIR}/.vendor
+            - ../:${CONTAINER_WORK_DIR}
+            - venv:${CONTAINER_WORK_DIR}/.venv
+            - vendor:${CONTAINER_WORK_DIR}/.vendor
             - uv_cache:${CONTAINER_HOME}/.cache/uv
             - local_cache:${CONTAINER_HOME}/.local
 
@@ -23,90 +29,89 @@ services:
             - whisper_cache:${CONTAINER_HOME}/.cache/whisper
 
             # dataset
-            - datasets:${WORKDIR}/.datasets:ro
-            - datasets_ami:${WORKDIR}/.datasets/ami:rw
-            - datasets_tedlium:${WORKDIR}/.datasets/tedlium:rw
-            - datasets_vox_populi:${WORKDIR}/.datasets/vox_populi:rw
-            - datasets_libri_speech:${WORKDIR}/.datasets/libri_speech:rw
+            - datasets:${CONTAINER_WORK_DIR}/.datasets:ro
+            - datasets_ami:${CONTAINER_WORK_DIR}/.datasets/ami:rw
+            - datasets_tedlium:${CONTAINER_WORK_DIR}/.datasets/tedlium:rw
+            - datasets_vox_populi:${CONTAINER_WORK_DIR}/.datasets/vox_populi:rw
+            - datasets_libri_speech:${CONTAINER_WORK_DIR}/.datasets/libri_speech:rw
 
             # storage
-            - storage_rt_whisper:${WORKDIR}/.storage:rw
+            - storage_rt_whisper:${CONTAINER_WORK_DIR}/.storage:rw
         deploy:
             resources:
                 reservations:
                     devices:
                         - driver: nvidia
-                          count: 1
+                          device_ids: ["${CONTAINER_GPU_ID}"]
                           capabilities: [gpu]
         command: ["tail", "-f", "/dev/null"]
 
 volumes:
     venv:
-      driver: local
+        driver: local
     vendor:
-      driver: local
+        driver: local
     uv_cache:
-      driver: local
+        driver: local
     local_cache:
-      driver: local
+        driver: local
     huggingface_cache:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/cache/huggingface
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/cache/huggingface
     torch_cache:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/cache/torch
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/cache/torch
     fasttext_cache:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/cache/fasttext
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/cache/fasttext
     whisper_cache:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/cache/whisper
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/cache/whisper
     datasets:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/datasets
     datasets_ami:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets/ami
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/datasets/ami
     datasets_tedlium:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets/tedlium
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/datasets/tedlium
     datasets_vox_populi:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets/vox_populi
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/datasets/vox_populi
     datasets_libri_speech:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/datasets/libri_speech
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/datasets/libri_speech
     storage_rt_whisper:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: ${DOCKER_VOLUME}/storage/rt-whisper
-
+        driver: local
+        driver_opts:
+            type: none
+            o: bind
+            device: ${CONTAINER_VOLUME}/storage/rt-whisper

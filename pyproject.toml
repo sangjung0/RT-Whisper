@@ -232,9 +232,4 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "pybind11",
-]
-
-[tool.uv.sources]
-pybind11 = { path = ".vendor/pybind11-3.0.1-py3-none-any.whl" }
+dev = []

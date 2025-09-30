@@ -7,18 +7,20 @@ usage() {
     exit 1
 }
 
-[[ $# -lt 1 ]] && usage
+# args: <username> [--target <path[:exclude1:exclude2:...]> ...]
+if [[ $# -lt 1 ]]; then
+    usage
+fi
 
-
-USER_NAME="$1"
+CONTAINER_USER="$1"
 shift
 
-if ! id "$USER_NAME" &>/dev/null; then
-    echo "Error: user '$USER_NAME' does not exist." >&2
+if ! id "$CONTAINER_USER" &>/dev/null; then
+    echo "Error: user '$CONTAINER_USER' does not exist." >&2
     exit 1
 fi
 
-OWNER="${USER_NAME}:${USER_NAME}"
+OWNER="${CONTAINER_USER}:${CONTAINER_USER}"
 
 declare -a TARGETS=()
 declare -A EXCLUDES
@@ -79,7 +81,7 @@ chown_with_excludes() {
     mapfile -d '' -t prune < <(build_prune_args "$target" || true)
     (( ${#prune[@]} )) && args+=( "${prune[@]}" )
 
-    args+=( \( -not -user "$USER_NAME" -o -not -group "$USER_NAME" \) )
+    args+=( \( -not -user "$CONTAINER_USER" -o -not -group "$CONTAINER_USER" \) )
 
     if (( EUID == 0 )); then
         args+=( -exec chown "$owner" {} + )

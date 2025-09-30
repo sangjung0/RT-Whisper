@@ -1,10 +1,10 @@
 FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04 AS base
 
-ARG USER="root"
-ARG UID=0
-ARG HOME="/${USER}"
-ARG WORKDIR="/workspaces/dev"
-ARG UV_GROUP="dev"
+ARG CONTAINER_USER
+ARG CONTAINER_UID
+ARG CONTAINER_HOME
+ARG CONTAINER_WORK_DIR
+ARG CONTAINER_UV_GROUP
 
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-lc"]
@@ -20,41 +20,43 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
+# LOAD SCRIPT
 COPY .devcontainer/scripts /tmp/scripts
 RUN chmod +x /tmp/scripts/*.sh
 
-RUN /tmp/scripts/add_user_and_setup_sudo.sh ${USER} ${UID} \
-    && /tmp/scripts/setup_zsh.sh ${USER} ${UID}
+# ADD USER AND SETUP ZSH
+RUN /tmp/scripts/add_user_and_setup_sudo.sh ${CONTAINER_USER} ${CONTAINER_UID}
+RUN /tmp/scripts/setup_zsh.sh ${CONTAINER_USER} ${CONTAINER_UID}
 
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh \
-    && export PATH="$HOME/.local/bin:$PATH"
+RUN sudo -u ${CONTAINER_USER} curl -LsSf https://astral.sh/uv/install.sh | sudo -u ${CONTAINER_USER} sh
+RUN sudo -u ${CONTAINER_USER} -H env PATH="${CONTAINER_HOME}/.local/bin:$PATH"
 
 # BUILDER
 FROM base AS builder
 
-WORKDIR ${WORKDIR}
-COPY pyproject.toml uv.lock ${WORKDIR}/
+WORKDIR ${CONTAINER_WORK_DIR}
+COPY pyproject.toml uv.lock ${CONTAINER_WORK_DIR}/
 
-RUN install -d -o ${UID} -g ${UID} ${WORKDIR}/.venv ${WORKDIR}/.vendor ${HOME}
+RUN install -d -o ${CONTAINER_UID} -g ${CONTAINER_UID} ${CONTAINER_WORK_DIR}/.venv ${CONTAINER_HOME}
 
-RUN chown -R ${UID}:${UID} ${WORKDIR} ${HOME} \
-    && sudo -u ${USER} -H /tmp/scripts/setup_uv.sh ${UV_GROUP} ${WORKDIR}
+USER ${CONTAINER_USER}
+RUN chown -R ${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}
+RUN sudo -u ${CONTAINER_USER} -H bash -lc "/tmp/scripts/setup_uv.sh ${CONTAINER_UV_GROUP} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}"
 
-RUN rm -f ${WORKDIR}/pyproject.toml ${WORKDIR}/uv.lock || true
+RUN rm -f ${CONTAINER_WORK_DIR}/pyproject.toml ${CONTAINER_WORK_DIR}/uv.lock || true
 
 # RUN
 FROM base AS final
 
-WORKDIR ${WORKDIR}
+WORKDIR ${CONTAINER_WORK_DIR}
 
-COPY --from=builder --chown=${UID}:${UID} ${WORKDIR}/.venv   ${WORKDIR}/.venv
-COPY --from=builder --chown=${UID}:${UID} ${WORKDIR}/.vendor ${WORKDIR}/.vendor
-COPY --from=builder --chown=${UID}:${UID} ${HOME}/.cache/uv  ${HOME}/.cache/uv
-COPY --from=builder --chown=${UID}:${UID} ${HOME}/.local  ${HOME}/.local
+COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_WORK_DIR}/.venv   ${CONTAINER_WORK_DIR}/.venv
+COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_HOME}/.cache/uv  ${CONTAINER_HOME}/.cache/uv
+COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_HOME}/.local  ${CONTAINER_HOME}/.local
 
 RUN rm -rf /tmp/scripts
 
-USER ${USER}
-ENV VIRTUAL_ENV=${WORKDIR}/.venv
-ENV PATH="${WORKDIR}/.venv/bin:${PATH}"
+USER ${CONTAINER_USER}
+ENV VIRTUAL_ENV="${CONTAINER_WORK_DIR}/.venv"
+ENV PATH="${CONTAINER_WORK_DIR}/.venv/bin:${PATH}"
 
