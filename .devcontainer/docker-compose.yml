@@ -9,6 +9,7 @@ services:
             UID: ${CONTAINER_UID}
             HOME: ${CONTAINER_HOME}
             WORKDIR: ${WORKDIR}
+            TZ: ${TZ}
         volumes:
             - ../:${WORKDIR}
             - venv:${WORKDIR}/.venv
