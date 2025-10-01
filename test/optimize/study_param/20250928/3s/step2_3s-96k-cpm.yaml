@@ -3,12 +3,12 @@ description: "
     use_cache: True
     use_prompt: False
 
-    학습 횟수 500으로 제한
+    학습 횟수 1000으로 제한
     "
 optimizer:
     algo: CMA # SPSA or CMA
     model_sample_rate: 16000
-    max_study_steps: 500
+    max_study_steps: 1000
     use_cache: True
     use_prompt: False
     random_seed: 42
