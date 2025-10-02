@@ -1,0 +1,196 @@
+description: "
+    20251003 기점으로 수정된 RT Whisper 알고리즘을 사용함 (테스트용, 알고리즘 완전히 적용 안됨)
+    use_cache: True
+    use_prompt: False
+
+    학습 횟수 1000으로 제한
+    "
+optimizer:
+    algo: CMA # SPSA or CMA
+    model_sample_rate: 16000
+    max_study_steps: 1000
+    use_cache: True
+    use_prompt: False
+    random_seed: 42
+    chunk_size: 16000
+    language: "en"
+    top_k: 10
+    sigma: 0.3
+study:
+    whisper:
+        model_options:
+            model_size_or_path: "large-v3"
+            device: "cuda"
+            compute_type: "float16"
+        transcribe_options:
+            beam_size: 5
+            vad_filter: False
+            temperature: [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    silero_vad:
+        model_options: {}
+        run_options: {}
+    boundary_word_filter:
+        model_path:
+            is_train: False
+            dtype: model
+            key: model
+            model_path: /workspaces/dev/test/optimize/model_weight/model-pt-96k_3s_96bu.pth
+            device: cpu
+            maximum: 20.0
+            minimum: -20.0
+        boundary:
+            is_train: False
+            dtype: integer
+            key: boundary
+            value: 16000
+            minimum: 0
+            maximum: 112000
+            step: 160
+    asr:
+        max_prompt_words: 40
+        max_overlap_duration:
+            is_train: False
+            dtype: integer
+            key: "overlap_duration"
+            value: 96000
+            minimum: 0
+            maximum: 112000
+            step: 8000
+    position_weighted_filter:
+    duration_filter:
+        min_dur:
+            default: 160
+            en:
+                is_train: True
+                dtype: integer
+                key: "df_min_dur_en"
+                value: 480
+                minimum: 0
+                maximum: 1600
+                step: 160
+            ko:
+                is_train: False
+                dtype: integer
+                key: "df_min_dur_ko"
+                value: 480
+                minimum: 0
+                maximum: 1600
+                step: 160
+    probability_filter:
+        min_prob:
+            default: 1.0
+            en:
+                is_train: True
+                dtype: float
+                key: "pf_min_prob_en"
+                value: 0.4959827740712158
+                minimum: 0
+                maximum: 1
+            ko:
+                is_train: False
+                dtype: float
+                key: "pf_min_prob_ko"
+                value: 0.4959827740712158
+                minimum: 0
+                maximum: 1
+    selector:
+        m:
+            is_train: True
+            dtype: float
+            key: m
+            value: 0.12075781832846982
+            minimum: 0
+            maximum: 1
+        p:
+            is_train: True
+            dtype: float
+            key: p
+            value: 0.02258105418781403
+            minimum: 0
+            maximum: 1
+        s:
+            is_train: True
+            dtype: float
+            key: s
+            value: 0.2363243814730352
+            minimum: 0
+            maximum: 1
+        iou_threshold:
+            default: 0.5
+            en:
+                is_train: True
+                dtype: float
+                key: "iou_threshold_en"
+                value: 0.09602928860751775
+                minimum: 0
+                maximum: 1
+            ko:
+                is_train: False
+                dtype: float
+                key: "iou_threshold_ko"
+                value: 0.09602928860751775
+                minimum: 0
+                maximum: 1
+        cos_threshold:
+            default: 0.5
+            en:
+                is_train: True
+                dtype: float
+                key: "cos_threshold_en"
+                value: 0.2503592185233303
+                minimum: 0
+                maximum: 1
+            ko:
+                is_train: False
+                dtype: float
+                key: "cos_threshold_ko"
+                value: 0.2503592185233303
+                minimum: 0
+                maximum: 1
+        padding:
+            default: 3200
+            en:
+                is_train: True
+                dtype: integer
+                key: "padding_en"
+                value: 160
+                minimum: 0
+                maximum: 1600
+                step: 160
+            ko:
+                is_train: False
+                dtype: integer
+                key: "padding_ko"
+                value: 160
+                minimum: 0
+                maximum: 1600
+                step: 160
+        window:
+            is_train: True
+            dtype: integer
+            key: window
+            value: 1
+            minimum: 0
+            maximum: 10
+        gs_alpha:
+            is_train: True
+            dtype: float
+            key: gs_alpha
+            value: 1
+            minimum: 0
+            maximum: 1
+        st_alpha:
+            is_train: True
+            dtype: float
+            key: st_alpha
+            value: 1
+            minimum: 0
+            maximum: 1
+        token_group_size:
+            is_train: True
+            dtype: integer
+            key: "token_group_size"
+            value: 2
+            minimum: 1
+            maximum: 10
+            step: 1

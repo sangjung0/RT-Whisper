@@ -38,10 +38,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20251003/en/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -50,10 +50,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20251003/en/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -62,10 +62,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_esic,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/esic/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/esic/20251003/en/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # Zeroth Korean
@@ -76,10 +76,10 @@ params = [
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -89,10 +89,10 @@ params = [
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -102,10 +102,10 @@ params = [
         "dataset": load_zeroth_korean,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # KSPonSpeech
@@ -116,10 +116,10 @@ params = [
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -129,10 +129,10 @@ params = [
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -142,10 +142,10 @@ params = [
         "dataset": load_ks_pon_speech,
         "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/ko/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # VoxPopuli
@@ -155,10 +155,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20251003/en/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -167,10 +167,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20251003/en/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -179,10 +179,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_vox_populi,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/vox_populi/20251003/en/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # Tedlium
@@ -192,10 +192,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20251003/en/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -204,10 +204,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20251003/en/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -216,10 +216,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_tedlium,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/tedlium/20251003/en/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # LibriSpeech clean
@@ -229,10 +229,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20251003/en/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -241,10 +241,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20251003/en/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -253,10 +253,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_clean,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_clean/20251003/en/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/1s/step2_1s-96k-cpm.yaml",
         ],
     },
     # LibriSpeech other
@@ -266,10 +266,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/3s/step2_3s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20251003/en/3s/step2_3s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/3s/step2_3s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/3s/step2_3s-96k-cpm.yaml",
         ],
     },
     {
@@ -278,10 +278,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/2s/step2_2s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20251003/en/2s/step2_2s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/2s/step2_2s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/2s/step2_2s-96k-cpm.yaml",
         ],
     },
     {
@@ -290,10 +290,10 @@ params = [
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_libri_other,
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20250928/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/libri_other/20251003/en/1s/step2_1s-96k-cpm",
         ],
         "study_instruction": [
-            f"{WORKDIR}/test/optimize/study_param/20250928/1s/step2_1s-96k-cpm.yaml",
+            f"{WORKDIR}/test/optimize/study_param/20251003/en/1s/step2_1s-96k-cpm.yaml",
         ],
     },
 
