@@ -28,19 +28,13 @@ if ! command -v uv &> /dev/null; then
     exit 1
 fi
 
-if ! command -v python3 &>/dev/null; then
-    echo "[ERROR] python3 is not installed" >&2
-    exit 1
-fi
-
 cd "${CONTAINER_WORK_DIR}"
 
-echo "[INFO] uv sync"
-if uv sync --frozen --group dev; then
-    echo "[INFO] uv sync succeeded."
-    break
+echo "[info] uv sync"
+if uv sync --group dev; then
+    echo "[info] uv sync succeeded."
 else
-    echo "[INFO] uv sync failed."
+    echo "[info] uv sync failed."
     exit 1
 fi
 
