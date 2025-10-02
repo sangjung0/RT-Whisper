@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04 AS base
+FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu22.04
 
 ARG CONTAINER_USER
 ARG CONTAINER_UID
@@ -18,6 +18,10 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     sctk \
     python3 \
     python3-pip \
+    autoconf \
+    automake \
+    build-essential \
+    libtool \
     && rm -rf /var/lib/apt/lists/*
 
 # LOAD SCRIPT
@@ -31,9 +35,6 @@ RUN /tmp/scripts/setup_zsh.sh ${CONTAINER_USER} ${CONTAINER_UID}
 RUN sudo -u ${CONTAINER_USER} curl -LsSf https://astral.sh/uv/install.sh | sudo -u ${CONTAINER_USER} sh
 RUN sudo -u ${CONTAINER_USER} -H env PATH="${CONTAINER_HOME}/.local/bin:$PATH"
 
-# BUILDER
-FROM base AS builder
-
 WORKDIR ${CONTAINER_WORK_DIR}
 COPY pyproject.toml uv.lock ${CONTAINER_WORK_DIR}/
 
@@ -41,19 +42,9 @@ RUN install -d -o ${CONTAINER_UID} -g ${CONTAINER_UID} ${CONTAINER_WORK_DIR}/.ve
 
 RUN chown -R ${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}
 RUN sudo -u ${CONTAINER_USER} -H bash -lc "/tmp/scripts/setup_uv.sh ${CONTAINER_UV_GROUP} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}"
+RUN sudo -u ${CONTAINER_USER} -H bash -lc "/tmp/scripts/setup_mecab_kor.sh"
 
-RUN rm -f ${CONTAINER_WORK_DIR}/pyproject.toml ${CONTAINER_WORK_DIR}/uv.lock || true
-
-# RUN
-FROM base AS final
-
-WORKDIR ${CONTAINER_WORK_DIR}
-
-COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_WORK_DIR}/.venv   ${CONTAINER_WORK_DIR}/.venv
-COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_HOME}/.cache/uv  ${CONTAINER_HOME}/.cache/uv
-COPY --from=builder --chown=${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_HOME}/.local  ${CONTAINER_HOME}/.local
-
-RUN rm -rf /tmp/scripts
+RUN rm -f ${CONTAINER_WORK_DIR}/pyproject.toml ${CONTAINER_WORK_DIR}/uv.lock /tmp/* || true
 
 USER ${CONTAINER_USER}
 ENV VIRTUAL_ENV="${CONTAINER_WORK_DIR}/.venv"

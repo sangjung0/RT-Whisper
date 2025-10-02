@@ -20,6 +20,11 @@ if ! id "$CONTAINER_USER" &>/dev/null; then
     exit 1
 fi
 
+if [[ "$CONTAINER_USER" == "root" ]]; then
+    echo "[INFO] root user detected → skipping ownership change"
+    exit 0
+fi
+
 OWNER="${CONTAINER_USER}:${CONTAINER_USER}"
 
 declare -a TARGETS=()

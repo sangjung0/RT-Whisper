@@ -19,9 +19,6 @@ services:
         volumes:
             - ../:${CONTAINER_WORK_DIR}
             - venv:${CONTAINER_WORK_DIR}/.venv
-            - vendor:${CONTAINER_WORK_DIR}/.vendor
-            - uv_cache:${CONTAINER_HOME}/.cache/uv
-            - local_cache:${CONTAINER_HOME}/.local
 
             - huggingface_cache:${CONTAINER_HOME}/.cache/huggingface
             - torch_cache:${CONTAINER_HOME}/.cache/torch
@@ -48,12 +45,6 @@ services:
 
 volumes:
     venv:
-        driver: local
-    vendor:
-        driver: local
-    uv_cache:
-        driver: local
-    local_cache:
         driver: local
     huggingface_cache:
         driver: local
