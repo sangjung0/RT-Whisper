@@ -42,7 +42,7 @@ RUN install -d -o ${CONTAINER_UID} -g ${CONTAINER_UID} ${CONTAINER_WORK_DIR}/.ve
 
 RUN chown -R ${CONTAINER_UID}:${CONTAINER_UID} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}
 RUN sudo -u ${CONTAINER_USER} -H bash -lc "/tmp/scripts/setup_uv.sh ${CONTAINER_UV_GROUP} ${CONTAINER_WORK_DIR} ${CONTAINER_HOME}"
-RUN sudo -u ${CONTAINER_USER} -H bash -lc "/tmp/scripts/setup_mecab_kor.sh"
+RUN /tmp/scripts/setup_mecab_kor.sh
 
 RUN rm -f ${CONTAINER_WORK_DIR}/pyproject.toml ${CONTAINER_WORK_DIR}/uv.lock /tmp/* || true
 

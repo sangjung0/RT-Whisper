@@ -1,17 +1,10 @@
-import os
-from faster_whisper import WhisperModel
+# pip install -U transformers huggingface_hub accelerate sentencepiece
+from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor
 
-WORKDIR = os.environ["CONTAINER_WORK_DIR"]
-TEST_AUDIO_FILE = f"{WORKDIR}/.data/news_with_english.mp3"
+# large-v3
+m1 = AutoModelForSpeechSeq2Seq.from_pretrained("openai/whisper-large-v3")
+p1 = AutoProcessor.from_pretrained("openai/whisper-large-v3")
 
-model = WhisperModel("large-v3", device="cuda", compute_type="int8")
-
-segments, info = model.transcribe(TEST_AUDIO_FILE, beam_size=5)
-
-print(
-    "Detected language '%s' with probability %f"
-    % (info.language, info.language_probability)
-)
-
-for segment in segments:
-    print("[%.2fs -> %.2fs] %s" % (segment.start, segment.end, segment.text))
+# large-v2
+m2 = AutoModelForSpeechSeq2Seq.from_pretrained("openai/whisper-large-v2")
+p2 = AutoProcessor.from_pretrained("openai/whisper-large-v2")

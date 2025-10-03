@@ -74,7 +74,6 @@ params = [
         "storage": f"{WORKDIR}/.storage/zeroth_korean/3s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
-        "language": "ko",
         "output": [
             f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/3s/step2_3s-96k-cpm",
         ],
@@ -87,7 +86,6 @@ params = [
         "storage": f"{WORKDIR}/.storage/zeroth_korean/2s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
-        "language": "ko",
         "output": [
             f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/2s/step2_2s-96k-cpm",
         ],
@@ -100,9 +98,8 @@ params = [
         "storage": f"{WORKDIR}/.storage/zeroth_korean/1s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_zeroth_korean,
-        "language": "ko",
         "output": [
-            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/1s/step2_1s-96k-cpm",
+            f"{WORKDIR}/test/optimize/hyperparameters/zeroth_korean/20251003/ko/1s/step2_1s-96k-cpm"
         ],
         "study_instruction": [
             f"{WORKDIR}/test/optimize/study_param/20251003/ko/1s/step2_1s-96k-cpm.yaml",
@@ -114,7 +111,6 @@ params = [
         "storage": f"{WORKDIR}/.storage/kspon_speech/3s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
-        "language": "ko",
         "output": [
             f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/3s/step2_3s-96k-cpm",
         ],
@@ -127,7 +123,6 @@ params = [
         "storage": f"{WORKDIR}/.storage/kspon_speech/2s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
-        "language": "ko",
         "output": [
             f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/2s/step2_2s-96k-cpm",
         ],
@@ -140,7 +135,6 @@ params = [
         "storage": f"{WORKDIR}/.storage/kspon_speech/1s",
         "study": f"{WORKDIR}/test/optimize/study",
         "dataset": load_ks_pon_speech,
-        "language": "ko",
         "output": [
             f"{WORKDIR}/test/optimize/hyperparameters/kspon_speech/20251003/ko/1s/step2_1s-96k-cpm",
         ],
@@ -308,13 +302,9 @@ for param in params:
     study_instruction = param["study_instruction"]
     print(f"{name}: {len(datasets)}")
 
-    language = param.get("language", None)
-
     for op, si in zip(output, study_instruction):
         op, si = Path(op), Path(si)
         instruction = read_yaml(si)
-        if language is not None:
-            instruction["optimizer"]["language"] = language
         optimizer = Optimizer(study, op, instruction, cache_storage=storage)
         optimizer.optimize(datasets, log_step=100, plot_history=False)
 
